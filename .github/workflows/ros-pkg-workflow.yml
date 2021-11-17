@@ -175,3 +175,26 @@ jobs:
     steps:
     - name: Checkout    
       uses: actions/checkout@v2
+
+    - name: Set tag output
+      id: vars
+      run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+
+    - name: Fetch artifact from github release
+      run: | 
+        mkdir artifacts
+        cd artifacts
+        gh release download ${{ steps.vars.outputs.tag}} -p *.deb
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Publish to Nexus ppa-testing
+      if: ${{ inputs.deploy == 'true' }}
+      run: |
+          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
+          NEXUS_REPO="ppa-main"
+          FILE_LOCATION=$(find artifacts/*.deb)
+          find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
+          -H "Content-Type: multipart/form-data" \
+          --data-binary "@{}" \
+          "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/" \;
