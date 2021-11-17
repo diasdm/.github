@@ -6,13 +6,12 @@ on:
         required: false
         type: string
         default: 'false'
+
+    secrets:
       auto_commit_user:
         required: true
-        type: string
       auto_commit_mail:
         required: true
-        type: string
-    secrets:
       registry_user:
         required: true
       registry_password:
