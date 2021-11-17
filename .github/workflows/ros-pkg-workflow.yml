@@ -188,8 +188,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Publish to Nexus ppa-testing
-      if: ${{ inputs.deploy == 'true' }}
+    - name: Publish to Nexus ppa-main
       run: |
           NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
           NEXUS_REPO="ppa-main"
