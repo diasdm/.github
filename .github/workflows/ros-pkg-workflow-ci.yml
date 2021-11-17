@@ -18,8 +18,8 @@ jobs:
       image: registry.cloud.mov.ai/devops/ros-buildtools-melodic:main
       options: --user root
       credentials:
-        username: ${{secrets.PORTUS_APP_USER}} 
-        password: ${{secrets.PORTUS_APP_TOKEN}}
+        username: ${{secrets.registry_user}} 
+        password: ${{secrets.registry_password}}
 
     steps:
     - name: Checkout    
