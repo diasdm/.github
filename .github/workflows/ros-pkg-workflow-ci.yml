@@ -1,0 +1,66 @@
+name: Build and pack Ros packages 
+on:
+  workflow_call:
+    gitub_repo:
+        required: true
+        type: string
+
+jobs:
+  Test-Ros-Component:
+    runs-on: ubuntu-20.04
+    container:
+      image: registry.cloud.mov.ai/devops/ros-buildtools-melodic:main
+      options: --user root
+      credentials:
+        username: ${{secrets.PORTUS_APP_USER}} 
+        password: ${{secrets.PORTUS_APP_TOKEN}}
+
+    steps:
+    - name: Checkout    
+      uses: actions/checkout@v2
+
+    - name: Validate Repository Package.xml
+      run: |
+        expected_url="<url>$GITHUB_SERVER_URL/$GITHUB_REPOSITORY</url>"
+        VALIDATION_FILE="/tmp/verification-failed"
+        find -L ./ -type f -name 'package.xml' -exec sh -c '
+
+        search_result=$(cat $0 | grep "$1")
+
+        if [ -z "$search_result" ]:
+        then
+            echo "\e[31m$0"
+            touch $2
+        fi 
+
+        ' {} $expected_url $VALIDATION_FILE \;
+
+        if [ -f $VALIDATION_FILE ];
+        then    
+            echo "\e[31mPlease add \033[0;36m$expected_url \e[31mto all the package.xmls mentioned above!"
+            exit 1
+        fi 
+
+    - name: Install Mobros
+      run: python3 -m pip install mobros==1.0.1.8 
+
+    - name: Setup link to Ros userspace
+      run: |
+        mkdir /opt/mov.ai/user/cache/ros/src/
+        ln -s $(pwd)/* /opt/mov.ai/user/cache/ros/src/
+
+    - name: Build
+      run: mobros build 
+
+    - name: Pack
+      run: |
+        export MOVAI_OUTPUT_DIR="$(pwd)/artifacts"
+        mobros pack --workspace="$(pwd)" 
+
+    - name: Print generated packages
+      run: |
+        ls -la artifacts
+
+    - name: Print generated rosdep
+      run: |
+        cat /usr/local/rosdep/ros-pkgs.yaml
