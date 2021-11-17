@@ -6,6 +6,10 @@ on:
         required: false
         type: string
         default: 'false'
+      release:
+        required: false
+        type: string
+        default: 'false'
 
     secrets:
       auto_commit_user:
@@ -29,6 +33,7 @@ on:
 
 jobs:
   Test-Ros-Component:
+    if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
       image: registry.cloud.mov.ai/devops/ros-buildtools-melodic:main
@@ -156,3 +161,17 @@ jobs:
         find artifacts -type f -exec gh release upload ${{ steps.vars.outputs.ros_pkg_version }} {} \;
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  Release-Ros-Component:
+    if: ${{ inputs.release == 'true' }}
+    runs-on: ubuntu-20.04
+    container:
+      image: registry.cloud.mov.ai/devops/ros-buildtools-melodic:main
+      options: --user root
+      credentials:
+        username: ${{secrets.registry_user}} 
+        password: ${{secrets.registry_password}}
+
+    steps:
+    - name: Checkout    
+      uses: actions/checkout@v2
