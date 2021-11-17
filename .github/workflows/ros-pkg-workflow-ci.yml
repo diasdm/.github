@@ -1,7 +1,8 @@
 name: Build and pack Ros packages 
 on:
   workflow_call:
-    gitub_repo:
+    inputs:
+      gitub_repo:
         required: true
         type: string
 
