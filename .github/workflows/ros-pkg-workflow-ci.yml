@@ -2,9 +2,10 @@ name: Build and pack Ros packages
 on:
   workflow_call:
     inputs:
-      gitub_repo:
-        required: true
+      deploy:
+        required: false
         type: string
+        default: 'false'
     secrets:
       registry_user:
         required: true
@@ -70,3 +71,73 @@ jobs:
     - name: Print generated rosdep
       run: |
         cat /usr/local/rosdep/ros-pkgs.yaml
+
+
+    - name: Commit raise version
+      if: ${{ inputs.deploy == 'true' }}
+      run: |
+        git config --global user.name '${{ secrets.RAISE_BOT_COMMIT_USER }}'
+        git config --global user.email '${{ secrets.RAISE_BOT_COMMIT_MAIL }}'
+        git pull
+        git add **package.xml
+        git commit -m "Automatic Bump of build version"
+        git push
+    
+    - name: Find package details
+      id: vars
+      if: ${{ inputs.deploy == 'true' }}
+      run: |
+            MOVAI_PACKAGING_DIR="/opt/mov.ai/user/cache/ros/src/"
+            main_package="$(find -L ${MOVAI_PACKAGING_DIR} -name package.xml | awk '{ print length, $0 }' | sort -n | cut -d" " -f2- | head -n 1)"
+            build_version_section=$(cat $main_package | grep build_version)
+            version_section=$(cat $main_package | grep "<version")
+            main_version=$(echo $version_section | sed 's/ //g' | sed -e 's/<\w*>'//g | sed -e 's/<\/\w*>'//g)
+            buildid=$(echo $build_version_section | sed 's/ //g' | sed -e 's/<\w*>'//g | sed -e 's/<\/\w*>'//g)
+            VERSION="$main_version-$buildid"
+            echo ::set-output name=ros_pkg_version::$VERSION
+
+    - name: Rosdep Publish
+      if: ${{ inputs.deploy == 'true' }}
+      run: |
+        export AWS_DEFAULT_REGION="eu-west-1"
+        export AWS_ACCESS_KEY_ID="${{ secrets.AWS_SQS_ROSDEP_ACCESS_KEY }}"
+        export AWS_SECRET_ACCESS_KEY='${{ secrets.AWS_SQS_ROSDEP_SECRET_ACCESS_KEY }}'
+        mobros publish
+        cat /usr/local/rosdep/ros-pkgs.yaml
+
+
+    - name: Publish to Nexus ppa-dev
+      if: ${{ inputs.deploy == 'true' }}
+      run: |
+          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
+          NEXUS_REPO="ppa-dev"
+          FILE_LOCATION=$(find artifacts/*.deb)
+          find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.NEXUS_PUBLISHER_USR }}:${{ secrets.NEXUS_PUBLISHER_PWD }}" \
+          -H "Content-Type: multipart/form-data" \
+          --data-binary "@{}" \
+          "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/" \;
+    
+    - name: Publish to Nexus ppa-testing
+      if: ${{ inputs.deploy == 'true' }}
+      run: |
+          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
+          NEXUS_REPO="ppa-testing"
+          FILE_LOCATION=$(find artifacts/*.deb)
+          find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.NEXUS_PUBLISHER_USR }}:${{ secrets.NEXUS_PUBLISHER_PWD }}" \
+          -H "Content-Type: multipart/form-data" \
+          --data-binary "@{}" \
+          "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/" \;
+
+    - name: Create Github Release
+      if: ${{ inputs.deploy == 'true' }}
+      shell: bash
+      run: |    
+        title="Release of ${{ steps.vars.outputs.ros_pkg_version }}" 
+        
+        gh release create -p -t "$title" -n "Please add release notes" ${{ steps.vars.outputs.ros_pkg_version }}
+
+        # add all files in the artifacts folder
+        ls -la artifacts
+        find artifacts -type f -exec gh release upload ${{ steps.vars.outputs.ros_pkg_version }} {} \;
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
