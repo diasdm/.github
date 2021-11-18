@@ -50,6 +50,7 @@ jobs:
       with:
         # Disabling shallow clone is recommended for improving relevancy of reporting
         fetch-depth: 0
+        submodules: recursive
 
     - name: Validate Repository Package.xml
       run: |
@@ -205,7 +206,8 @@ jobs:
       with:
         # Disabling shallow clone is recommended for improving relevancy of reporting
         fetch-depth: 0
-        
+        submodules: recursive
+
     - name: Set tag output
       id: vars
       run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
