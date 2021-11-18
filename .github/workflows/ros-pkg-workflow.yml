@@ -30,6 +30,8 @@ on:
         required: true
       github_token:
         required: true
+      sonar_token:
+        required: true
 
 jobs:
   Test-Ros-Component:
@@ -68,6 +70,28 @@ jobs:
             exit 1
         fi 
 
+    - name: SonarQube Scan
+      uses: SonarSource/sonarqube-scan-action@v1.0.0
+      env:
+        SONAR_TOKEN: ${{ secrets.sonar_token }}
+        SONAR_HOST_URL: https://sonarqube.aws.cloud.mov.ai
+      with:
+        projectBaseDir: ./
+        args: >
+          -Dsonar.organization=MOV-AI
+          -Dsonar.projectKey=${{ github.event.repository.name }}
+          -Dsonar.verbose=true
+          -Dsonar.sources=.
+          -Dsonar.scm.provider=git
+          -Dsonar.qualitygate.wait=true
+          -Dsonar.qualitygate.timeout=300
+
+    - name: Link to SonarQube Dashboard
+      shell: bash
+      run: |
+        echo "Please check report here: https://sonarqube.aws.cloud.mov.ai/dashboard?id=${{ github.event.repository.name }}"
+      id: sonar_links
+      
     - name: Install Mobros
       run: python3 -m pip install mobros==1.0.1.8 
 
