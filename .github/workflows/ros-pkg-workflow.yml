@@ -59,12 +59,17 @@ jobs:
         find -L ./ -type f -name 'package.xml' -exec sh -c '
 
         search_result=$(cat $0 | grep "$1")
+        is_movai_package=$(cat $0 | grep "<name>movai_")
 
-        if [ -z "$search_result" ]:
-        then
-            echo "\e[31m$0"
-            touch $2
-        fi 
+        # is movai package ?
+        if [ -n "$is_movai_package" ]:
+        then  
+          if [ -z "$search_result" ]:
+          then
+              echo "\e[31m$0"
+              touch $2
+          fi 
+        fi
 
         ' {} $expected_url $VALIDATION_FILE \;
 
