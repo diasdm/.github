@@ -81,7 +81,6 @@ jobs:
         fi 
 
     - name: Validate Repository Ros structure
-      working-directory: /opt/mov.ai/user/cache/ros/src/
       shell: bash
       run: |
         root_packages="$(find -L . -maxdepth 2 -type f -name 'package.xml'| wc -l)"
