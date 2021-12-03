@@ -109,34 +109,6 @@ jobs:
         mkdir /opt/mov.ai/user/cache/ros/src/
         ln -s $(pwd)/* /opt/mov.ai/user/cache/ros/src/
 
-    - name: DUARTE DELETE ME
-      working-directory: /opt/mov.ai/user/cache/ros/src/
-      run: |
-            packages_xmls="$(find -L . -name package.xml | grep -E '^[.]\/\w+/package.xml')"
-            echo "$packages_xmls"
-            packages_array=($(echo $packages_xmls | tr ' ' "\n"))
-            nr_metapackages=0
-            main_package=""
-
-            # analyse root level packages. Not analysing sub directories of them! 
-            for pkg_path in "${packages_array[@]}"
-            do
-                is_ros_metapackage $pkg_path
-                if [ $IS_ROS_META_PKG -eq 0 ]
-                then
-                    main_package=$pkg_path
-                else
-                    main_package_candidate=$pkg_path
-                fi
-            done
-            
-            # if no ros metapackage was found, and we passed the validations, it means i only have 1 root package and that will be my main for raise.
-            if [ $nr_metapackages -eq 0 ]
-            then
-                main_package=$main_package_candidate
-            fi
-            echo "i think its $main_package"
-
     - name: Build
       run: mobros build 
 
@@ -169,37 +141,9 @@ jobs:
 #      if: ${{ inputs.deploy == 'true' }}
       working-directory: /opt/mov.ai/user/cache/ros/src/
       run: |
-            packages_xmls="$(find -L . -name package.xml | grep -E '^[.]\/\w+/package.xml')"
-
-            packages_array=($(echo $packages_xmls | tr ' ' "\n"))
-            nr_metapackages=0
-            main_package=""
-
-            # analyse root level packages. Not analysing sub directories of them! 
-            for pkg_path in "${packages_array[@]}"
-            do
-                is_ros_metapackage $pkg_path
-                if [ $IS_ROS_META_PKG -eq 0 ]
-                then
-                    ((nr_metapackages=nr_metapackages+1))
-                    main_package=$pkg_path
-                else
-                    main_package_candidate=$pkg_path
-                fi
-            done
-            
-            # if no ros metapackage was found, and we passed the validations, it means i only have 1 root package and that will be my main for raise.
-            if [ $nr_metapackages -eq 0 ]
-            then
-                main_package=$main_package_candidate
-            fi
-            echo "i think its $main_package"
-            build_version_section=$(cat $main_package | grep build_version)
-            version_section=$(cat $main_package | grep "<version")
-            main_version=$(echo $version_section | sed 's/ //g' | sed -e 's/<\w*>'//g | sed -e 's/<\/\w*>'//g)
-            buildid=$(echo $build_version_section | sed 's/ //g' | sed -e 's/<\w*>'//g | sed -e 's/<\/\w*>'//g)
-            VERSION="$main_version-$buildid"
-            echo ::set-output name=ros_pkg_version::$VERSION
+            version=$(cat /tmp/main-package.mobrosinfo)
+            echo "i think its $version"
+            echo ::set-output name=ros_pkg_version::$version
 
     - name: Rosdep Publish
       if: ${{ inputs.deploy == 'true' }}
