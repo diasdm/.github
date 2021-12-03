@@ -141,14 +141,13 @@ jobs:
       id: vars
       if: ${{ inputs.deploy == 'true' }}
       run: |
-            MOVAI_PACKAGING_DIR="/opt/mov.ai/user/cache/ros/src/"
-            main_package="$(find -L ${MOVAI_PACKAGING_DIR} -name package.xml | awk '{ print length, $0 }' | sort -n | cut -d" " -f2- | head -n 1)"
+            main_package=$(cat /tmp/main-package.mobrosinfo)
             build_version_section=$(cat $main_package | grep build_version)
             version_section=$(cat $main_package | grep "<version")
             main_version=$(echo $version_section | sed 's/ //g' | sed -e 's/<\w*>'//g | sed -e 's/<\/\w*>'//g)
             buildid=$(echo $build_version_section | sed 's/ //g' | sed -e 's/<\w*>'//g | sed -e 's/<\/\w*>'//g)
             VERSION="$main_version-$buildid"
-            echo ::set-output name=ros_pkg_version::$VERSION
+            echo ::set-output name=ros_pkg_version::$VERSION  
 
     - name: Rosdep Publish
       if: ${{ inputs.deploy == 'true' }}

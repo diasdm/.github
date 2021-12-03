@@ -138,12 +138,16 @@ jobs:
     
     - name: Find package details
       id: vars
-#      if: ${{ inputs.deploy == 'true' }}
+      if: ${{ inputs.deploy == 'true' }}
       working-directory: /opt/mov.ai/user/cache/ros/src/
       run: |
-            version=$(cat /tmp/main-package.mobrosinfo)
-            echo "i think its $version"
-            echo ::set-output name=ros_pkg_version::$version
+            main_package=$(cat /tmp/main-package.mobrosinfo)
+            build_version_section=$(cat $main_package | grep build_version)
+            version_section=$(cat $main_package | grep "<version")
+            main_version=$(echo $version_section | sed 's/ //g' | sed -e 's/<\w*>'//g | sed -e 's/<\/\w*>'//g)
+            buildid=$(echo $build_version_section | sed 's/ //g' | sed -e 's/<\w*>'//g | sed -e 's/<\/\w*>'//g)
+            VERSION="$main_version-$buildid"
+            echo ::set-output name=ros_pkg_version::$VERSION
 
     - name: Rosdep Publish
       if: ${{ inputs.deploy == 'true' }}
