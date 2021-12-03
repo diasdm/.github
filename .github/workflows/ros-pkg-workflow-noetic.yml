@@ -80,6 +80,51 @@ jobs:
             exit 1
         fi 
 
+    - name: Validate Repository Ros structure
+      working-directory: /opt/mov.ai/user/cache/ros/src/
+      shell: bash
+      run: |
+        root_packages="$(find -L . -maxdepth 2 -type f -name 'package.xml'| wc -l)"
+
+        # Catch the: No package.xml found in root ros components (ros components that are in the root of the repo. Ex: ./<my_component>/package.xml).
+        if [ $root_packages -eq 0 ]
+        then
+            echo -e "\e[31mNo packages found at the root level. Without it, mobros can not decide which version to raise (mobros chooses a main package, and his version is the one used for all in the same repository. In case of many packages in the root folder, please create a metapackage.).\033[0m"
+            exit 6
+        fi
+
+        packages_xmls="$(find -L . -maxdepth 2 -type f -name 'package.xml')"
+        # transform into array
+        packages_array=($(echo $packages_xmls | tr ' ' "\n"))
+        nr_metapackages=0
+        root_level_ros_components=0
+
+        # analyse root level packages. Not analysing sub directories of them! 
+        for pkg_path in "${packages_array[@]}"
+        do
+
+            is_ros_metapackage $pkg_path
+            if [ $IS_ROS_META_PKG -eq 0 ]
+            then
+                ((nr_metapackages=nr_metapackages+1))
+            else
+                ((root_level_ros_components=root_level_ros_components+1))
+            fi
+        done
+        
+        # Catch the: Multiple ros metapackages in root level. Becomes impossible to find the main package to raise. Should be only one.
+        if [ $nr_metapackages -gt 1 ]
+        then
+            echo -e "\e[31mMultiple Ros Metapackages found in the root of your repository. You can only have one (found $nr_metapackages).\033[0m"
+            exit 4
+        fi
+
+        # Catch the: Multiple ros packages in root level without a ros metapackage. We need a metapackage to identify the main package for raise.
+        if [ $root_level_ros_components -gt 1 ] && [ $nr_metapackages -eq 0 ]
+        then
+            echo -e "\e[31mYou have multiple ros packages in root level without defining a ros metapackage.\033[0m"
+            exit 5
+        fi
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v1.0.0
       env:
