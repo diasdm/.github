@@ -82,6 +82,21 @@ jobs:
     - name: Validate Repository Ros structure
       shell: bash
       run: |
+        function is_ros_metapackage(){
+          package_path=$1
+
+          if [ -z "$package_path" ]; then
+              package_path="./package.xml"
+          fi
+            
+          result="$(grep "<metapackage" $package_path)"
+          IS_ROS_META_PKG=1
+          if [ $result ]
+          then
+              IS_ROS_META_PKG=0
+          fi
+          
+        }
         root_packages="$(find -L . -maxdepth 2 -type f -name 'package.xml'| wc -l)"
 
         # Catch the: No package.xml found in root ros components (ros components that are in the root of the repo. Ex: ./<my_component>/package.xml).
