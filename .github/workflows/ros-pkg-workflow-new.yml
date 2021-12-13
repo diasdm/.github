@@ -1,0 +1,210 @@
+name: Build and pack Ros packages 
+on:
+  workflow_call:
+    inputs:
+      deploy:
+        required: false
+        type: string
+        default: 'false'
+      release:
+        required: false
+        type: string
+        default: 'false'
+        
+
+    secrets:
+      auto_commit_user:
+        required: true
+      auto_commit_mail:
+        required: true
+      registry_user:
+        required: true
+      registry_password:
+        required: true
+      nexus_publisher_user:
+        required: true
+      nexus_publisher_password:
+        required: true
+      aws_sqs_rosdep_access_key:
+        required: true
+      aws_sqs_rosdep_secret_access_key:
+        required: true
+      github_token:
+        required: true
+      sonar_token:
+        required: true
+
+jobs:
+  Melodic-Build:
+    uses: MOV-AI/.github/.github/workflows/reusable-ros-build-pack.yml@feature/add-ros-pkg-pipeline
+    with:
+      deploy: 'false'
+      ros_distro: 'melodic'
+    secrets:
+      auto_commit_user: ${{ secrets.auto_commit_user }}
+      auto_commit_mail: ${{ secrets.auto_commit_mail }}
+      registry_user: ${{ secrets.registry_user }}
+      registry_password: ${{ secrets.registry_password }}
+      nexus_publisher_user: ${{ secrets.nexus_publisher_user }}
+      nexus_publisher_password: ${{ secrets.nexus_publisher_password }}
+      aws_sqs_rosdep_access_key: ${{ secrets.aws_sqs_rosdep_access_key }}
+      aws_sqs_rosdep_secret_access_key: ${{ secrets.aws_sqs_rosdep_secret_access_key }}
+      github_token: ${{ secrets.github_token }}
+      sonar_token: ${{ secrets.sonar_token }}
+
+  Noetic-Build:
+    uses: MOV-AI/.github/.github/workflows/reusable-ros-build-pack.yml@feature/add-ros-pkg-pipeline
+    with:
+      deploy: 'false'
+      ros_distro: 'noetic'
+    secrets:
+      auto_commit_user: ${{ secrets.auto_commit_user }}
+      auto_commit_mail: ${{ secrets.auto_commit_mail }}
+      registry_user: ${{ secrets.registry_user }}
+      registry_password: ${{ secrets.registry_password }}
+      nexus_publisher_user: ${{ secrets.nexus_publisher_user }}
+      nexus_publisher_password: ${{ secrets.nexus_publisher_password }}
+      aws_sqs_rosdep_access_key: ${{ secrets.aws_sqs_rosdep_access_key }}
+      aws_sqs_rosdep_secret_access_key: ${{ secrets.aws_sqs_rosdep_secret_access_key }}
+      github_token: ${{ secrets.github_token }}
+      sonar_token: ${{ secrets.sonar_token }}
+
+
+  Publish-Ros-Component:
+    if: ${{ inputs.deploy == 'true' }}
+    runs-on: ubuntu-20.04
+    needs:  [Noetic-Build, Melodic-Build]
+    container:
+      image: registry.cloud.mov.ai/devops/ros-buildtools-noetic:main
+      options: --user root
+      credentials:
+        username: ${{secrets.registry_user}} 
+        password: ${{secrets.registry_password}}
+
+    steps:
+    - name: Checkout    
+      if: ${{ inputs.deploy == 'true' }}
+      uses: actions/checkout@v2
+      with:
+        # Disabling shallow clone is recommended for improving relevancy of reporting
+        fetch-depth: 0
+        submodules: recursive
+        
+    - name: Download a single artifact
+      if: ${{ inputs.deploy == 'true' }}
+      uses: actions/download-artifact@v2
+      with:
+        name: packages
+        path: artifacts
+
+    - name: Print generated packages
+      if: ${{ inputs.deploy == 'true' }}
+      run: |
+        ls -la .
+
+    - name: Install Mobros
+      if: ${{ inputs.deploy == 'true' }}
+      run: python3 -m pip install mobros==1.0.1.21 --ignore-installed
+
+    - name: Raise version and validate Ros repository
+      if: ${{ inputs.deploy == 'true' }}
+      run: mobros raise --workspace="$(pwd)" 
+    
+    - name: Commit raise version
+      if: ${{ inputs.deploy == 'true' }}
+      run: |
+        git config --global user.name '${{ secrets.auto_commit_user }}'
+        git config --global user.email '${{ secrets.auto_commit_mail }}'
+        git pull
+        git add **package.xml
+        git commit -m "Automatic Bump of build version"
+        git push
+    
+    - name: Find package details
+      id: vars
+      if: ${{ inputs.deploy == 'true' }}
+      run: |
+            main_package=$(cat /tmp/main-package.mobrosinfo)
+            build_version_section=$(cat $main_package | grep build_version)
+            version_section=$(cat $main_package | grep "<version")
+            main_version=$(echo $version_section | sed 's/ //g' | sed -e 's/<\w*>'//g | sed -e 's/<\/\w*>'//g)
+            buildid=$(echo $build_version_section | sed 's/ //g' | sed -e 's/<\w*>'//g | sed -e 's/<\/\w*>'//g)
+            VERSION="$main_version-$buildid"
+            echo ::set-output name=ros_pkg_version::$VERSION  
+
+
+    - name: Publish to Nexus ppa-dev
+      if: ${{ inputs.deploy == 'true' }}
+      run: |
+          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
+          NEXUS_REPO="ppa-dev"
+          FILE_LOCATION=$(find artifacts/*.deb)
+          find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
+          -H "Content-Type: multipart/form-data" \
+          --data-binary "@{}" \
+          "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/" \;
+    
+    - name: Publish to Nexus ppa-testing
+      if: ${{ inputs.deploy == 'true' }}
+      run: |
+          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
+          NEXUS_REPO="ppa-testing"
+          FILE_LOCATION=$(find artifacts/*.deb)
+          find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
+          -H "Content-Type: multipart/form-data" \
+          --data-binary "@{}" \
+          "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/" \;
+
+    - name: Create Github Release
+      if: ${{ inputs.deploy == 'true' }}
+      shell: bash
+      run: |    
+        title="Release of ${{ steps.vars.outputs.ros_pkg_version }}" 
+        
+        gh release create -p -t "$title" -n "Please add release notes" ${{ steps.vars.outputs.ros_pkg_version }}
+
+        # add all files in the artifacts folder
+        ls -la artifacts
+        find artifacts -type f -exec gh release upload ${{ steps.vars.outputs.ros_pkg_version }} {} \;
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  Release-Ros-Component:
+    if: ${{ inputs.release == 'true' }}
+    runs-on: ubuntu-20.04
+    container:
+      image: registry.cloud.mov.ai/devops/ros-buildtools-noetic:main
+      options: --user root
+      credentials:
+        username: ${{secrets.registry_user}} 
+        password: ${{secrets.registry_password}}
+
+    steps:
+    - name: Checkout    
+      uses: actions/checkout@v2
+      with:
+        # Disabling shallow clone is recommended for improving relevancy of reporting
+        fetch-depth: 0
+        submodules: recursive
+
+    - name: Set tag output
+      id: vars
+      run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+
+    - name: Fetch artifact from github release
+      run: | 
+        mkdir artifacts
+        cd artifacts
+        gh release download ${{ steps.vars.outputs.tag}} -p *.deb
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Publish to Nexus ppa-main
+      run: |
+          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
+          NEXUS_REPO="ppa-main"
+          FILE_LOCATION=$(find artifacts/*.deb)
+          find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
+          -H "Content-Type: multipart/form-data" \
+          --data-binary "@{}" \
+          "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/" \;
