@@ -257,7 +257,7 @@ jobs:
   Publish-Ros-Component:
     if: ${{ inputs.deploy == 'true' }}
     runs-on: ubuntu-20.04
-    needs:  [Test-Ros-Component-Noetic, Test-Ros-Component-Melodic]
+    needs:  [Noetic-Build, Melodic-Build]
     container:
       image: registry.cloud.mov.ai/devops/ros-buildtools-noetic:main
       options: --user root
