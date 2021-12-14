@@ -11,9 +11,8 @@ on:
         type: string
         default: 'false'
       ros_distro:
-        required: false
+        required: true
         type: string
-        default: 'false'
         
 
     secrets:
@@ -42,11 +41,11 @@ jobs:
   Build:
     strategy:
       matrix:
-        distro: [melodic, noetic]
+        distro: '${{ toJSON(inputs.ros_distro) }}'
     if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.cloud.mov.ai/devops/ros-buildtools-{{ matrix.distro }}:main
+      image: registry.cloud.mov.ai/devops/ros-buildtools-${{ matrix.distro }}:main
       options: --user root
       credentials:
         username: ${{secrets.registry_user}} 
