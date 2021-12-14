@@ -41,7 +41,7 @@ jobs:
   Build:
     strategy:
       matrix:
-        distro: '${{ toJSON(inputs.ros_distro) }}'
+        distro: '${{ fromJSON(inputs.ros_distro) }}'
     if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
