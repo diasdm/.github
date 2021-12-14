@@ -10,6 +10,10 @@ on:
         required: false
         type: string
         default: 'false'
+      ros_distro:
+        required: false
+        type: string
+        default: 'false'
         
 
     secrets:
