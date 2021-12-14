@@ -29,7 +29,7 @@ on:
         required: true
       aws_sqs_rosdep_secret_access_key:
         required: true
-      github_token:
+      gh_token:
         required: true
       sonar_token:
         required: true
@@ -351,7 +351,7 @@ jobs:
         ls -la artifacts
         find artifacts -type f -exec gh release upload ${{ steps.vars.outputs.ros_pkg_version }} {} \;
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.gh_token }}
 
   Release-Ros-Component:
     if: ${{ inputs.release == 'true' }}
@@ -381,7 +381,7 @@ jobs:
         cd artifacts
         gh release download ${{ steps.vars.outputs.tag}} -p *.deb
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.gh_token }}
 
     - name: Publish to Nexus ppa-main
       run: |
