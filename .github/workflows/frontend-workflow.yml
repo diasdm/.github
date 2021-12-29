@@ -1,0 +1,257 @@
+name: Build and pack Ros packages 
+on:
+  workflow_call:
+    inputs:
+      deploy:
+        required: false
+        type: string
+        default: 'false'
+      release:
+        required: false
+        type: string
+        default: 'false'
+      ros_distro:
+        required: true
+        type: string
+        
+
+    secrets:
+      auto_commit_user:
+        required: true
+      auto_commit_mail:
+        required: true
+      registry_user:
+        required: true
+      registry_password:
+        required: true
+      nexus_publisher_user:
+        required: true
+      nexus_publisher_password:
+        required: true
+      aws_sqs_rosdep_access_key:
+        required: true
+      aws_sqs_rosdep_secret_access_key:
+        required: true
+      gh_token:
+        required: true
+      sonar_token:
+        required: true
+
+jobs:
+  Build:
+    if: ${{ inputs.release == 'false' }}
+    runs-on: ubuntu-20.04
+    container:
+      image: registry.cloud.mov.ai/devops/npm-buildserver:latest
+      credentials:
+        username: ${{secrets.PORTUS_APP_USER}} 
+        password: ${{secrets.PORTUS_APP_TOKEN}}
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    steps:
+    - name: Checkout    
+      uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.NPM_TOKEN }}
+        # Disabling shallow clone is recommended for improving relevancy of reporting
+        fetch-depth: 0
+        submodules: recursive
+
+    - name: Raise App version
+      run: |
+        git config --global user.name '${{ secrets.RAISE_BOT_COMMIT_USER }}'
+        git config --global user.email '${{ secrets.RAISE_BOT_COMMIT_MAIL }}'
+        npm version prerelease -m "Automatic Bump of build version"
+        git pull
+        git add package.*
+        git push
+
+
+    - name: Setup Github as proxy Registry 
+      uses: actions/setup-node@v2
+      with:
+        node-version: '16.x'
+        registry-url: 'https://npm.pkg.github.com/mov-ai'
+
+    - name: Find Package details
+      id: vars
+      run: |
+        PACKAGE_VERSION=$(cat package.json | grep version | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]')
+        PACKAGE_NAME=$(cat package.json | grep name |head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]')
+        
+        echo ::set-output name=npm_pkg_name::$PACKAGE_NAME
+        echo ::set-output name=npm_pkg_version::$PACKAGE_VERSION
+
+    
+    - name: Bump package.json metadata Version
+      uses: deef0000dragon1/json-edit-action/@v1
+      env:
+        KEY: movai.Version
+        VALUE: ${{steps.vars.outputs.npm_pkg_version}}
+        FILE: package.json
+        
+    - name: Install dependencies
+      run: npm ci --loglevel verbose
+
+    - name: Build
+      run: npm run build
+
+    - name: Check NPM log on failure
+      if: ${{ failure() }}
+      run: cat /github/home/.npm/_logs/*.log
+
+
+    - name: SonarQube Scan
+      uses: SonarSource/sonarqube-scan-action@v1.0.0
+      env:
+        SONAR_TOKEN: ${{ secrets.sonar_token }}
+        SONAR_HOST_URL: https://sonarqube.aws.cloud.mov.ai
+      with:
+        projectBaseDir: ./
+        args: >
+          -Dsonar.organization=MOV-AI
+          -Dsonar.projectKey=${{ github.event.repository.name }}
+          -Dsonar.verbose=true
+          -Dsonar.sources=.
+          -Dsonar.scm.provider=git
+          -Dsonar.qualitygate.wait=true
+          -Dsonar.qualitygate.timeout=300
+
+    - name: Link to SonarQube Dashboard
+      shell: bash
+      run: |
+        echo "Please check report here: https://sonarqube.aws.cloud.mov.ai/dashboard?id=${{ github.event.repository.name }}"
+      id: sonar_links
+
+
+    # Skip tests for now
+    #- name: Run tests
+    #  run: npm run test
+
+    - name: Bump manifest.json metadata Version
+      uses: deef0000dragon1/json-edit-action/@v1
+      env:
+        KEY: version
+        VALUE: ${{steps.vars.outputs.npm_pkg_version}}
+        FILE: build/manifest.json
+
+    - name: Pack debian
+      run: |
+        dch -v ${{ steps.vars.outputs.npm_pkg_version }} -D "UNRELEASED" "bump version"
+        dpkg-buildpackage && \
+        mkdir artifacts && \
+        cp ../*.deb artifacts
+
+
+
+  Publish:
+    if: ${{ inputs.deploy == 'true' }}
+    runs-on: ubuntu-20.04
+    needs:  [Build]
+    container:
+      image: registry.cloud.mov.ai/devops/ros-buildtools-noetic:main
+      options: --user root
+      credentials:
+        username: ${{secrets.registry_user}} 
+        password: ${{secrets.registry_password}}
+
+    steps:
+    - name: Checkout    
+      if: ${{ inputs.deploy == 'true' }}
+      uses: actions/checkout@v2
+      with:
+        # Disabling shallow clone is recommended for improving relevancy of reporting
+        fetch-depth: 0
+        submodules: recursive
+        
+    - name: Download a single artifact
+      if: ${{ inputs.deploy == 'true' }}
+      uses: actions/download-artifact@v2
+      with:
+        name: packages
+        path: artifacts
+
+    - name: Publish
+      run: npm publish
+
+    - name: Publish to Nexus ppa-dev
+      run: |
+          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
+          NEXUS_REPO="ppa-dev"
+          FILE_LOCATION=$(find artifacts/*.deb)
+          curl -u "${{ secrets.NEXUS_PUBLISHER_USR }}:${{ secrets.NEXUS_PUBLISHER_PWD }}" \
+          -H "Content-Type: multipart/form-data" \
+          --data-binary "@$FILE_LOCATION" \
+          "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/"
+  
+    - name: Publish to Nexus ppa-testing
+      run: |
+          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
+          NEXUS_REPO="ppa-testing"
+          FILE_LOCATION=$(find artifacts/*.deb)
+          curl -u "${{ secrets.NEXUS_PUBLISHER_USR }}:${{ secrets.NEXUS_PUBLISHER_PWD }}" \
+          -H "Content-Type: multipart/form-data" \
+          --data-binary "@$FILE_LOCATION" \
+          "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/"
+
+    - name: Create Github Release
+      shell: bash
+      run: |
+        # contains more than one release ?
+        if (( $(grep -o '# v' CHANGELOG.md | wc -l) > 1 )); then
+          # use the latest release notes
+          body=$(grep -m2 -A 9999 "# v" CHANGELOG.md | grep -B 9999 -m2 "# v" |sed '$ d')
+        else
+          body=$(cat CHANGELOG.md)
+        fi
+        
+        title="Release of ${{ steps.vars.outputs.npm_pkg_version }}" 
+        
+        gh release create -p -t "$title" -n "$body" ${{ steps.vars.outputs.npm_pkg_version }}
+
+        # add all files in the artifacts folder
+        ls -la artifacts
+        find artifacts -type f -exec gh release upload ${{ steps.vars.outputs.npm_pkg_version }} {} \;
+        
+
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+     
+
+  Release:
+    if: ${{ inputs.release == 'true' }}
+    runs-on: ubuntu-20.04
+    container:
+      image: registry.cloud.mov.ai/devops/npm-buildserver:latest
+      credentials:
+        username: ${{secrets.PORTUS_APP_USER}} 
+        password: ${{secrets.PORTUS_APP_TOKEN}} 
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+    steps:
+    - name: Checkout    
+      uses: actions/checkout@v2
+
+    - name: Set tag output
+      id: vars
+      run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+
+    - name: Fetch artifact from github release
+      run: | 
+        mkdir artifacts
+        cd artifacts
+        gh release download ${{ steps.vars.outputs.tag}} -p *.deb
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Publish to Nexus ppa-main
+      run: |
+          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
+          NEXUS_REPO="ppa-main"
+          FILE_LOCATION=$(find artifacts/*.deb)
+          find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
+          -H "Content-Type: multipart/form-data" \
+          --data-binary "@{}" \
+          "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/" \;
