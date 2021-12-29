@@ -218,10 +218,12 @@ jobs:
 
     - name: Publish to Nexus ppa-dev
       if: ${{ inputs.deploy == 'true' }}
+      shell: bash
       run: |
+          echo ${BASH_VERSION}
           NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
           NEXUS_REPO="ppa-dev"
-          
+
           for file in artifacts/*.deb
           do
             RETURN_CODE=$(curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
@@ -250,7 +252,9 @@ jobs:
     
     - name: Publish to Nexus ppa-testing
       if: ${{ inputs.deploy == 'true' }}
+      shell: bash
       run: |
+          echo ${BASH_VERSION}
           NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
           NEXUS_REPO="ppa-testing"
 
