@@ -189,17 +189,7 @@ jobs:
     - name: Raise version and validate Ros repository
       if: ${{ inputs.deploy == 'true' }}
       run: mobros raise --workspace="$(pwd)" 
-    
-    - name: Commit raise version
-      if: ${{ inputs.deploy == 'true' }}
-      run: |
-        git config --global user.name '${{ secrets.auto_commit_user }}'
-        git config --global user.email '${{ secrets.auto_commit_mail }}'
-        git pull
-        git add **package.xml
-        git commit -m "Automatic Bump of build version"
-        git push
-    
+         
     - name: Find package details
       id: vars
       if: ${{ inputs.deploy == 'true' }}
@@ -215,39 +205,97 @@ jobs:
 
     - name: Publish to Nexus ppa-dev
       if: ${{ inputs.deploy == 'true' }}
+      shell: bash
       run: |
+          echo ${BASH_VERSION}
           NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
           NEXUS_REPO="ppa-dev"
-          FILE_LOCATION=$(find artifacts/*.deb)
-          find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
-          -H "Content-Type: multipart/form-data" \
-          --data-binary "@{}" \
-          "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/" \;
+
+          for file in artifacts/*.deb
+          do
+            RETURN_CODE=$(curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
+            -H "Content-Type: multipart/form-data" \
+            --data-binary "@$file" \
+            -w '%{http_code}' \
+            "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/")
+
+            #retry
+            if [[ ! "$RETURN_CODE" =~ ^(200|201|202)$ ]]; then
+              echo "Failed upload with $RETURN_CODE. Retrying"
+            
+              RETURN_CODE=$(curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
+                -H "Content-Type: multipart/form-data" \
+                --data-binary "@$file" \
+                -w '%{http_code}' \
+                "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/")
+            fi
+
+            if [[ ! "$RETURN_CODE" =~ ^(200|201|202)$ ]]; then
+              echo "Failed upload with $RETURN_CODE. Exiting"
+              exit 1
+            fi
+            
+          done
     
     - name: Publish to Nexus ppa-testing
       if: ${{ inputs.deploy == 'true' }}
+      shell: bash
       run: |
+          echo ${BASH_VERSION}
           NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
           NEXUS_REPO="ppa-testing"
-          FILE_LOCATION=$(find artifacts/*.deb)
-          find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
-          -H "Content-Type: multipart/form-data" \
-          --data-binary "@{}" \
-          "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/" \;
 
-    - name: Create Github Release
+          for file in artifacts/*.deb
+          do
+            RETURN_CODE=$(curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
+            -H "Content-Type: multipart/form-data" \
+            --data-binary "@$file" \
+            -w '%{http_code}' \
+            "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/")
+
+            #retry
+            if [[ ! "$RETURN_CODE" =~ ^(200|201|202)$ ]]; then
+              echo "Failed upload with $RETURN_CODE. Retrying"
+            
+              RETURN_CODE=$(curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
+                -H "Content-Type: multipart/form-data" \
+                --data-binary "@$file" \
+                -w '%{http_code}' \
+                "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/")
+            fi
+
+            if [[ ! "$RETURN_CODE" =~ ^(200|201|202)$ ]]; then
+              echo "Failed upload with $RETURN_CODE. Exiting"
+              exit 1
+            fi
+            
+          done
+
+    - name: Commit raise version
       if: ${{ inputs.deploy == 'true' }}
-      shell: bash
-      run: |    
-        title="Release of ${{ steps.vars.outputs.ros_pkg_version }}" 
+      id: raise
+      run: |
+        git config --global user.name '${{ secrets.auto_commit_user }}'
+        git config --global user.email '${{ secrets.auto_commit_mail }}'
+        git pull
+        git add **package.xml
+        git commit -m "Automatic Bump of build version"
+        git push
+        commit_id=$(git log --format="%H" -n 1)
+        echo ::set-output name=commit_id::$VERSION  
         
-        gh release create -p -t "$title" -n "Please add release notes" ${{ steps.vars.outputs.ros_pkg_version }}
-
-        # add all files in the artifacts folder
-        ls -la artifacts
-        find artifacts -type f -exec gh release upload ${{ steps.vars.outputs.ros_pkg_version }} {} \;
-      env:
-        GITHUB_TOKEN: ${{ secrets.gh_token }}
+    - name: Create Github Release
+      uses: softprops/action-gh-release@v1
+      if: ${{ inputs.deploy == 'true' }}
+      with:
+        name: "Release of ${{ steps.vars.outputs.ros_pkg_version }}"
+        body: "Please add release notes"
+        tag_name: ${{ steps.vars.outputs.ros_pkg_version }}
+        target_commitish: ${{ steps.raise.outputs.commit_id }}
+        token: ${{ secrets.gh_token }}
+        prerelease: true
+        generate_release_notes: true
+        files: artifacts/*.deb
 
   Release:
     if: ${{ inputs.release == 'true' }}
