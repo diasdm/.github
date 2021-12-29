@@ -248,6 +248,7 @@ jobs:
         target_commitish: ${{ steps.raise.outputs.commit_id }}
         token: ${{ secrets.gh_token }}
         prerelease: true
+        files: artifacts/*.deb
 
 
   Release:
