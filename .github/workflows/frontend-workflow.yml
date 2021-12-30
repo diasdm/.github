@@ -1,4 +1,4 @@
-name: Build and pack Ros packages 
+name: Build and pack FE packages 
 on:
   workflow_call:
     inputs:
@@ -46,8 +46,8 @@ jobs:
     container:
       image: registry.cloud.mov.ai/devops/npm-buildserver:latest
       credentials:
-        username: ${{secrets.PORTUS_APP_USER}} 
-        password: ${{secrets.PORTUS_APP_TOKEN}}
+        username: ${{secrets.registry_user}} 
+        password: ${{secrets.registry_password}}
     env:
       NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
 
@@ -289,10 +289,10 @@ jobs:
     container:
       image: registry.cloud.mov.ai/devops/npm-buildserver:latest
       credentials:
-        username: ${{secrets.PORTUS_APP_USER}} 
-        password: ${{secrets.PORTUS_APP_TOKEN}} 
+        username: ${{secrets.registry_user}} 
+        password: ${{secrets.registry_password}}
     env:
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
       
     steps:
     - name: Checkout    
@@ -308,7 +308,7 @@ jobs:
         cd artifacts
         gh release download ${{ steps.vars.outputs.tag}} -p *.deb
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.gh_token }}
 
     - name: Publish to Nexus ppa-main
       run: |
