@@ -75,9 +75,10 @@ jobs:
     - name: Check NPM log on failure
       if: ${{ failure() }}
       run: cat /github/home/.npm/_logs/*.log
-    # Skip tests for now
-    #- name: Run tests
-    #  run: npm run test
+    
+    - name: Run tests
+      if: ${{ inputs.run_tests == 'true' }}
+      run: npm run test
 
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v1.0.0
