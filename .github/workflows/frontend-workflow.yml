@@ -168,6 +168,8 @@ jobs:
       credentials:
         username: ${{secrets.registry_user}} 
         password: ${{secrets.registry_password}}
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
 
     steps:
     - name: Checkout    
@@ -176,6 +178,7 @@ jobs:
         # Disabling shallow clone is recommended for improving relevancy of reporting
         fetch-depth: 0
         submodules: recursive
+        token: ${{ secrets.npm_token }}
         
     - name: Download a single artifact
       uses: actions/download-artifact@v2
