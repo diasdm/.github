@@ -6,14 +6,7 @@ on:
         required: false
         type: string
         default: 'false'
-      release:
-        required: false
-        type: string
-        default: 'false'
-      ros_distro:
-        required: true
-        type: string
-        
+       
 
     secrets:
       auto_commit_user:
@@ -24,14 +17,6 @@ on:
         required: true
       registry_password:
         required: true
-      nexus_publisher_user:
-        required: true
-      nexus_publisher_password:
-        required: true
-      aws_sqs_rosdep_access_key:
-        required: true
-      aws_sqs_rosdep_secret_access_key:
-        required: true
       gh_token:
         required: true
       sonar_token:
@@ -40,7 +25,6 @@ on:
 jobs:
   Build:
 
-    if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
       image: registry.cloud.mov.ai/devops/npm-buildserver:latest
@@ -60,8 +44,8 @@ jobs:
 
     - name: Raise App version
       run: |
-        git config --global user.name 'Automatic Raise'
-        git config --global user.email 'test@test'
+        git config --global user.name '${{ secrets.auto_commit_user }}'
+        git config --global user.email '${{ secrets.auto_commit_mail }}'
         npm version patch --no-git-tag-version
 
     - name: Setup Github as proxy Registry 
@@ -106,6 +90,7 @@ jobs:
       id: sonar_links
 
     - name: Publish
+      if: ${{ inputs.deploy == 'true' }}
       run: npm publish
 
     
