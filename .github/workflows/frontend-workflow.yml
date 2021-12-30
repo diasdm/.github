@@ -100,6 +100,12 @@ jobs:
       if: ${{ failure() }}
       run: cat /github/home/.npm/_logs/*.log
 
+    - name: Run tests
+      if: ${{ inputs.run_tests == 'true' }}
+      run: npm run test
+
+    - name: Run test coverage
+      run: echo TODO
 
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v1.0.0
@@ -112,7 +118,6 @@ jobs:
           -Dsonar.organization=MOV-AI
           -Dsonar.projectKey=${{ github.event.repository.name }}
           -Dsonar.verbose=true
-          -Dsonar.sources=.
           -Dsonar.scm.provider=git
           -Dsonar.qualitygate.wait=true
           -Dsonar.qualitygate.timeout=300
@@ -122,10 +127,6 @@ jobs:
       run: |
         echo "Please check report here: https://sonarqube.aws.cloud.mov.ai/dashboard?id=${{ github.event.repository.name }}"
       id: sonar_links
-
-    - name: Run tests
-      if: ${{ inputs.run_tests == 'true' }}
-      run: npm run test
 
     - name: Bump manifest.json metadata Version
       uses: deef0000dragon1/json-edit-action/@v1
