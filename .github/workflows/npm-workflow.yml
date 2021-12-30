@@ -21,6 +21,8 @@ on:
         required: true
       sonar_token:
         required: true
+      npm_token:
+        required: true
 
 jobs:
   Build:
@@ -32,6 +34,9 @@ jobs:
       credentials:
         username: ${{secrets.registry_user}} 
         password: ${{secrets.registry_password}}
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
+
 
     steps:
     - name: Checkout    
@@ -40,7 +45,7 @@ jobs:
         # Disabling shallow clone is recommended for improving relevancy of reporting
         fetch-depth: 0
         submodules: recursive
-        token: ${{ secrets.NPM_TOKEN }}
+        token: ${{ secrets.npm_token }}
 
     - name: Raise App version
       run: |
@@ -105,6 +110,8 @@ jobs:
       credentials:
         username: ${{secrets.registry_user}} 
         password: ${{secrets.registry_password}}
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
 
     steps:
     - name: Checkout    
@@ -114,6 +121,7 @@ jobs:
         # Disabling shallow clone is recommended for improving relevancy of reporting
         fetch-depth: 0
         submodules: recursive
+        token: ${{ secrets.npm_token }}
         
     - name: Raise App version
       run: |
