@@ -10,6 +10,10 @@ on:
         required: false
         type: string
         default: 'true'
+      npm_version:
+        required: false
+        type: string
+        default: '16.x'
 
     secrets:
       auto_commit_user:
@@ -59,7 +63,7 @@ jobs:
     - name: Setup Github as proxy Registry 
       uses: actions/setup-node@v2
       with:
-        node-version: '16.x'
+        node-version: ' ${{ inputs.npm_version }}'
         registry-url: 'https://npm.pkg.github.com/mov-ai'
 
     - name: Install dependencies
