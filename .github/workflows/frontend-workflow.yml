@@ -189,7 +189,6 @@ jobs:
     - name: Publish to Nexus ppa-dev
       shell: bash
       run: |
-          echo ${BASH_VERSION}
           NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
           NEXUS_REPO="ppa-dev"
 
@@ -222,7 +221,6 @@ jobs:
     - name: Publish to Nexus ppa-testing
       shell: bash
       run: |
-          echo ${BASH_VERSION}
           NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
           NEXUS_REPO="ppa-testing"
 
@@ -260,8 +258,8 @@ jobs:
         npm version prerelease -m "Automatic Bump of build version" 
         git add package.*
         git push
-        commit_id=$(git log --format="%H" -n 1)
-        echo ::set-output name=commit_id::$VERSION  
+        commit_hash=$(git log --format="%H" -n 1)
+        echo ::set-output name=commit_id::$commit_hash  
 
     - name: Find Package details
       id: vars
