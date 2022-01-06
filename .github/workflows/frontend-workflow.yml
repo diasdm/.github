@@ -137,7 +137,7 @@ jobs:
 
     - name: Pack debian
       run: |
-        dch -v ${{ steps.vars.outputs.npm_pkg_version }} -D "UNRELEASED" "bump version"
+        dch -v ${{ steps.vars.outputs.npm_pkg_version }} -b -D "UNRELEASED" "bump version"
         dpkg-buildpackage && \
         mkdir artifacts && \
         cp ../*.deb artifacts
