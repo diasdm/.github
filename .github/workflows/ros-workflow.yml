@@ -45,7 +45,7 @@ jobs:
     if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.cloud.mov.ai/devops/ros-buildtools-${{ matrix.distro }}:main
+      image: registry.cloud.mov.ai/devops/ros-buildtools-${{ matrix.distro }}:latest
       options: --user root
       credentials:
         username: ${{secrets.registry_user}} 
@@ -58,6 +58,11 @@ jobs:
         # Disabling shallow clone is recommended for improving relevancy of reporting
         fetch-depth: 0
         submodules: recursive
+    - name: Troubleshoot
+      run: |
+        expected_url="<url>$GITHUB_SERVER_URL/$GITHUB_REPOSITORY</url>"
+        VALIDATION_FILE="/tmp/verification-failed"
+        echo "value is ${{ inputs.deploy}} which is ${{ inputs.deploy == 'true' }}"
 
     - name: Validate Repository Package.xml
       run: |
@@ -155,7 +160,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs:  [Build]
     container:
-      image: registry.cloud.mov.ai/devops/ros-buildtools-noetic:main
+      image: registry.cloud.mov.ai/devops/ros-buildtools-noetic:latest
       options: --user root
       credentials:
         username: ${{secrets.registry_user}} 
@@ -299,7 +304,7 @@ jobs:
     if: ${{ inputs.release == 'true' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.cloud.mov.ai/devops/ros-buildtools-noetic:main
+      image: registry.cloud.mov.ai/devops/ros-buildtools-noetic:latest
       options: --user root
       credentials:
         username: ${{secrets.registry_user}} 
