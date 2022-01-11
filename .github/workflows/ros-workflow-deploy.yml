@@ -151,7 +151,7 @@ jobs:
         cat /usr/local/rosdep/ros-pkgs.yaml
 
   Publish:
-    if: ${{ inputs.deploy == 'true' }}
+    if: ${{ true }}
     runs-on: ubuntu-20.04
     needs:  [Build]
     container:
