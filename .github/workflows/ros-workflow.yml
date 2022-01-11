@@ -4,8 +4,8 @@ on:
     inputs:
       deploy:
         required: false
-        type: string
-        default: 'false'
+        type: boolean
+        default: false
       release:
         required: false
         type: string
@@ -62,7 +62,7 @@ jobs:
       run: |
         expected_url="<url>$GITHUB_SERVER_URL/$GITHUB_REPOSITORY</url>"
         VALIDATION_FILE="/tmp/verification-failed"
-        echo "value is ${{ inputs.deploy}} which is ${{ inputs.deploy == 'true' }}"
+        echo "value is ${{ inputs.deploy}} which is ${{ inputs.deploy  }}"
 
     - name: Validate Repository Package.xml
       run: |
@@ -147,7 +147,7 @@ jobs:
         cat /usr/local/rosdep/ros-pkgs.yaml
 
     - name: Rosdep Publish
-      if: ${{ inputs.deploy == 'true' }}
+      if: ${{ inputs.deploy }}
       run: |
         export AWS_DEFAULT_REGION="eu-west-1"
         export AWS_ACCESS_KEY_ID="${{ secrets.aws_sqs_rosdep_access_key }}"
@@ -156,7 +156,7 @@ jobs:
         cat /usr/local/rosdep/ros-pkgs.yaml
 
   Publish:
-    if: ${{ inputs.deploy == 'true' }}
+    if: ${{ inputs.deploy }}
     runs-on: ubuntu-20.04
     needs:  [Build]
     container:
@@ -168,7 +168,7 @@ jobs:
 
     steps:
     - name: Checkout    
-      if: ${{ inputs.deploy == 'true' }}
+      if: ${{ inputs.deploy }}
       uses: actions/checkout@v2
       with:
         # Disabling shallow clone is recommended for improving relevancy of reporting
@@ -176,28 +176,28 @@ jobs:
         submodules: recursive
         
     - name: Download a single artifact
-      if: ${{ inputs.deploy == 'true' }}
+      if: ${{ inputs.deploy }}
       uses: actions/download-artifact@v2
       with:
         name: packages
         path: artifacts
 
     - name: Print generated packages
-      if: ${{ inputs.deploy == 'true' }}
+      if: ${{ inputs.deploy }}
       run: |
         ls -la .
 
     - name: Install Mobros
-      if: ${{ inputs.deploy == 'true' }}
+      if: ${{ inputs.deploy }}
       run: python3 -m pip install mobros==1.0.1.21 --ignore-installed
 
     - name: Raise version and validate Ros repository
-      if: ${{ inputs.deploy == 'true' }}
+      if: ${{ inputs.deploy }}
       run: mobros raise --workspace="$(pwd)" 
          
     - name: Find package details
       id: vars
-      if: ${{ inputs.deploy == 'true' }}
+      if: ${{ inputs.deploy }}
       run: |
             main_package=$(cat /tmp/main-package.mobrosinfo)
             build_version_section=$(cat $main_package | grep build_version)
@@ -209,7 +209,7 @@ jobs:
 
 
     - name: Publish to Nexus ppa-dev
-      if: ${{ inputs.deploy == 'true' }}
+      if: ${{ inputs.deploy }}
       shell: bash
       run: |
           NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
@@ -242,7 +242,7 @@ jobs:
           done
     
     - name: Publish to Nexus ppa-testing
-      if: ${{ inputs.deploy == 'true' }}
+      if: ${{ inputs.deploy }}
       shell: bash
       run: |
           NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
@@ -275,7 +275,7 @@ jobs:
           done
 
     - name: Commit raise version
-      if: ${{ inputs.deploy == 'true' }}
+      if: ${{ inputs.deploy }}
       id: raise
       run: |
         git config --global user.name '${{ secrets.auto_commit_user }}'
@@ -289,7 +289,7 @@ jobs:
         
     - name: Create Github Release
       uses: softprops/action-gh-release@v1
-      if: ${{ inputs.deploy == 'true' }}
+      if: ${{ inputs.deploy }}
       with:
         name: "Release of ${{ steps.vars.outputs.ros_pkg_version }}"
         body: "Please add release notes"
