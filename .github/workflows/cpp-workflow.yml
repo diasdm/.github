@@ -11,8 +11,9 @@ on:
         type: string
         default: 'false'
       components:
-        required: true
+        required: false
         type: string
+        default: ''
       custom_requirements:
         required: false
         type: string
