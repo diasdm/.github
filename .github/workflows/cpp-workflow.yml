@@ -61,6 +61,7 @@ jobs:
     - name: Find Package details
       id: vars
       run: |
+        echo $(pwd)
         PACKAGE_VERSION=$(dpkg-parsechangelog --show-field Version)
         PACKAGE_NAME=$(dpkg-parsechangelog --show-field Source)
         echo ::set-output name=pkg_name::$PACKAGE_NAME
