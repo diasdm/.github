@@ -175,9 +175,8 @@ jobs:
 
     - name: Raise Version
       id: vars-after-raise
-      run: |
-        main_package_version=""
-        
+      shell: bash
+      run: |     
         sub_component_expr=${{inputs.components}}
         sub_component_str=$(echo $sub_component_expr | sed -e 's/\[//g' | sed -e 's/\]//g')
 
@@ -185,6 +184,7 @@ jobs:
 
         for sub_component in "${sub_components_array[@]}"
         do
+          echo "$sub_component"
           pushd $sub_component >/dev/null
 
           echo "raising component $sub_component"
