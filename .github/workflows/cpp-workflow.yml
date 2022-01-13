@@ -83,7 +83,7 @@ jobs:
     - name: Install requirements
       shell: bash
       run: |
-        IFS=';' read -r -a array <<< ${{ inputs.custom_requirements }}
+        IFS=';' read -r -a array <<< '${{ inputs.custom_requirements }}'
 
         for cmd in "${array[@]}"
         do
