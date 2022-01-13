@@ -61,8 +61,6 @@ jobs:
     - name: Find Package details
       id: vars
       run: |
-        echo $(pwd)
-        echo ${{ fromJSON(inputs.components) }}
         PACKAGE_VERSION=$(dpkg-parsechangelog --show-field Version)
         PACKAGE_NAME=$(dpkg-parsechangelog --show-field Source)
         echo ::set-output name=pkg_name::$PACKAGE_NAME
@@ -79,7 +77,6 @@ jobs:
         RAISED_PACKAGE_VERSION="$main_version-$raised_buildid"
         echo ::set-output name=pkg_version::$RAISED_PACKAGE_VERSION
       working-directory: ${{ matrix.sub_component }}
-
 
     - name: Install requirements
       shell: bash
@@ -174,27 +171,32 @@ jobs:
 
     - name: Print generated packages
       run: |
-        ls -la .
-
-    - name: Find Package details
-      id: vars
-      run: |
-        PACKAGE_NAME=$(dpkg-parsechangelog --show-field Source)
-        echo ::set-output name=pkg_name::$PACKAGE_NAME
-      working-directory: ${{ matrix.sub_component }}
+        ls -la artifacts
 
     - name: Raise Version
       id: vars-after-raise
       run: |
         main_package_version=""
         
-        PACKAGE_VERSION=$(dpkg-parsechangelog --show-field Version)
-        main_version=${PACKAGE_VERSION%-*}
-        build_id="${PACKAGE_VERSION#*-}"
-        raised_buildid=$(($build_id+1))
-        RAISED_PACKAGE_VERSION="$main_version-$raised_buildid"
+        sub_component_expr=${{inputs.components}}
+        sub_component_str=$(echo $sub_component_expr | sed -e 's/\[//g' | sed -e 's/\]//g')
 
+        IFS=',' read -r -a sub_components_array <<< $sub_component_str
 
+        for sub_component in "${sub_components_array[@]}"
+        do
+          pushd $sub_component >/dev/null
+
+          echo "raising component $sub_component"
+          PACKAGE_VERSION=$(dpkg-parsechangelog --show-field Version)
+          main_version=${PACKAGE_VERSION%-*}
+          build_id="${PACKAGE_VERSION#*-}"
+          raised_buildid=$(($build_id+1))
+          RAISED_PACKAGE_VERSION="$main_version-$raised_buildid"
+          dch -v $RAISED_PACKAGE_VERSION -b -D "UNRELEASED" "bump version"
+
+          popd >/dev/null
+        done
 
         echo ::set-output name=pkg_version::$RAISED_PACKAGE_VERSION
       working-directory: ${{ matrix.sub_component }}
@@ -279,9 +281,9 @@ jobs:
     - name: Create Github Release
       uses: softprops/action-gh-release@v1
       with:
-        name: "Release of ${{ steps.vars.outputs.ros_pkg_version }}"
+        name: "Release of ${{ steps.vars-after-raise.outputs.pkg_version }}"
         body: "Please add release notes"
-        tag_name: ${{ steps.vars.outputs.ros_pkg_version }}
+        tag_name: ${{ steps.vars-after-raise.outputs.pkg_version }}
         target_commitish: ${{ steps.raise.outputs.commit_id }}
         token: ${{ secrets.gh_token }}
         prerelease: true
