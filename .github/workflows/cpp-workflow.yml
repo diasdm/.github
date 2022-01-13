@@ -62,6 +62,7 @@ jobs:
       id: vars
       run: |
         echo $(pwd)
+        echo ${{ fromJSON(inputs.components) }}
         PACKAGE_VERSION=$(dpkg-parsechangelog --show-field Version)
         PACKAGE_NAME=$(dpkg-parsechangelog --show-field Source)
         echo ::set-output name=pkg_name::$PACKAGE_NAME
@@ -178,20 +179,23 @@ jobs:
     - name: Find Package details
       id: vars
       run: |
-        PACKAGE_VERSION=$(dpkg-parsechangelog --show-field Version)
         PACKAGE_NAME=$(dpkg-parsechangelog --show-field Source)
         echo ::set-output name=pkg_name::$PACKAGE_NAME
-        echo ::set-output name=pkg_version::$PACKAGE_VERSION
       working-directory: ${{ matrix.sub_component }}
 
     - name: Raise Version
       id: vars-after-raise
       run: |
-        PACKAGE_VERSION=${{ steps.vars.outputs.pkg_version }}
+        main_package_version=""
+        
+        PACKAGE_VERSION=$(dpkg-parsechangelog --show-field Version)
         main_version=${PACKAGE_VERSION%-*}
         build_id="${PACKAGE_VERSION#*-}"
         raised_buildid=$(($build_id+1))
         RAISED_PACKAGE_VERSION="$main_version-$raised_buildid"
+
+
+
         echo ::set-output name=pkg_version::$RAISED_PACKAGE_VERSION
       working-directory: ${{ matrix.sub_component }}
 
