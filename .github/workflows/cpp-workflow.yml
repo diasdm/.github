@@ -65,7 +65,7 @@ jobs:
         PACKAGE_NAME=$(dpkg-parsechangelog --show-field Source)
         echo ::set-output name=pkg_name::$PACKAGE_NAME
         echo ::set-output name=pkg_version::$PACKAGE_VERSION
-      working-directory: ${{ matrix.custom_requirements }}
+      working-directory: ${{ matrix.sub_component }}
 
     - name: Raise Version
       id: vars-after-raise
@@ -76,7 +76,7 @@ jobs:
         raised_buildid=$(($build_id+1))
         RAISED_PACKAGE_VERSION="$main_version-$raised_buildid"
         echo ::set-output name=pkg_version::$RAISED_PACKAGE_VERSION
-      working-directory: ${{ matrix.custom_requirements }}
+      working-directory: ${{ matrix.sub_component }}
 
 
     - name: Install requirements
@@ -91,7 +91,7 @@ jobs:
         done
         echo "finished custom script, now the requirement.apt"
         apt-get install $(cat ./requirements.apt) -y
-      working-directory: ${{ matrix.custom_requirements }}
+      working-directory: ${{ matrix.sub_component}}
  
         #          curl -fsSL http://packages.osrfoundation.org/gazebo.key | apt-key add - ;add-apt-repository "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main"
 
@@ -102,7 +102,7 @@ jobs:
         SONAR_TOKEN: ${{ secrets.sonar_token }}
         SONAR_HOST_URL: https://sonarqube.aws.cloud.mov.ai
       with:
-        projectBaseDir: ./${{ matrix.custom_requirements }}
+        projectBaseDir: ./${{ matrix.sub_component }}
         args: >
           -Dsonar.organization=MOV-AI
           -Dsonar.projectKey=${{ github.event.repository.name }}
@@ -125,7 +125,7 @@ jobs:
         cd build
         cmake .. -DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu/
         make
-      working-directory: ${{ matrix.custom_requirements }}
+      working-directory: ${{ matrix.sub_component }}
 
     - name: Pack
       run: | 
@@ -133,17 +133,17 @@ jobs:
         dpkg-buildpackage -b && \
         mkdir artifacts && \
         cp ../*.deb artifacts
-      working-directory: ${{ matrix.custom_requirements }}
+      working-directory: ${{ matrix.sub_component }}
 
     - name: Archive binary
       uses: actions/upload-artifact@v2
       with:
         name: packages
-        path: ${{ matrix.custom_requirements }}/artifacts/*
+        path: ${{ matrix.sub_component }}/artifacts/*
 
     - name: Print generated packages
       run: ls -la artifacts
-      working-directory: ${{ matrix.custom_requirements }}
+      working-directory: ${{ matrix.sub_component }}
 
   Publish:
     if: ${{ inputs.deploy == 'true' }}
@@ -181,7 +181,7 @@ jobs:
         PACKAGE_NAME=$(dpkg-parsechangelog --show-field Source)
         echo ::set-output name=pkg_name::$PACKAGE_NAME
         echo ::set-output name=pkg_version::$PACKAGE_VERSION
-      working-directory: ${{ matrix.custom_requirements }}
+      working-directory: ${{ matrix.sub_component }}
 
     - name: Raise Version
       id: vars-after-raise
@@ -192,7 +192,7 @@ jobs:
         raised_buildid=$(($build_id+1))
         RAISED_PACKAGE_VERSION="$main_version-$raised_buildid"
         echo ::set-output name=pkg_version::$RAISED_PACKAGE_VERSION
-      working-directory: ${{ matrix.custom_requirements }}
+      working-directory: ${{ matrix.sub_component }}
 
 
     - name: Publish to Nexus ppa-dev
