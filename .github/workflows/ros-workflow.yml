@@ -99,7 +99,7 @@ jobs:
 
     - name: Mobtest validations
       run: |
-        mobtest /__w/workspace/src/
+        mobtest $(pwd)
 
     - name: Raise version and validate Ros repository
       run: mobros raise --workspace="$(pwd)" 
