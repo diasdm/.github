@@ -71,7 +71,8 @@ jobs:
 
     - name: Build
       run: npm run build
-
+    - name: troubleshoot
+      run: ls -ll
     - name: Check NPM log on failure
       if: ${{ failure() }}
       run: cat /github/home/.npm/_logs/*.log
