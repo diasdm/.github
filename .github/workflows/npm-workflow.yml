@@ -71,8 +71,7 @@ jobs:
 
     - name: Build
       run: npm run build
-    - name: troubleshoot
-      run: ls -ll dist
+
     - name: Check NPM log on failure
       if: ${{ failure() }}
       run: cat /github/home/.npm/_logs/*.log
@@ -107,7 +106,6 @@ jobs:
       if: ${{ inputs.deploy == 'true' }}
       run: npm publish
 
-    
 
   Post-publish:
     if: ${{ inputs.deploy == 'true' }}
@@ -139,3 +137,24 @@ jobs:
         npm version patch -m "Automatic Bump of build version" 
         git add package.*
         git push
+        commit_hash=$(git log --format="%H" -n 1)
+        echo ::set-output name=commit_id::$commit_hash  
+
+    - name: Find Package details
+      id: vars
+      run: |
+        PACKAGE_VERSION=$(cat package.json | grep version | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]')
+        PACKAGE_NAME=$(cat package.json | grep name |head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]')
+        
+        echo ::set-output name=npm_pkg_name::$PACKAGE_NAME
+        echo ::set-output name=npm_pkg_version::$PACKAGE_VERSION
+
+    - name: Create Github Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: "Release of ${{ steps.vars.outputs.npm_pkg_version }}"
+        tag_name: ${{ steps.vars.outputs.npm_pkg_version }}
+        target_commitish: ${{ steps.raise.outputs.commit_id }}
+        token: ${{ secrets.gh_token }}
+        prerelease: true
+        generate_release_notes: true
