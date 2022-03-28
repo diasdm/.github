@@ -90,7 +90,7 @@ jobs:
       run: python3 -m pip install mobros==1.0.1.21 --ignore-installed
 
     - name: Install Mobtest
-      run: python3 -m pip install mobtest==0.0.1.2 --ignore-installed
+      run: python3 -m pip install mobtest==0.0.1.4 --ignore-installed
 
     - name: Setup link to Ros userspace
       run: |
