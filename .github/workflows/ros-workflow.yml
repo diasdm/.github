@@ -42,7 +42,7 @@ jobs:
     strategy:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
-        build_mode: '["debug","release"]'
+        build_mode: ["debug","release"]
     if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
