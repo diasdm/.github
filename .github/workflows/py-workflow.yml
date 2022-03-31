@@ -51,7 +51,6 @@ jobs:
       run: python3 -m pip install -r build-requirements.txt
 
     - name: Python Linter
-      if: ${{ inputs.release == 'true' }}
       run: |
         python3 -m pylint *
         python3 -m black .
@@ -94,7 +93,6 @@ jobs:
       run: bump2version build setup.py --no-tag --no-commit
 
     - name: Find Package details
-      if: ${{ inputs.deploy == 'true' }}
       id: vars
       run: |
         PACKAGE_VERSION=$(cat .bumpversion.cfg | sed s/' '/''/g | grep 'current_version=' | sed s/'current_version='/''/g)
@@ -104,7 +102,6 @@ jobs:
         echo ::set-output name=py_pkg_version::$PACKAGE_VERSION
 
     - name: Sync setup.py
-      if: ${{ inputs.deploy == 'true' }}
       run: sed -i s/"$(cat setup.py | grep version)"/"    version=\"${{ steps.vars.outputs.py_pkg_version }}\","/g setup.py
 
     - name: Push auto raise version
