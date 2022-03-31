@@ -51,6 +51,7 @@ jobs:
       run: python3 -m pip install -r build-requirements.txt
 
     - name: Python Linter
+      if: ${{ inputs.release == 'true' }}
       run: |
         python3 -m pylint *
         python3 -m black .
