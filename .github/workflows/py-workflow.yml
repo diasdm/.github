@@ -9,6 +9,10 @@ on:
       release:
         required: false
         type: string
+        default: 'false'
+      skip_linting:
+        required: false
+        type: string
         default: 'false'        
 
     secrets:
@@ -51,6 +55,7 @@ jobs:
       run: python3 -m pip install -r build-requirements.txt
 
     - name: Python Linter
+      if: ${{ inputs.skip_linting == 'true' }}
       run: |
         python3 -m pylint *
         python3 -m black .
