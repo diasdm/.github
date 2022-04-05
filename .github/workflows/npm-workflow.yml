@@ -58,7 +58,7 @@ jobs:
       run: |
         git config --global user.name '${{ secrets.auto_commit_user }}'
         git config --global user.email '${{ secrets.auto_commit_mail }}'
-        npm version patch --no-git-tag-version
+        npm version prerelease --no-git-tag-version
 
     - name: Setup Github as proxy Registry 
       uses: actions/setup-node@v2
