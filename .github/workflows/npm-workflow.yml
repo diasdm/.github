@@ -36,7 +36,7 @@ jobs:
 
     runs-on: ubuntu-20.04
     container:
-      image: registry.cloud.mov.ai/devops/npm-buildserver:latest
+      image: registry.aws.cloud.mov.ai/devops/npm-buildserver:latest
       options: --user root
       credentials:
         username: ${{secrets.registry_user}} 
@@ -112,7 +112,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs:  [Build]
     container:
-      image: registry.cloud.mov.ai/devops/npm-buildserver:latest
+      image: registry.aws.cloud.mov.ai/devops/npm-buildserver:latest
       options: --user root
       credentials:
         username: ${{secrets.registry_user}} 
