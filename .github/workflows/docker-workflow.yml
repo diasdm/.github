@@ -42,7 +42,7 @@ jobs:
         with:
           username: ${{ secrets.registry_user }}
           password: ${{ secrets.registry_password }}
-          registry: registry.cloud.mov.ai
+          registry: registry.aws.cloud.mov.ai
 
       - name: "Verify push and tag vars from env"
         id: get_version
