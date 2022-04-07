@@ -52,8 +52,8 @@ jobs:
         run: |
           echo $GITHUB_REF
           echo $DOCKER_PUSH
-          if "${DOCKER_PUSH}" = "true"; then
-            if "${GITHUB_REF}" = "refs/heads/main"; then
+          if [ "${DOCKER_PUSH}" = "true" ]; then
+            if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
               echo ::set-output name=DOCKER_TAG::latest
             else
               echo ::set-output name=DOCKER_TAG::${GITHUB_REF##*/}
@@ -68,7 +68,8 @@ jobs:
           context: .
           file: ${{ inputs.docker_file }}
           push: ${{ env.DOCKER_PUSH }}
+          # should use automatic tagging:
+          # https://github.com/marketplace/actions/docker-build-push-action#tagging-the-image-using-gitops
           tags: |
             ${{ inputs.docker_image }}:${{ steps.get_version.outputs.DOCKER_TAG }}
-          build-args:
           pull: true
