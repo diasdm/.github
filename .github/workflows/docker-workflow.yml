@@ -96,9 +96,10 @@ jobs:
             # If public push is needed
             if [ "${PUBLIC_PUSH}" = "true" ]; then
               DOCKER_IMAGES="${DOCKER_IMAGES}\n${{ inputs.public_registry }}/${{ inputs.docker_image }}:${{ steps.get_version.outputs.DOCKER_TAG }}"
-              echo "::set-output name=DOCKER_IMAGES::${DOCKER_IMAGES}"
             fi
           fi
+          DOCKER_IMAGES="${DOCKER_IMAGES//$'\n'/'%0A'}"
+          echo "::set-output name=DOCKER_IMAGES::$(echo "$DOCKER_IMAGES")"
           echo -e "Images to publish:\n$DOCKER_IMAGES"
 
       - name: Build and push:${{ env.DOCKER_PUSH }}
