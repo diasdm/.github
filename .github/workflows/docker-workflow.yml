@@ -2,6 +2,14 @@ name: Build, Deploy and release Docker images
 on:
   workflow_call:
     inputs:
+      docker_registry:
+        required: false
+        type: string
+        default: registry.cloud.mov.ai
+      public_registry:
+        required: false
+        type: string
+        default: pubregistry.cloud.mov.ai
       docker_file:
         required: true
         type: string
@@ -11,6 +19,10 @@ on:
       github_ref:
         required: true
         type: string
+      public:
+        required: false
+        type: boolean
+        default: false
     secrets:
       registry_user:
         required: true
@@ -20,6 +32,9 @@ on:
 jobs:
   build_deploy:
     runs-on: ubuntu-20.04
+    permissions:
+      contents: read
+      packages: write
     env:
       DOCKER_PUSH: ${{ contains(inputs.github_ref, 'refs/heads/main') || contains(inputs.github_ref, 'refs/tags/v')}}
     steps:
@@ -33,16 +48,23 @@ jobs:
           format: tty
           failure-threshold: error # optional, default is info
           # A space separated string of rules to ignore
-          ignore: # optional
+          # ignore: # optional
           # Path to a config file
-          config: # optional
+          # config: # optional
 
-      - name: Login to Movai Registry
+      - name: Login to Private Registry
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.registry_user }}
           password: ${{ secrets.registry_password }}
-          registry: registry.cloud.mov.ai
+          registry: ${{ inputs.docker_registry }}
+
+      - name: Login to Public Registry
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ inputs.public_registry }}
 
       - name: "Verify push and tag vars from env"
         id: get_version
@@ -62,7 +84,24 @@ jobs:
             echo ::set-output name=DOCKER_TAG::local
           fi
 
-      - name: Build and push:${{ env.DOCKER_PUSH }} of ${{ inputs.docker_image }}:${{ steps.get_version.outputs.DOCKER_TAG }}
+      - name: "Verify push and tag vars from env"
+        id: get_image_names
+        env:
+          PUBLIC_PUSH: ${{ inputs.public }}
+          DOCKER_PUSH: ${{ env.DOCKER_PUSH }}
+        run: |
+          if [ "${DOCKER_PUSH}" = "true" ]; then
+            DOCKER_IMAGES=${{ inputs.docker_registry }}.${{ inputs.docker_image }}:${{ steps.get_version.outputs.DOCKER_TAG }}
+
+            # If public push is needed
+            if [ "${PUBLIC_PUSH}" = "true" ]; then
+              DOCKER_IMAGES="${DOCKER_IMAGES} ${{ inputs.docker_registry }}.${{ inputs.docker_image }}:${{ steps.get_version.outputs.DOCKER_TAG }}"
+              echo ::set-output name=DOCKER_IMAGES::${DOCKER_IMAGES}
+            fi
+          fi
+          echo "Images to publish: $DOCKER_IMAGES"
+
+      - name: Build and push:${{ env.DOCKER_PUSH }}
         uses: docker/build-push-action@v2
         with:
           context: .
@@ -71,5 +110,5 @@ jobs:
           # should use automatic tagging:
           # https://github.com/marketplace/actions/docker-build-push-action#tagging-the-image-using-gitops
           tags: |
-            ${{ inputs.docker_image }}:${{ steps.get_version.outputs.DOCKER_TAG }}
+            ${{ steps.get_image_names.outputs.DOCKER_IMAGES }}
           pull: true
