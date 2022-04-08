@@ -88,19 +88,19 @@ jobs:
         id: get_image_names
         env:
           PUBLIC_PUSH: ${{ inputs.public }}
-          DOCKER_PUSH: ${{ env.DOCKER_PUSH }}
         run: |
-          if [ "${DOCKER_PUSH}" = "true" ]; then
-            DOCKER_IMAGES=${{ inputs.docker_registry }}/${{ inputs.docker_image }}:${{ steps.get_version.outputs.DOCKER_TAG }}
+          PUB_DOCKER_IMAGES=""
+          DOCKER_IMAGES=${{ inputs.docker_registry }}/${{ inputs.docker_image }}:${{ steps.get_version.outputs.DOCKER_TAG }}
+          echo "::set-output name=DOCKER_IMAGES::$DOCKER_IMAGES"
 
-            # If public push is needed
-            if [ "${PUBLIC_PUSH}" = "true" ]; then
-              DOCKER_IMAGES="${DOCKER_IMAGES}\n${{ inputs.public_registry }}/${{ inputs.docker_image }}:${{ steps.get_version.outputs.DOCKER_TAG }}"
-            fi
+          # If public push is needed
+          if [ "${PUBLIC_PUSH}" = "true" ]; then
+            PUB_DOCKER_IMAGES="${{ inputs.public_registry }}/${{ inputs.docker_image }}:${{ steps.get_version.outputs.DOCKER_TAG }}"
           fi
-          DOCKER_IMAGES="${DOCKER_IMAGES//$'\n'/'%0A'}"
-          echo "::set-output name=DOCKER_IMAGES::$(echo "$DOCKER_IMAGES")"
-          echo -e "Images to publish:\n$DOCKER_IMAGES"
+          echo "::set-output name=PUB_DOCKER_IMAGES::$PUB_DOCKER_IMAGES"
+
+          echo -e "Images to publish:\n$DOCKER_IMAGES $PUB_DOCKER_IMAGES"
+
 
       - name: Build and push:${{ env.DOCKER_PUSH }}
         uses: docker/build-push-action@v2
@@ -112,4 +112,5 @@ jobs:
           # https://github.com/marketplace/actions/docker-build-push-action#tagging-the-image-using-gitops
           tags: |
             ${{ steps.get_image_names.outputs.DOCKER_IMAGES }}
+            ${{ steps.get_image_names.outputs.PUB_DOCKER_IMAGES }}
           pull: true
