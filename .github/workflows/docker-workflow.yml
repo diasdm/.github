@@ -5,11 +5,11 @@ on:
       docker_registry:
         required: false
         type: string
-        default: registry.cloud.mov.ai
+        default: registry.aws.cloud.mov.ai
       public_registry:
         required: false
         type: string
-        default: pubregistry.cloud.mov.ai
+        default: pubregistry.aws.cloud.mov.ai
       docker_file:
         required: true
         type: string
@@ -95,7 +95,7 @@ jobs:
 
             # If public push is needed
             if [ "${PUBLIC_PUSH}" = "true" ]; then
-              DOCKER_IMAGES="${DOCKER_IMAGES} ${{ inputs.docker_registry }}.${{ inputs.docker_image }}:${{ steps.get_version.outputs.DOCKER_TAG }}"
+              DOCKER_IMAGES="${DOCKER_IMAGES} ${{ inputs.public_registry }}.${{ inputs.docker_image }}:${{ steps.get_version.outputs.DOCKER_TAG }}"
               echo ::set-output name=DOCKER_IMAGES::${DOCKER_IMAGES}
             fi
           fi
