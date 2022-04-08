@@ -105,7 +105,9 @@ jobs:
       run: mobros raise --workspace="$(pwd)" 
     
     - name: Build
-      run: mobros build --mode ${{ matrix.build_mode }}
+      run: |
+        echo "-$IGNITION_VERSION-"
+        mobros build --mode ${{ matrix.build_mode }}
       env:
         STRIP_REPLACES: true
         IGNITION_VERSION: fortress
@@ -113,6 +115,7 @@ jobs:
     - name: Pack
       run: |
         export MOVAI_OUTPUT_DIR="$(pwd)/artifacts"
+        echo $IGNITION_VERSION
         mobros pack --workspace="$(pwd)" --mode ${{ matrix.build_mode }}
       env:
         STRIP_REPLACES: true
