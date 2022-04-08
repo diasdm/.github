@@ -60,6 +60,7 @@ jobs:
           registry: ${{ inputs.docker_registry }}
 
       - name: Login to Public Registry
+        if: ${{ inputs.public == 'true' }}
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.registry_user }}
