@@ -88,7 +88,7 @@ jobs:
 
     - name: Run post-checkout
       run: |
-        if [ -e ./scripts/post-checkout]; then
+        if [ -e ./scripts/post-checkout ]; then
           python3 ./scripts/post-checkout
         fi
 
