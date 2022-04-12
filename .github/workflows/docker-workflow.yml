@@ -23,6 +23,9 @@ on:
         required: false
         type: boolean
         default: false
+      public_image:
+        required: false
+        type: string
     secrets:
       registry_user:
         required: true
@@ -96,7 +99,7 @@ jobs:
 
           # If public push is needed
           if [ "${PUBLIC_PUSH}" = "true" ]; then
-            PUB_DOCKER_IMAGES="${{ inputs.public_registry }}/${{ inputs.docker_image }}:${{ steps.get_version.outputs.DOCKER_TAG }}"
+            PUB_DOCKER_IMAGES="${{ inputs.public_registry }}/${{ inputs.public_image }}:${{ steps.get_version.outputs.DOCKER_TAG }}"
           fi
           echo "::set-output name=PUB_DOCKER_IMAGES::$PUB_DOCKER_IMAGES"
 
