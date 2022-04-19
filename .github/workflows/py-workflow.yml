@@ -114,7 +114,6 @@ jobs:
         git push --force-with-lease
 
     - name: Enable 4 digit version
-      if: ${{ inputs.deploy == 'true' }}
       id: releasevars
       run: |
         PACKAGE_RELEASE_VERSION=$(echo ${{ steps.vars.outputs.py_pkg_version }} | sed s/"-"/"."/g)
@@ -124,6 +123,12 @@ jobs:
 
     - name: build
       run: python3 -m build
+
+    - name: Archive binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: packages
+        path: dist/*
 
     - name: Publish package to TestPyPI Experimental
       uses: pypa/gh-action-pypi-publish@release/v1
