@@ -192,6 +192,12 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.gh_token }}
 
+    - name: Archive binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: packages
+        path: dist/*
+        
     - name: Publish package to TestPyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
