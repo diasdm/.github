@@ -42,6 +42,9 @@ jobs:
       credentials:
         username: ${{secrets.registry_user}} 
         password: ${{secrets.registry_password}}
+    outputs:
+      package_name: ${{ steps.vars.outputs.py_pkg_name }}
+      package_version: ${{ steps.releasevars.outputs.py_pkg_version }}
 
     steps:
     - name: Checkout    
@@ -157,8 +160,10 @@ jobs:
         username: ${{secrets.registry_user}} 
         password: ${{secrets.registry_password}}
     outputs:
-      version: ${{ steps.info.outputs.version }}
+      package_name: ${{ needs.Build.outputs.package_name }}
+      package_version: ${{ needs.Build.outputs.package_version }}
     steps:
+
     - name: Checkout    
       uses: actions/checkout@v2
       with:
@@ -169,18 +174,9 @@ jobs:
         name: packages
         path: dist
 
-    - name: Calc version
-      id: info
-      run: |
-        package_name=$(find dist -type f -name *.whl)
-        NEW_VERSIONING='[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+'
-        version=$(echo $package_name | grep -Eo $NEW_VERSIONING )
-        echo $version
-        echo "::set-output name=version::$version"
-
     - name: Raise & Pack
       run: |
-        dch -b -v "${{ steps.info.output.version }}" "Auto created package version ${{ steps.info.output.version }}"
+        dch -b -v "${{ needs.Build.outputs.package_version }}" "Auto created package version ${{ needs.Build.outputs.package_version }}"
         dpkg-buildpackage -nc -d -b -rfakeroot -us -uc -tc
         mkdir artifacts && \
         cp ../*.deb artifacts
@@ -217,22 +213,22 @@ jobs:
         if: ${{ inputs.deploy == 'true' }}
         shell: bash
         run: |
-          title="Release of ${{ steps.releasevars.outputs.py_pkg_version }}" 
+          title="Release of ${{ needs.Debian-Pack.outputs.package_version }}" 
           
-          gh release create -p -t "$title" -n "Release notes for ${{ steps.vars.outputs.py_pkg_name }}" ${{ steps.releasevars.outputs.py_pkg_version }}
+          gh release create -p -t "$title" -n "Release notes for ${{ needs.Debian-Pack.outputs.package_name }}" ${{ needs.Debian-Pack.outputs.package_version }}
 
           # add all files in the artifacts folder
           assets=()
           for asset in dist/*; do
             # do nothing if folder is empty
             if [[ $asset != "dist/*" ]]; then
-              gh release upload ${{ steps.releasevars.outputs.py_pkg_version }} $asset
+              gh release upload ${{ needs.Debian-Pack.outputs.package_version }} $asset
             fi 
           done
           for asset in artifacts/*; do
             # do nothing if folder is empty
             if [[ $asset != "artifacts/*" ]]; then
-              gh release upload ${{ steps.releasevars.outputs.py_pkg_version }} $asset
+              gh release upload ${{ needs.Debian-Pack.outputs.package_version }} $asset
             fi 
           done
         env:
