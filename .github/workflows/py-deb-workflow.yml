@@ -159,33 +159,37 @@ jobs:
     outputs:
       version: ${{ steps.info.outputs.version }}
     steps:
-      - name: Download a single artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: packages
-          path: dist
+    - name: Checkout    
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - name: Download a single artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: packages
+        path: dist
 
-      - name: Calc version
-        id: info
-        run: |
-          package_name=$(find dist -type f -name *.whl)
-          NEW_VERSIONING='[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+'
-          version=$(echo $package_name | grep -Eo $NEW_VERSIONING )
-          echo $version
-          echo "::set-output name=version::$version"
+    - name: Calc version
+      id: info
+      run: |
+        package_name=$(find dist -type f -name *.whl)
+        NEW_VERSIONING='[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+'
+        version=$(echo $package_name | grep -Eo $NEW_VERSIONING )
+        echo $version
+        echo "::set-output name=version::$version"
 
-      - name: Raise & Pack
-        run: |
-          dch -b -v "${{ steps.info.output.version }}" "Auto created package version ${{ steps.info.output.version }}"
-          dpkg-buildpackage -nc -d -b -rfakeroot -us -uc -tc
-          mkdir artifacts && \
-          cp ../*.deb artifacts
+    - name: Raise & Pack
+      run: |
+        dch -b -v "${{ steps.info.output.version }}" "Auto created package version ${{ steps.info.output.version }}"
+        dpkg-buildpackage -nc -d -b -rfakeroot -us -uc -tc
+        mkdir artifacts && \
+        cp ../*.deb artifacts
 
-      - name: Archive binary
-        uses: actions/upload-artifact@v2
-        with:
-          name: artifacts
-          path: artifacts/*.deb
+    - name: Archive binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: artifacts
+        path: artifacts/*.deb
 
   Publish:
     needs: [Debian-Pack]
