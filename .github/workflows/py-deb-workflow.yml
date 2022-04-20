@@ -197,6 +197,11 @@ jobs:
         username: ${{secrets.registry_user}} 
         password: ${{secrets.registry_password}}
     steps:
+      - name: Checkout    
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
       - name: Download a single artifact
         uses: actions/download-artifact@v2
         with:
