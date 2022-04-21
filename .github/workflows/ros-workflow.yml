@@ -213,7 +213,7 @@ jobs:
     - name: Publish to Nexus ppa-dev
       shell: bash
       run: |
-          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
+          NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
           NEXUS_REPO="ppa-dev"
 
           for file in artifacts/*.deb
@@ -245,7 +245,7 @@ jobs:
     - name: Publish to Nexus ppa-testing
       shell: bash
       run: |
-          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
+          NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
           NEXUS_REPO="ppa-testing"
 
           for file in artifacts/*.deb

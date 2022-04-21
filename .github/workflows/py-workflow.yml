@@ -13,7 +13,11 @@ on:
       skip_linting:
         required: false
         type: string
-        default: 'false'        
+        default: 'false'
+      prod_publish_repos:
+        required: false
+        type: string
+        default: '["ppa-main"]'
 
     secrets:
       auto_commit_user:
@@ -167,6 +171,9 @@ jobs:
 
 
   Release:
+    strategy:
+      matrix:
+        publish_repo: ${{ fromJSON(inputs.prod_publish_repos) }}
     if: ${{ inputs.release == 'true' }}
     runs-on: ubuntu-20.04
     container:
@@ -198,9 +205,9 @@ jobs:
         name: packages
         path: dist/*
         
-    - name: Publish package to TestPyPI
+    - name: Publish package to ${{ matrix.publish_repo }}
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: ${{ secrets.nexus_publisher_user }}
         password: ${{ secrets.nexus_publisher_password }}
-        repository_url: https://artifacts.cloud.mov.ai/repository/pypi-edge/
+        repository_url: https://artifacts.cloud.aws.mov.ai/repository/${{ matrix.publish_repo }}/
