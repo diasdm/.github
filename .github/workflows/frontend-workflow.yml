@@ -18,6 +18,10 @@ on:
         required: false
         type: string
         default: '16.x'
+      prod_publish_repos:
+        required: false
+        type: string
+        default: '["ppa-main"]'
 
     secrets:
       auto_commit_user:
@@ -294,6 +298,9 @@ jobs:
         files: artifacts/*.deb
 
   Release:
+    strategy:
+      matrix:
+        publish_repo: ${{ fromJSON(inputs.prod_publish_repos) }}
     if: ${{ inputs.release == 'true' }}
     runs-on: ubuntu-20.04
     container:
@@ -322,8 +329,8 @@ jobs:
 
     - name: Publish to Nexus ppa-main
       run: |
-          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
-          NEXUS_REPO="ppa-main"
+          NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
+          NEXUS_REPO="${{ matrix.publish_repo }}"
           FILE_LOCATION=$(find artifacts/*.deb)
           find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
           -H "Content-Type: multipart/form-data" \
