@@ -66,6 +66,7 @@ jobs:
 
     - name: Raise App version
       run: |
+        git config --global --add safe.directory $(pwd)
         git config --global user.name '${{ secrets.auto_commit_user }}'
         git config --global user.email '${{ secrets.auto_commit_mail }}'
         npm version prerelease --no-git-tag-version
@@ -257,6 +258,7 @@ jobs:
     - name: Raise App version
       id: raise
       run: |
+        git config --global --add safe.directory $(pwd)
         git config --global user.name '${{ secrets.auto_commit_user }}'
         git config --global user.email '${{ secrets.auto_commit_mail }}'
         npm version prerelease -m "Automatic Bump of build version" 
@@ -321,6 +323,7 @@ jobs:
 
     - name: Fetch artifact from github release
       run: | 
+        git config --global --add safe.directory $(pwd)
         mkdir artifacts
         cd artifacts
         gh release download ${{ steps.vars.outputs.tag}} -p *.deb

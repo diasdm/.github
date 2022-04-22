@@ -296,6 +296,7 @@ jobs:
       run: | 
         mkdir artifacts
         cd artifacts
+        git config --global --add safe.directory $(pwd)
         gh release download ${{ steps.vars.outputs.tag}} -p *.deb
       env:
         GITHUB_TOKEN: ${{ secrets.gh_token }}
