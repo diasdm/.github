@@ -193,6 +193,7 @@ jobs:
 
     - name: Fetch artifact from github release
       run: | 
+        git config --global --add safe.directory $(pwd)
         mkdir dist
         cd dist
         gh release download ${{ steps.vars.outputs.tag}} -p *.whl
