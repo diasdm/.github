@@ -347,7 +347,6 @@ jobs:
         git config --global --add safe.directory $(pwd)
         cd artifacts
         gh release download ${{ steps.vars.outputs.tag}} -p *.deb
-        popd
       env:
         GITHUB_TOKEN: ${{ secrets.gh_token }}
 
