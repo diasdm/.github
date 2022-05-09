@@ -18,6 +18,10 @@ on:
         required: false
         type: string
         default: '["ppa-main"]'
+      prod_publish_pypi:
+        required: false
+        type: string
+        default: 'pypi-public'
 
     secrets:
       auto_commit_user:
@@ -367,7 +371,7 @@ jobs:
       with:
         user: ${{ secrets.nexus_publisher_user }}
         password: ${{ secrets.nexus_publisher_password }}
-        repository_url: https://artifacts.cloud.mov.ai/repository/pypi-edge/
+        repository_url: https://artifacts.aws.cloud.mov.ai/repository/${{ inputs.prod_publish_pypi }}
   
     - name: Publish to Nexus
       run: |
