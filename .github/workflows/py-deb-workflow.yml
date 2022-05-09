@@ -331,28 +331,33 @@ jobs:
       id: vars
       run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
 
-    - name: Fetch artifact from github release
+    - name: Fetch python artifact from github release
       run: | 
-        mkdir dist artifacts
+        mkdir dist
         git config --global --add safe.directory $(pwd)
-        pushd dist
+        cd dist
         gh release download ${{ steps.vars.outputs.tag}} -p *.whl
         gh release download ${{ steps.vars.outputs.tag}} -p *.tar.gz
-        popd
-        pushd artifacts
+      env:
+        GITHUB_TOKEN: ${{ secrets.gh_token }}
+        
+    - name: Fetch debian artifact from github release
+      run: | 
+        mkdir artifacts
+        git config --global --add safe.directory $(pwd)
+        cd artifacts
         gh release download ${{ steps.vars.outputs.tag}} -p *.deb
         popd
-
       env:
         GITHUB_TOKEN: ${{ secrets.gh_token }}
 
-    - name: Archive binary
+    - name: Archive python artifact
       uses: actions/upload-artifact@v2
       with:
         name: packages
         path: dist/*
 
-    - name: Archive binary
+    - name: Archive debian artifact
       uses: actions/upload-artifact@v2
       with:
         name: artifacts
