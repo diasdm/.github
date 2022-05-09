@@ -367,9 +367,9 @@ jobs:
       with:
         user: ${{ secrets.nexus_publisher_user }}
         password: ${{ secrets.nexus_publisher_password }}
-        repository_url: https://artifacts.aws.cloud.mov.ai/repository/pypi-edge/
+        repository_url: https://artifacts.cloud.mov.ai/repository/pypi-edge/
   
-    - name: Publish to Nexus ppa-main
+    - name: Publish to Nexus
       run: |
           NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
           NEXUS_REPO="${{ matrix.publish_repo }}"
