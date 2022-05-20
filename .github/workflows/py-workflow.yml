@@ -103,6 +103,7 @@ jobs:
 
     - name: Sync setup.py
       run: sed -i s/"$(cat setup.py | grep version)"/"    version=\"${{ steps.vars.outputs.py_pkg_version }}\","/g setup.py
+    
 
     - name: Push auto raise version
       if: ${{ inputs.deploy == 'true' }}
@@ -114,8 +115,13 @@ jobs:
         git add setup.py
         git add .bumpversion.cfg
         git commit -m "Automatic Bump of build version"
-        git pull
-        git push --force-with-lease
+
+    - name: Raise App version
+      uses: CasperWA/push-protected@v2
+      with:
+        token: ${{ secrets.auto_commit_pwd }}
+        branch: ${{ github.ref_name }}
+        unprotect_reviews: true
 
     - name: Enable 4 digit version
       id: releasevars
