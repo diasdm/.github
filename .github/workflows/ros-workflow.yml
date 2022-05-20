@@ -132,7 +132,7 @@ jobs:
   Test:
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/devops/ros-buildtools-${{ matrix.distro }}:latest
+      image: registry.aws.cloud.mov.ai/devops/ros-buildtools-noetic:latest
       options: --user root
       credentials:
         username: ${{secrets.registry_user}} 
