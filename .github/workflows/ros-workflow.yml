@@ -141,6 +141,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          # Disabling shallow clone is recommended for improving relevancy of reporting
+          fetch-depth: 0
+          submodules: recursive
 
       - name: Install Mobtest
         run: python3 -m pip install mobtest==0.0.1.4 --ignore-installed
