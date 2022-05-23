@@ -100,6 +100,7 @@ jobs:
 
     - name: Mobtest validations
       run: |
+        mkdir ./generic-reports
         mobtest --sonar_issues_path ./generic-reports/mobtest-issues.json .
 
     - name: Raise version and validate Ros repository
