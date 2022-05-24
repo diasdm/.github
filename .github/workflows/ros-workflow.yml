@@ -115,6 +115,7 @@ jobs:
         mobros pack --workspace="$(pwd)" --mode ${{ matrix.build_mode }}
 
     - name: Collect generic reports
+      id: vars
       shell: bash
       run: |
         # get all files in ./generic-reports
