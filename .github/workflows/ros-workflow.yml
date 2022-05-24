@@ -117,10 +117,13 @@ jobs:
     - name: Collect generic reports
       shell: bash
       run: |
-        generic_reports=$(ls ./generic-reports)
-        generic_reports=$(echo "$generic_reports" | sed "s/^/.\/generic\//g")
+        # get all files in ./generic-reports
+        generic_reports=$(find ./generic-reports -maxdepth 1 -type f)
+        # join with ,
         generic_reports=$(echo "${generic_reports[@]}" | tr '\n' ',')
+        # remove last ','
         generic_reports=${generic_reports::-1}
+
         echo "Generic reports: ${generic_reports}"
         echo ::set-output name=generic_paths::${generic_reports}
 
