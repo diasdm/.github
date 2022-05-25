@@ -64,7 +64,7 @@ jobs:
       run: python3 -m pip install -r build-requirements.txt
 
     - name: Python Linter
-      if: ${{ inputs.skip_linting == 'true' }}
+      if: ${{ inputs.skip_linting != 'true' }}
       run: |
         python3 -m pylint *
         python3 -m black .
@@ -93,6 +93,7 @@ jobs:
       id: sonar_links
 
     - name: Run tests
+      if: ${{ inputs.skip_testing != 'true' }}
       run: python3 -m pytest
 
   Build:
