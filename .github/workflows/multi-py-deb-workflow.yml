@@ -113,6 +113,16 @@ jobs:
       package_version: ${{ steps.releasevars.outputs.py_pkg_version }}
 
     steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        # Disabling shallow clone is recommended for improving relevancy of reporting
+        fetch-depth: 0
+        submodules: recursive
+
+    - name: install build-requirements
+      run: python3 -m pip install -r build-requirements.txt
+
     - name: Create hardlinks for package ${{ matrix.pack_path }}
       run: |
         ln -f ${{ matrix.pack_path }}/debian/setup.py setup.py
@@ -199,7 +209,6 @@ jobs:
       package_name: ${{ needs.Build.outputs.package_name }}
       package_version: ${{ needs.Build.outputs.package_version }}
     steps:
-
     - name: Checkout
       uses: actions/checkout@v2
       with:
