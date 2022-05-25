@@ -123,10 +123,10 @@ jobs:
     - name: install build-requirements
       run: python3 -m pip install -r build-requirements.txt
 
-    - name: Create hardlinks for package ${{ matrix.pack_path }}
+    - name: Create links for package ${{ matrix.pack_path }}
       run: |
         ln -f ${{ matrix.pack_path }}/debian/setup.py setup.py
-        ln -f ${{ matrix.pack_path }}/debian debian
+        ln -sf ${{ matrix.pack_path }}/debian debian
 
     - name: Raise version
       if: ${{ inputs.deploy == 'true' }}
@@ -220,10 +220,10 @@ jobs:
         name: packages
         path: dist
 
-    - name: Create hardlinks for package ${{ matrix.pack_path }}
+    - name: Create links for package ${{ matrix.pack_path }}
       run: |
         ln -f ${{ matrix.pack_path }}/debian/setup.py setup.py
-        ln -f ${{ matrix.pack_path }}/debian debian
+        ln -sf ${{ matrix.pack_path }}/debian debian
 
     - name: Raise & Pack
       run: |
