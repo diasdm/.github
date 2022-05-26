@@ -191,7 +191,6 @@ jobs:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
     outputs:
-      package_name: ${{ steps.vars.outputs.py_pkg_name }}
       package_version: ${{ steps.vars.outputs.py_pkg_version }}
     steps:
       - name: Checkout
@@ -212,9 +211,6 @@ jobs:
         id: vars
         run: |
           PACKAGE_VERSION=$(cat .bumpversion.cfg | sed s/' '/''/g | grep 'current_version=' | sed s/'current_version='/''/g)
-          PACKAGE_NAME=$(cat setup.py | grep name | cut -d '"' -f2)
-
-          echo ::set-output name=py_pkg_name::$PACKAGE_NAME
           echo ::set-output name=py_pkg_version::$PACKAGE_VERSION
 
       - name: Push auto raise version
@@ -249,7 +245,6 @@ jobs:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
     outputs:
-      package_name: ${{ needs.Raise.outputs.package_name }}
       package_version: ${{ needs.Raise.outputs.package_version }}
     steps:
     - name: Checkout
@@ -393,7 +388,7 @@ jobs:
         run: |
           title="Release of ${{ needs.Debian-Pack.outputs.package_version }}"
 
-          gh release create -p -t "$title" -n "Release notes for ${{ needs.Debian-Pack.outputs.package_name }}" ${{ needs.Debian-Pack.outputs.package_version }}
+          gh release create -p -t "$title" -n "Release notes for ${{ needs.Debian-Pack.outputs.package_version }}
 
           # add all files in the artifacts folder
           assets=()
