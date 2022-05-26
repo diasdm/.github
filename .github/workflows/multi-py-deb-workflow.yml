@@ -130,7 +130,7 @@ jobs:
 
     - name: Raise version locally
       if: ${{ inputs.deploy == 'true' }}
-      run: bump2version build setup.py --no-tag --no-commit
+      run: bump2version build setup.py --no-tag --no-commit --allow-dirty
 
     - name: Find Package details
       id: vars
@@ -205,7 +205,7 @@ jobs:
       - name: Auto Raise version
         if: ${{ inputs.deploy == 'true' }}
         run: |
-          bump2version build setup.py --no-tag --no-commit
+          bump2version build setup.py --no-tag --no-commit --allow-dirty
 
       - name: Find Package details
         id: vars
