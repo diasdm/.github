@@ -393,8 +393,8 @@ jobs:
         shell: bash
         run: |
           title="Release of ${{ needs.Debian-Pack.outputs.package_version }}"
-
-          gh release create -p -t "$title" -n "Release notes for ${{ needs.Debian-Pack.outputs.package_version }}
+          git config --global --add safe.directory $(pwd)
+          gh release create -p -t "$title" -n "Release notes of version ${{ needs.Debian-Pack.outputs.package_version }}" ${{ needs.Debian-Pack.outputs.package_version }}
 
           # add all files in the artifacts folder
           assets=()
@@ -432,6 +432,7 @@ jobs:
 
     - name: Fetch artifact from github release
       run: |
+        git config --global --add safe.directory $(pwd)
         mkdir dist artifacts
         cd dist
         gh release download ${{ steps.vars.outputs.tag}} -p *.whl
