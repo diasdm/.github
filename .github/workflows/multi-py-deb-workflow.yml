@@ -190,7 +190,9 @@ jobs:
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
-
+    outputs:
+      package_name: ${{ steps.vars.outputs.py_pkg_name }}
+      package_version: ${{ steps.vars.outputs.py_pkg_version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -205,6 +207,15 @@ jobs:
         run: |
           ln -s ${{ matrix.pack_path[0] }}/debian/setup.py
           bump2version build setup.py --no-tag --no-commit
+
+      - name: Find Package details
+        id: vars
+        run: |
+          PACKAGE_VERSION=$(cat .bumpversion.cfg | sed s/' '/''/g | grep 'current_version=' | sed s/'current_version='/''/g)
+          PACKAGE_NAME=$(cat setup.py | grep name | cut -d '"' -f2)
+
+          echo ::set-output name=py_pkg_name::$PACKAGE_NAME
+          echo ::set-output name=py_pkg_version::$PACKAGE_VERSION
 
       - name: Push auto raise version
         if: ${{ inputs.deploy == 'true' }}
@@ -238,8 +249,8 @@ jobs:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
     outputs:
-      package_name: ${{ needs.Build.outputs.package_name }}
-      package_version: ${{ needs.Build.outputs.package_version }}
+      package_name: ${{ needs.Raise.outputs.package_name }}
+      package_version: ${{ needs.Raise.outputs.package_version }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -259,10 +270,10 @@ jobs:
 
     - name: Raise & Pack
       run: |
-        dch -b -v "${{ needs.Build.outputs.package_version }}" "Auto created package version ${{ needs.Build.outputs.package_version }}"
+        dch -b --create -v "${{ needs.Raise.outputs.package_version }}" "Auto created package version ${{ needs.Raise.outputs.package_version }}"
         PKG_VERSION_ANCHOR='$PKG_VERSION'
-        sed -i "s/$PKG_VERSION_ANCHOR/${{ needs.Build.outputs.package_version }}/g" ./debian/postinst
-        sed -i "s/$PKG_VERSION_ANCHOR/${{ needs.Build.outputs.package_version }}/g" ./debian/prerm
+        sed -i "s/$PKG_VERSION_ANCHOR/${{ needs.Raise.outputs.package_version }}/g" ./debian/postinst
+        sed -i "s/$PKG_VERSION_ANCHOR/${{ needs.Raise.outputs.package_version }}/g" ./debian/prerm
         dpkg-buildpackage -nc -d -b -rfakeroot -us -uc -tc
         mkdir artifacts && \
         cp ../*.deb artifacts
