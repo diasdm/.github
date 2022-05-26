@@ -274,6 +274,9 @@ jobs:
         PKG_VERSION_ANCHOR='$PKG_VERSION'
         sed -i "s/$PKG_VERSION_ANCHOR/${{ needs.Raise.outputs.package_version }}/g" ./debian/postinst
         sed -i "s/$PKG_VERSION_ANCHOR/${{ needs.Raise.outputs.package_version }}/g" ./debian/prerm
+
+        install_tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes"
+        mk-build-deps --install --root-cmd sudo --tool="${install_tool}" debian/contro
         dpkg-buildpackage -nc -d -b -rfakeroot -us -uc -tc
         mkdir artifacts && \
         cp ../*.deb artifacts
