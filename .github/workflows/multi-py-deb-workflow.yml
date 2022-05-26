@@ -128,27 +128,27 @@ jobs:
         ln -f ${{ matrix.pack_path }}/debian/setup.py setup.py
         ln -sf ${{ matrix.pack_path }}/debian debian
 
-    - name: Raise version
+    - name: Raise version locally
       if: ${{ inputs.deploy == 'true' }}
-      run: bump2version build ${{ matrix.pack_path }}/setup.py --no-tag --no-commit
+      run: bump2version build setup.py --no-tag --no-commit
 
     - name: Find Package details
       id: vars
       run: |
         PACKAGE_VERSION=$(cat .bumpversion.cfg | sed s/' '/''/g | grep 'current_version=' | sed s/'current_version='/''/g)
-        PACKAGE_NAME=$(cat ${{ matrix.pack_path }}/setup.py | grep name | cut -d '"' -f2)
+        PACKAGE_NAME=$(cat setup.py | grep name | cut -d '"' -f2)
 
         echo ::set-output name=py_pkg_name::$PACKAGE_NAME
         echo ::set-output name=py_pkg_version::$PACKAGE_VERSION
 
     - name: Sync setup.py
-      run: sed -i s/"$(cat ${{ matrix.pack_path }}/setup.py | grep version)"/"    version=\"${{ steps.vars.outputs.py_pkg_version }}\","/g ${{ matrix.pack_path }}/setup.py
+      run: sed -i s/"$(cat setup.py | grep version)"/"    version=\"${{ steps.vars.outputs.py_pkg_version }}\","/g setup.py
 
     - name: Enable 4 digit version
       id: releasevars
       run: |
         PACKAGE_RELEASE_VERSION=$(echo ${{ steps.vars.outputs.py_pkg_version }} | sed s/"-"/"."/g)
-        sed -i s/"$(cat ${{ matrix.pack_path }}/setup.py | grep version)"/"$(cat ${{ matrix.pack_path }}/setup.py | grep version | sed s/"-"/"."/g)"/g ${{ matrix.pack_path }}/setup.py
+        sed -i s/"$(cat setup.py | grep version)"/"$(cat setup.py | grep version | sed s/"-"/"."/g)"/g setup.py
 
         echo ::set-output name=py_pkg_version::$PACKAGE_RELEASE_VERSION
 
@@ -160,17 +160,6 @@ jobs:
       with:
         name: packages
         path: dist/*
-
-    - name: Push auto raise version
-      if: ${{ inputs.deploy == 'true' }}
-      run: |
-        git config --global user.name ${{ secrets.auto_commit_user }}
-        git config --global user.email ${{ secrets.auto_commit_mail }}
-        git add ${{ matrix.pack_path }}/setup.py
-        git add .bumpversion.cfg
-        git commit -m "Automatic Bump of build version"
-        git pull
-        git push --force-with-lease
 
     - name: Publish package to TestPyPI Experimental
       uses: pypa/gh-action-pypi-publish@release/v1
@@ -192,12 +181,55 @@ jobs:
         rm -f setup.py
         rm -f debian
 
+  Raise:
+    needs: [Build]
+    if: ${{ inputs.release == 'false' }}
+    runs-on: ubuntu-20.04
+    container:
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
+      credentials:
+        username: ${{secrets.registry_user}}
+        password: ${{secrets.registry_password}}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: install build-requirements
+        run: python3 -m pip install -r build-requirements.txt
+
+      - name: Auto Raise version
+        if: ${{ inputs.deploy == 'true' }}
+        run: |
+          ln -s ${{ matrix.pack_path[0]/debian/setup.py }}
+          bump2version build setup.py --no-tag --no-commit
+
+      - name: Push auto raise version
+        if: ${{ inputs.deploy == 'true' }}
+        run: |
+          git config --global user.name ${{ secrets.auto_commit_user }}
+          git config --global user.email ${{ secrets.auto_commit_mail }}
+          git add .bumpversion.cfg
+          git commit -m "Automatic Bump of build version"
+          git pull
+          git push --force-with-lease
+
+      # - name: Raise App version
+      #   if: ${{ inputs.deploy == 'true' }}
+      #   uses: CasperWA/push-protected@v2
+      #   with:
+      #     token: ${{ secrets.RAISE_BOT_COMMIT_PASSWORD }}
+      #     branch: ${{ github.ref_name }}
+      #     unprotect_reviews: true
+
   Debian-Pack:
     if: ${{ inputs.release == 'false' }}
     strategy:
       matrix:
         pack_path: ${{ fromJSON(inputs.package_paths) }}
-    needs: [Build]
+    needs: [Raise]
     runs-on: ubuntu-20.04
     container:
       image: registry.aws.cloud.mov.ai/devops/ros-buildtools-noetic:latest
