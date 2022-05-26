@@ -277,7 +277,7 @@ jobs:
 
         apt update
         install_tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes"
-        mk-build-deps --install --root-cmd sudo --tool="${install_tool}" debian/contro
+        mk-build-deps --install --root-cmd sudo --tool="${install_tool}" debian/control
         dpkg-buildpackage -nc -d -b -rfakeroot -us -uc -tc
         mkdir artifacts && \
         cp ../*.deb artifacts
