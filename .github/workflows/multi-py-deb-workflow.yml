@@ -203,7 +203,7 @@ jobs:
       - name: Auto Raise version
         if: ${{ inputs.deploy == 'true' }}
         run: |
-          ln -s ${{ matrix.pack_path[0]/debian/setup.py }}
+          ln -s ${{ matrix.pack_path[0] }}/debian/setup.py
           bump2version build setup.py --no-tag --no-commit
 
       - name: Push auto raise version
