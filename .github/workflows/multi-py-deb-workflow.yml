@@ -202,7 +202,6 @@ jobs:
       - name: install build-requirements
         run: |
           python3 -m pip install -r build-requirements.txt
-          ln -f ${{ matrix.pack_path[0] }}/debian/setup.py setup.py
 
       - name: Auto Raise version
         if: ${{ inputs.deploy == 'true' }}
