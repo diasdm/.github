@@ -100,7 +100,7 @@ jobs:
 
     - name: Mobtest validations
       run: |
-        mkdir ./generic-reports
+        mkdir -p ./generic-reports
         mobtest --sonar_issues_path ./generic-reports/mobtest-issues.json .
 
     - name: Raise version and validate Ros repository
@@ -118,6 +118,9 @@ jobs:
       id: test
       shell: bash
       run: |
+        # guarantee folder is created
+        mkdir -p ./generic-reports
+
         # get all files in ./generic-reports
         generic_reports=$(find ./generic-reports -maxdepth 1 -type f)
         # join with ,
