@@ -200,12 +200,13 @@ jobs:
           submodules: recursive
 
       - name: install build-requirements
-        run: python3 -m pip install -r build-requirements.txt
+        run: |
+          python3 -m pip install -r build-requirements.txt
+          ln -f ${{ matrix.pack_path[0] }}/debian/setup.py setup.py
 
       - name: Auto Raise version
         if: ${{ inputs.deploy == 'true' }}
         run: |
-          ln -s ${{ matrix.pack_path[0] }}/debian/setup.py
           bump2version build setup.py --no-tag --no-commit
 
       - name: Find Package details
@@ -267,6 +268,9 @@ jobs:
       run: |
         ln -f ${{ matrix.pack_path }}/debian/setup.py setup.py
         ln -sf ${{ matrix.pack_path }}/debian debian
+
+    - name: Sync setup.py
+      run: sed -i s/"$(cat setup.py | grep version=)"/"    version=\"${{ needs.Raise.outputs.package_version }}\","/g setup.py
 
     - name: Raise & Pack
       run: |
