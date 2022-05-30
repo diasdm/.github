@@ -56,8 +56,6 @@ jobs:
     - name: Checkout    
       uses: actions/checkout@v2
       with:
-        # Disabling shallow clone is recommended for improving relevancy of reporting
-        fetch-depth: 0
         submodules: recursive
 
     - name: Validate Repository Package.xml
@@ -191,8 +189,6 @@ jobs:
     - name: Checkout    
       uses: actions/checkout@v2
       with:
-        # Disabling shallow clone is recommended for improving relevancy of reporting
-        fetch-depth: 0
         submodules: recursive
         
     - name: Download a single artifact
@@ -293,8 +289,6 @@ jobs:
     - name: Checkout    
       uses: actions/checkout@v2
       with:
-        # Disabling shallow clone is recommended for improving relevancy of reporting
-        fetch-depth: 0
         submodules: recursive
 
     - name: Set tag output
