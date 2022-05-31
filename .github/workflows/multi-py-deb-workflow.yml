@@ -194,6 +194,7 @@ jobs:
         password: ${{secrets.registry_password}}
     outputs:
       package_version: ${{ steps.vars.outputs.py_pkg_version }}
+      commit_id: ${{ steps.commit_id.outputs.commit_id }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -236,6 +237,12 @@ jobs:
           token: ${{ secrets.auto_commit_password }}
           branch: ${{ steps.var_branch.outputs.branch }}
           unprotect_reviews: true
+
+      - name: Commit of version
+        id: commit_id
+        run: |
+          commit_hash=$(git log --format="%H" -n 1)
+          echo ::set-output name=commit_id::$commit_hash
 
   Debian-Pack:
     if: ${{ inputs.release == 'false' }}
@@ -394,7 +401,12 @@ jobs:
         run: |
           title="Release of ${{ needs.Debian-Pack.outputs.package_version }}"
           git config --global --add safe.directory $(pwd)
-          gh release create -p -t "$title" -n "Release notes of version ${{ needs.Debian-Pack.outputs.package_version }}" ${{ needs.Debian-Pack.outputs.package_version }}
+          gh release create -p -t "$title" \
+          -n "Release notes of version ${{ needs.Debian-Pack.outputs.package_version }}"\
+          --target "${{ needs.Raise.outputs.commit_id }}"\
+           ${{ needs.Debian-Pack.outputs.package_version }}\
+
+
 
           # add all files in the artifacts folder
           assets=()
