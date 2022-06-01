@@ -369,9 +369,10 @@ jobs:
 
         cmd="rpmbuild $RPM_BUILD_ARGS -ba rpm/template.spec"
         eval $cmd
-
+        # store RPM packages
+        cd ..
         mkdir artifacts && \
-        cp ./*.rpm artifacts
+        mv ./${{ matrix.pack_path }}/*.rpm artifacts
 
     - name: Archive binary
       uses: actions/upload-artifact@v2
