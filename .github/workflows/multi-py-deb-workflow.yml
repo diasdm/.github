@@ -337,7 +337,9 @@ jobs:
     - name: Sync setup.py
       run: |
         cd ${{ matrix.pack_path }}/
-        sed -i s/"$(cat setup.py | grep version=)"/"    version=\"${{ needs.Raise.outputs.package_version }}\","/g setup.py
+        if [ -f setup.py ] ; then
+          sed -i s/"$(cat setup.py | grep version=)"/"    version=\"${{ needs.Raise.outputs.package_version }}\","/g setup.py
+        fi
 
     - name: Raise & RPM Pack
       run: |
@@ -465,7 +467,37 @@ jobs:
                 echo "Failed upload with $RETURN_CODE. Exiting"
                 exit 1
               fi
+            done
 
+      - name: Publish to Nexus yum-testing
+        shell: bash
+        run: |
+            NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
+            NEXUS_REPO="yum-testing"
+
+            for file in artifacts/*.rpm
+            do
+              RETURN_CODE=$(curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
+              -H "Content-Type: multipart/form-data" \
+              --data-binary "@$file" \
+              -w '%{http_code}' \
+              "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/")
+
+              #retry
+              if [[ ! "$RETURN_CODE" =~ ^(200|201|202)$ ]]; then
+                echo "Failed upload with $RETURN_CODE. Retrying"
+
+                RETURN_CODE=$(curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
+                  -H "Content-Type: multipart/form-data" \
+                  --data-binary "@$file" \
+                  -w '%{http_code}' \
+                  "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/")
+              fi
+
+              if [[ ! "$RETURN_CODE" =~ ^(200|201|202)$ ]]; then
+                echo "Failed upload with $RETURN_CODE. Exiting"
+                exit 1
+              fi
             done
 
       - name: Create Github Release
@@ -519,7 +551,7 @@ jobs:
         gh release download ${{ steps.vars.outputs.tag}} -p *.tar.gz
         cd artifacts
         gh release download ${{ steps.vars.outputs.tag}} -p *.deb
-
+        gh release download ${{ steps.vars.outputs.tag}} -p *.rpm
       env:
         GITHUB_TOKEN: ${{ secrets.gh_token }}
 
@@ -534,6 +566,12 @@ jobs:
       with:
         name: artifacts
         path: artifacts/*.deb
+
+    - name: Archive binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: artifacts
+        path: artifacts/*.rpm
 
     - name: Publish package to TestPyPI
       uses: pypa/gh-action-pypi-publish@release/v1
@@ -551,4 +589,3 @@ jobs:
           -H "Content-Type: multipart/form-data" \
           --data-binary "@{}" \
           "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/" \;
-
