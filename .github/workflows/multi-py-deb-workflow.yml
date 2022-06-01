@@ -402,7 +402,7 @@ jobs:
           apt install -y artifacts/*.deb
 
   Publish:
-    needs: [Debian-Pack]
+    needs: [Debian-Test, Rpm-Pack]
     if: ${{ inputs.deploy == 'true' }}
     runs-on: ubuntu-20.04
     container:
