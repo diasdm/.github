@@ -152,45 +152,11 @@ jobs:
           mkdir -p ./generic-reports
           mobtest --sonar_issues_path ./generic-reports/mobtest-issues.json .
 
-      - name: Collect generic reports
-        id: test
-        shell: bash
-        run: |
-          # guarantee folder is created
-          mkdir -p ./generic-reports
-
-          # get all files in ./generic-reports
-          generic_reports=$(find ./generic-reports -maxdepth 1 -type f)
-          # join with ,
-          generic_reports=$(echo "${generic_reports[@]}" | tr '\n' ',')
-          # remove last ','
-          generic_reports=${generic_reports::-1}
-
-          echo "Generic reports: ${generic_reports}"
-          echo ::set-output name=generic_reports::${generic_reports}
-
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v1.0.0
+      - name: Sonar run
+        uses: actions/action-forward-reports-to-sonar@main
         env:
           SONAR_TOKEN: ${{ secrets.sonar_token }}
           SONAR_HOST_URL: https://sonarqube.aws.cloud.mov.ai
-        with:
-          projectBaseDir: ./
-          args: >
-            -Dsonar.organization=MOV-AI
-            -Dsonar.projectKey=${{ github.event.repository.name }}
-            -Dsonar.verbose=true
-            -Dsonar.sources=.
-            -Dsonar.scm.provider=git
-            -Dsonar.qualitygate.wait=true
-            -Dsonar.qualitygate.timeout=300
-            -Dsonar.externalIssuesReportPaths=${{ steps.test.outputs.generic_reports }}
-
-      - name: Link to SonarQube Dashboard
-        shell: bash
-        run: |
-          echo "Please check report here: https://sonarqube.aws.cloud.mov.ai/dashboard?id=${{ github.event.repository.name }}"
-        id: sonar_links
 
   Publish:
     if: ${{ inputs.deploy == 'true' }}
