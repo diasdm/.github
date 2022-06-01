@@ -317,6 +317,12 @@ jobs:
     outputs:
       package_version: ${{ needs.Raise.outputs.package_version }}
     steps:
+    - name: Prereq
+      run: |
+        sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
+        sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+        yum install -y rpm-build rpmdevtools gcc make python38 git
+
     - name: Checkout
       uses: actions/checkout@v2
       with:
@@ -340,9 +346,6 @@ jobs:
           echo "No RPM dir found. skipping"
           exit 0
         fi
-        sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
-        sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
-        yum install -y rpm-build rpmdevtools gcc make python38 git
         RPM_BUILD_ARGS=""
         ARGS_LIST=(
         '--define "_topdir %(pwd)"'
