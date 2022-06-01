@@ -22,6 +22,10 @@ on:
         required: false
         type: string
         default: '["./"]'
+      rpm_build:
+        required: false
+        type: string
+        default: 'true'
 
 
     secrets:
@@ -272,7 +276,7 @@ jobs:
     - name: Sync setup.py
       run: sed -i s/"$(cat setup.py | grep version=)"/"    version=\"${{ needs.Raise.outputs.package_version }}\","/g setup.py
 
-    - name: Raise & Pack
+    - name: Raise & Deb Pack
       run: |
         dch -b -v "${{ needs.Raise.outputs.package_version }}" "Auto created package version ${{ needs.Raise.outputs.package_version }}"
         PKG_VERSION_ANCHOR='$PKG_VERSION'
@@ -296,6 +300,79 @@ jobs:
       run: |
         rm -f setup.py
         rm -f debian
+
+  Rpm-Pack:
+    if: ${{ inputs.release == 'false' }} && ${{ inputs.rpm_build == 'true' }}
+    strategy:
+      matrix:
+        pack_path: ${{ fromJSON(inputs.package_paths) }}
+    needs: [Raise]
+    runs-on: ubuntu-20.04
+    container:
+      image: centos:8
+      # options: --user root
+      # credentials:
+      #   username: ${{secrets.registry_user}}
+      #   password: ${{secrets.registry_password}}
+    outputs:
+      package_version: ${{ needs.Raise.outputs.package_version }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Download a single artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: packages
+        path: dist
+
+    - name: Sync setup.py
+      run: |
+        cd ${{ matrix.pack_path }}/
+        sed -i s/"$(cat setup.py | grep version=)"/"    version=\"${{ needs.Raise.outputs.package_version }}\","/g setup.py
+
+    - name: Raise & RPM Pack
+      run: |
+        cd ${{ matrix.pack_path }}/
+        if [ ! -d rpm ] ; then
+          echo "No RPM dir found. skipping"
+          exit 0
+        fi
+        sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
+        sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+        yum install -y rpm-build rpmdevtools gcc make python38 git
+        RPM_BUILD_ARGS=""
+        ARGS_LIST=(
+        '--define "_topdir %(pwd)"'
+        '--define "_builddir %{_topdir}"'
+        '--define "_rpmdir %{_topdir}"'
+        '--define "_sourcedir %{_topdir}"'
+        '--define "_srcrpmdir %{_topdir}"'
+        '--define "_rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm"'
+        )
+        for ARG in ${ARGS_LIST[@]}; do
+            RPM_BUILD_ARGS="$RPM_BUILD_ARGS $ARG"
+        done
+        PKG_VERSION_ANCHOR='_VERSION_'
+        PKG_BUILD_ID_ANCHOR='_BUILD_ID_'
+        PKG_VERSION=$(echo ${{ needs.Raise.outputs.package_version }} | cut -d '-' -f 1)
+        c=$(echo ${{ needs.Raise.outputs.package_version }} | cut -d '-' -f 2)
+        sed -i "s/$PKG_VERSION_ANCHOR/$PKG_VERSION/g" ./rpm/template.spec
+        sed -i "s/$PKG_BUILD_ID_ANCHOR/$PKG_VERSION/g" ./rpm/template.spec
+
+        cmd="rpmbuild $RPM_BUILD_ARGS -ba rpm/template.spec"
+        eval $cmd
+
+        mkdir artifacts && \
+        cp ./*.rpm artifacts
+
+    - name: Archive binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: artifacts
+        path: artifacts/*.rpm
 
   Publish:
     needs: [Debian-Pack]
