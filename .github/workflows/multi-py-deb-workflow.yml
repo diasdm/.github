@@ -310,12 +310,6 @@ jobs:
     runs-on: ubuntu-20.04
     container:
       image: centos:8
-      # options: --user root
-      # credentials:
-      #   username: ${{secrets.registry_user}}
-      #   password: ${{secrets.registry_password}}
-    outputs:
-      package_version: ${{ needs.Raise.outputs.package_version }}
     steps:
     - name: Prereq
       run: |
@@ -387,7 +381,7 @@ jobs:
     steps:
       - name: Prereq
         run: |
-          apt update && apt install -y curl
+          sudo apt update && sudo apt install -y curl
           curl -fsSL https://get.docker.com -o get-docker.sh
           sh get-docker.sh
 
@@ -399,10 +393,39 @@ jobs:
 
       - name: Install debian artifacts
         run: |
-          apt install -y artifacts/*.deb
+          find artifacts/ -name "*.deb" -not -name "*src*" -exec sudo apt install -y {} \;
+
+  Rpm-Test:
+    needs: [Rpm-Pack]
+    if: ${{ inputs.release == 'false' }}
+    runs-on: ubuntu-20.04
+    container:
+      image: centos:8
+    steps:
+      - name: Prereq
+        run: |
+          sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
+          sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+          # install docker
+          yum install -y python38 git curl
+          curl -fsSL https://get.docker.com -o get-docker.sh
+          sh get-docker.sh
+          # add zeromq repo
+          yum-config-manager --add-repo "https://download.opensuse.org/repositories/network:/messaging:/zeromq:/release-stable/RHEL_7/"
+          yum install --nogpgcheck -y zeromq-devel
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: artifacts
+          path: artifacts
+
+      - name: Install rpm artifacts
+        run: |
+          find artifacts/ -name "*.rpm" -not -name "*src*" -exec yum install -y {} \;
 
   Publish:
-    needs: [Debian-Test, Rpm-Pack]
+    needs: [Debian-Test, Rpm-Test]
     if: ${{ inputs.deploy == 'true' }}
     runs-on: ubuntu-20.04
     container:
