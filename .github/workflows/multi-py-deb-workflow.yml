@@ -363,9 +363,9 @@ jobs:
         PKG_VERSION_ANCHOR='_VERSION_'
         PKG_BUILD_ID_ANCHOR='_BUILD_ID_'
         PKG_VERSION=$(echo ${{ needs.Raise.outputs.package_version }} | cut -d '-' -f 1)
-        c=$(echo ${{ needs.Raise.outputs.package_version }} | cut -d '-' -f 2)
+        PKG_BUILD_ID=$(echo ${{ needs.Raise.outputs.package_version }} | cut -d '-' -f 2)
         sed -i "s/$PKG_VERSION_ANCHOR/$PKG_VERSION/g" ./rpm/template.spec
-        sed -i "s/$PKG_BUILD_ID_ANCHOR/$PKG_VERSION/g" ./rpm/template.spec
+        sed -i "s/$PKG_BUILD_ID_ANCHOR/$PKG_BUILD_ID/g" ./rpm/template.spec
 
         cmd="rpmbuild $RPM_BUILD_ARGS -ba rpm/template.spec"
         eval $cmd
