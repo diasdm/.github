@@ -380,6 +380,27 @@ jobs:
         name: artifacts
         path: artifacts/*.rpm
 
+  Debian-Test:
+    needs: [Debian-Pack]
+    if: ${{ inputs.release == 'false' }}
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Prereq
+        run: |
+          apt update && apt install -y curl
+          curl -fsSL https://get.docker.com -o get-docker.sh
+          sh get-docker.sh
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: artifacts
+          path: artifacts
+
+      - name: Install debian artifacts
+        run: |
+          apt install -y artifacts/*.deb
+
   Publish:
     needs: [Debian-Pack]
     if: ${{ inputs.deploy == 'true' }}
