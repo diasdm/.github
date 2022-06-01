@@ -288,7 +288,7 @@ jobs:
         mk-build-deps --install --root-cmd sudo --tool="${install_tool}" debian/control
         dpkg-buildpackage -nc -d -b -rfakeroot -us -uc -tc
         mkdir artifacts && \
-        cp ../*.deb artifacts
+        mv ../*.deb artifacts
 
     - name: Archive binary
       uses: actions/upload-artifact@v2
@@ -393,7 +393,8 @@ jobs:
 
       - name: Install debian artifacts
         run: |
-          find artifacts/ -name "*.deb" -not -name "*src*" -exec sudo apt install -y {} \;
+          cd artifacts/
+          find ./ -name "*.deb" -not -name "*src*" -exec sudo apt install -y {} \;
 
   Rpm-Test:
     needs: [Rpm-Pack]
