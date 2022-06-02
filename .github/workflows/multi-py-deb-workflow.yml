@@ -540,21 +540,29 @@ jobs:
 
             for file in artifacts/*.rpm
             do
-              RETURN_CODE=$(curl -u "${{ secrets.registry_user }}:${{ secrets.registry_password }}" \
-              -H "Content-Type: multipart/form-data" \
-              --data-binary "@$file" \
-              -w '%{http_code}' \
-              "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/")
+              RETURN_CODE=$(curl -X 'POST' -u "${{ secrets.registry_user }}:${{ secrets.registry_password }}" \
+                "https://$NEXUS_ENDPOINT/service/rest/v1/components?repository=$NEXUS_REPO" \
+                -H 'accept: application/json' \
+                -H 'Content-Type: multipart/form-data' \
+                -w '%{http_code}' \
+                -F 'yum.directory=system' \
+                -F 'yum.asset=@$file;type=application/x-rpm' \
+                -F 'yum.asset.filename=$file'
+              )
 
               #retry
               if [[ ! "$RETURN_CODE" =~ ^(200|201|202)$ ]]; then
                 echo "Failed upload with $RETURN_CODE. Retrying"
 
-                RETURN_CODE=$(curl -u "${{ secrets.registry_user }}:${{ secrets.registry_password }}" \
-                  -H "Content-Type: multipart/form-data" \
-                  --data-binary "@$file" \
+                RETURN_CODE=$(curl -X 'POST' -u "${{ secrets.registry_user }}:${{ secrets.registry_password }}" \
+                  "https://$NEXUS_ENDPOINT/service/rest/v1/components?repository=$NEXUS_REPO" \
+                  -H 'accept: application/json' \
+                  -H 'Content-Type: multipart/form-data' \
                   -w '%{http_code}' \
-                  "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/")
+                  -F 'yum.directory=system' \
+                  -F 'yum.asset=@$file;type=application/x-rpm' \
+                  -F 'yum.asset.filename=$file'
+                )
               fi
 
               if [[ ! "$RETURN_CODE" =~ ^(200|201|202)$ ]]; then
