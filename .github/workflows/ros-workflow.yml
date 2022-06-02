@@ -153,7 +153,7 @@ jobs:
           mobtest --sonar_issues_path ./generic-reports/mobtest-issues.json .
 
       - name: Sonar run
-        uses: actions/action-forward-reports-to-sonar@main
+        uses: MOV-AI/action-forward-reports-to-sonar@main
         env:
           SONAR_TOKEN: ${{ secrets.sonar_token }}
           SONAR_HOST_URL: https://sonarqube.aws.cloud.mov.ai
