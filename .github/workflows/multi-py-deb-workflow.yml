@@ -402,6 +402,7 @@ jobs:
         run: |
           title="Release of ${{ needs.Debian-Pack.outputs.package_version }}"
           git config --global --add safe.directory $(pwd)
+          
           gh release create -p -t "$title" \
           -n "Release notes of version ${{ needs.Debian-Pack.outputs.package_version }}" \
           --target "${{ needs.Debian-Pack.outputs.commit_id }}" \
