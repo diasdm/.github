@@ -259,6 +259,7 @@ jobs:
         password: ${{secrets.registry_password}}
     outputs:
       package_version: ${{ needs.Raise.outputs.package_version }}
+      commit_id: ${{ needs.Raise.outputs.commit_id }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -402,10 +403,10 @@ jobs:
           title="Release of ${{ needs.Debian-Pack.outputs.package_version }}"
           git config --global --add safe.directory $(pwd)
           gh release create -p -t "$title" \
-          -n "Release notes of version ${{ needs.Debian-Pack.outputs.package_version }}"\
-          --target "${{ needs.Raise.outputs.commit_id }}"\
-           ${{ needs.Debian-Pack.outputs.package_version }}\
-
+          -n "Release notes of version ${{ needs.Debian-Pack.outputs.package_version }}" \
+          --target "${{ needs.Debian-Pack.outputs.commit_id }}" \
+          --generate-notes \
+           ${{ needs.Debian-Pack.outputs.package_version }}
 
 
           # add all files in the artifacts folder
