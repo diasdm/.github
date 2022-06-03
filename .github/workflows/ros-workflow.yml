@@ -128,7 +128,9 @@ jobs:
         cat /usr/local/rosdep/ros-pkgs.yaml
 
   Test:
+    if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
+    needs: [Build]
     container:
       image: registry.aws.cloud.mov.ai/devops/ros-buildtools-noetic:latest
       options: --user root
