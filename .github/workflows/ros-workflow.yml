@@ -154,9 +154,9 @@ jobs:
 
       - name: Sonar run
         uses: MOV-AI/action-forward-reports-to-sonar@main
-        env:
-          SONAR_TOKEN: ${{ secrets.sonar_token }}
-          SONAR_HOST_URL: https://sonarqube.aws.cloud.mov.ai
+        with:
+          sonarqube_token: ${{ secrets.sonar_token }}
+          sonarqube_host_url: https://sonarqube.aws.cloud.mov.ai
 
   Publish:
     if: ${{ inputs.deploy == 'true' }}
