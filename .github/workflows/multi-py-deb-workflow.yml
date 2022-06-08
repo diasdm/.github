@@ -452,7 +452,7 @@ jobs:
 
   Publish:
     needs: [Raise, Debian-Pack, Rpm-Pack]
-    if: ${{ inputs.deploy == 'true' }}
+    if: ${{ always() && inputs.deploy == 'true' }}
     runs-on: ubuntu-20.04
     container:
       image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
@@ -506,7 +506,6 @@ jobs:
                 echo "Failed upload with $RETURN_CODE. Exiting"
                 exit 1
               fi
-
             done
 
       - name: Publish to Nexus ppa-testing
