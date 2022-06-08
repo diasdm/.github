@@ -320,7 +320,7 @@ jobs:
         rm -f debian
 
   Rpm-Pack:
-    if: ${{ inputs.release == 'false' }} && ${{ inputs.rpm_build == 'true' }}
+    if: ${{ inputs.release == 'false' && inputs.rpm_build == 'true' }}
     strategy:
       matrix:
         pack_path: ${{ fromJSON(inputs.package_paths) }}
@@ -393,8 +393,8 @@ jobs:
         path: artifacts/*.rpm
 
   Debian-Test:
-    needs: [Debian-Pack]
-    if: ${{ inputs.release == 'false' }} and ${{ inputs.install_test == 'true' }}
+    needs: [Raise, Debian-Pack]
+    if: ${{ inputs.release == 'false' && inputs.install_test == 'true' }}
     runs-on: ubuntu-20.04
     steps:
       - name: Prereq Docker
@@ -417,8 +417,8 @@ jobs:
           find ./ -name "*.deb" -not -name "*src*" -exec sudo apt install -y {} \;
 
   Rpm-Test:
-    needs: [Rpm-Pack]
-    if: ${{ inputs.release == 'false' }} and ${{ inputs.install_test == 'true' }} and ${{ inputs.rpbm_build == 'true' }}
+    needs: [Raise, Rpm-Pack]
+    if: ${{ inputs.release == 'false' && inputs.install_test == 'true' &&  inputs.rpbm_build == 'true' }}
     runs-on: ubuntu-20.04
     container:
       image: centos:8
@@ -451,7 +451,7 @@ jobs:
           find artifacts/ -name "*.rpm" -not -name "*src*" -exec yum install -y {} \;
 
   Publish:
-    needs: [Debian-Test, Rpm-Test]
+    needs: [Raise, Debian-Test, Rpm-Test]
     if: ${{ inputs.deploy == 'true' }}
     runs-on: ubuntu-20.04
     container:
@@ -584,14 +584,14 @@ jobs:
         if: ${{ inputs.deploy == 'true' }}
         shell: bash
         run: |
-          title="Release of ${{ needs.Debian-Pack.outputs.package_version }}"
+          title="Release of ${{ needs.Raise.outputs.package_version }}"
           git config --global --add safe.directory $(pwd)
-          
+
           gh release create -p -t "$title" \
-          -n "Release notes of version ${{ needs.Debian-Pack.outputs.package_version }}" \
-          --target "${{ needs.Debian-Pack.outputs.commit_id }}" \
+          -n "Release notes of version ${{ needs.Raise.outputs.package_version }}" \
+          --target "${{ needs.Raise.outputs.commit_id }}" \
           --generate-notes \
-           ${{ needs.Debian-Pack.outputs.package_version }}
+           ${{ needs.Raise.outputs.package_version }}
 
 
           # add all files in the artifacts folder
