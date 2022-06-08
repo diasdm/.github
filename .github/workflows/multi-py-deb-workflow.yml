@@ -533,6 +533,7 @@ jobs:
             done
 
       - name: Publish to Nexus yum-testing (new Nexus)
+        if: ${{ inputs.rpbm_build == 'true' }}
         shell: bash
         run: |
             NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
