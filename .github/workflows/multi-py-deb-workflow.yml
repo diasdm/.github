@@ -29,7 +29,7 @@ on:
       install_test:
         required: false
         type: string
-        default: 'false'
+        default: 'true'
       install_test_docker:
         required: false
         type: string
@@ -451,7 +451,7 @@ jobs:
           find artifacts/ -name "*.rpm" -not -name "*src*" -exec yum install -y {} \;
 
   Publish:
-    needs: [Raise, Debian-Test, Rpm-Test]
+    needs: [Raise, Debian-Pack, Rpm-Pack]
     if: ${{ inputs.deploy == 'true' }}
     runs-on: ubuntu-20.04
     container:
