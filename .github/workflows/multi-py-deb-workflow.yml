@@ -548,19 +548,20 @@ jobs:
 
             for file in artifacts/*.rpm
             do
+              echo "Uploading $file"
               RETURN_CODE=$(curl -X 'POST' -u "${{ secrets.registry_user }}:${{ secrets.registry_password }}" \
                 "https://$NEXUS_ENDPOINT/service/rest/v1/components?repository=$NEXUS_REPO" \
                 -H 'accept: application/json' \
                 -H 'Content-Type: multipart/form-data' \
                 -w '%{http_code}' \
                 -F 'yum.directory=system' \
-                -F 'yum.asset=@$file;type=application/x-rpm' \
-                -F 'yum.asset.filename=$file'
+                -F "yum.asset=@$file;type=application/x-rpm" \
+                -F "yum.asset.filename=$file"
               )
 
               #retry
               if [[ ! "$RETURN_CODE" =~ ^(200|201|202)$ ]]; then
-                echo "Failed upload with $RETURN_CODE. Retrying"
+                echo "Failed upload $file with $RETURN_CODE. Retrying"
 
                 RETURN_CODE=$(curl -X 'POST' -u "${{ secrets.registry_user }}:${{ secrets.registry_password }}" \
                   "https://$NEXUS_ENDPOINT/service/rest/v1/components?repository=$NEXUS_REPO" \
@@ -568,13 +569,13 @@ jobs:
                   -H 'Content-Type: multipart/form-data' \
                   -w '%{http_code}' \
                   -F 'yum.directory=system' \
-                  -F 'yum.asset=@$file;type=application/x-rpm' \
-                  -F 'yum.asset.filename=$file'
+                  -F "yum.asset=@$file;type=application/x-rpm" \
+                  -F "yum.asset.filename=$file"
                 )
               fi
 
               if [[ ! "$RETURN_CODE" =~ ^(200|201|202)$ ]]; then
-                echo "Failed upload with $RETURN_CODE. Exiting"
+                echo "Failed upload $file with $RETURN_CODE. Exiting"
                 exit 1
               fi
             done
