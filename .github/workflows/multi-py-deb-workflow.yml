@@ -418,7 +418,7 @@ jobs:
 
   Rpm-Test:
     needs: [Raise, Rpm-Pack]
-    if: ${{ inputs.release == 'false' && inputs.install_test == 'true' &&  inputs.rpbm_build == 'true' }}
+    if: ${{ inputs.release == 'false' && inputs.install_test == 'true' &&  inputs.rpm_build == 'true' }}
     runs-on: ubuntu-20.04
     container:
       image: centos:8
@@ -540,7 +540,7 @@ jobs:
             done
 
       - name: Publish to Nexus yum-testing (new Nexus)
-        if: ${{ inputs.rpbm_build == 'true' }}
+        if: ${{ inputs.rpm_build == 'true' }}
         shell: bash
         run: |
             NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
