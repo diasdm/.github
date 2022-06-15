@@ -44,15 +44,20 @@ jobs:
         docker login registry.aws.cloud.mov.ai -u ${{secrets.registry_user}} -p ${{secrets.registry_password}}
 
     - name: Promote images
+      shell: bash
       run: |
         images=($(cat platform.image.artifact | tr ' ' "\n"))
         for image in "${images[@]}"
         do
-          target=$(echo $image | sed 's|/qa/|/prod/|g')
-          target=$(echo $target | sed 's|/devops/|/prod/|g')
-          docker pull $image
-          docker tag $image $target
-          docker push $target
+          blacklisted='nodejs'
+
+          if [[ "$image" != *"$blacklisted"* ]]; then
+            target=$(echo $image | sed 's|/qa/|/prod/|g')
+            target=$(echo $target | sed 's|/devops/|/prod/|g')
+            docker pull $image
+            docker tag $image $target
+            docker push $target
+          fi
         done
 
     - name: Download staging packages
