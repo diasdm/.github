@@ -5,6 +5,10 @@ on:
       deploy_pkgs:
         required: false
         type: string
+        default: 'false'
+      self_deployment_pkgs:
+        required: false
+        type: string
         default: 'false' 
 
     secrets:
@@ -60,20 +64,24 @@ jobs:
           fi
         done
 
-    - name: Download staging packages
+    - name: Install package deployer
       if: ${{ inputs.deploy_pkgs == 'true' }}
+      run: |
+        python3 -m pip install -i https://artifacts.cloud.mov.ai/repository/pypi-edge/simple --extra-index-url https://pypi.org/simple movai-package-deployer==1.0.0.20
+        
+    - name: Download staging packages
+      if: ${{ inputs.deploy_pkgs == 'true' && inputs.self_deployment_pkgs == 'false' }}
       run: |
         mkdir artifacts
         cp deployable.dploy artifacts
         cd artifacts
-        python3 -m pip install -i https://artifacts.cloud.mov.ai/repository/pypi-edge/simple --extra-index-url https://pypi.org/simple movai-package-deployer==1.0.0.20
         export PATH="$HOME/.local/bin:$PATH"
         package-deployer download --deploy_file deployable.dploy --nx_api_usr ${{ secrets.nexus_publisher_user }} --nx_api_pwd ${{ secrets.nexus_publisher_password }}
         rm deployable.dploy
         ls -la
 
     - name: Publish to Nexus ppa-main
-      if: ${{ inputs.deploy_pkgs == 'true' }}
+      if: ${{ inputs.deploy_pkgs == 'true' && inputs.self_deployment_pkgs == 'false' }}
       run: |
           NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
           NEXUS_REPO="ppa-main"
@@ -83,3 +91,12 @@ jobs:
           --data-binary "@{}" \
           -w '%{http_code}' \
           "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/" \;
+
+
+    - name: Promote self deployable packages
+      if: ${{ inputs.deploy_pkgs == 'true' && inputs.self_deployment_pkgs == 'true' }}
+      run: |
+        export PATH="$HOME/.local/bin:$PATH"
+        export PYLOGLEVEL="DEBUG"
+        package-deployer deploy --deploy_file deployable.dploy --nx_api_usr ${{ secrets.nexus_publisher_user }} --nx_api_pwd ${{ secrets.nexus_publisher_password }}
+        package-deployer validateDeploy --deploy_file deployable.dploy --nx_api_usr ${{ secrets.nexus_publisher_user }} --nx_api_pwd ${{ secrets.nexus_publisher_password }}
