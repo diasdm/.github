@@ -49,6 +49,7 @@ jobs:
         for image in "${images[@]}"
         do
           target=$(echo $image | sed 's|/qa/|/prod/|g')
+          target=$(echo $target | sed 's|/devops/|/prod/|g')
           docker pull $image
           docker tag $image $target
           docker push $target
