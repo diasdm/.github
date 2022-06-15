@@ -20,6 +20,10 @@ on:
         required: true
       nexus_publisher_password:
         required: true
+      gh_otto_user:
+        required: false
+      gh_otto_password:
+        required: false
       gh_token:
         required: true
 
@@ -108,5 +112,5 @@ jobs:
       run: |
         export PATH="$HOME/.local/bin:$PATH"
         export PYLOGLEVEL="DEBUG"
-        package-deployer deploy --deploy_file deployable.dploy --nx_api_usr ${{ secrets.nexus_publisher_user }} --nx_api_pwd ${{ secrets.nexus_publisher_password }}
-        package-deployer validateDeploy --deploy_file deployable.dploy --nx_api_usr ${{ secrets.nexus_publisher_user }} --nx_api_pwd ${{ secrets.nexus_publisher_password }}
+        package-deployer deploy --deploy_file deployable.dploy --nx_api_usr ${{ secrets.nexus_publisher_user }} --nx_api_pwd ${{ secrets.nexus_publisher_password }} --gh_api_user ${{ secrets.gh_otto_user }} --gh_api_pwd ${{ secrets.gh_otto_password }}
+        package-deployer validateDeploy --deploy_file deployable.dploy --nx_api_usr ${{ secrets.nexus_publisher_user }} --nx_api_pwd ${{ secrets.nexus_publisher_password }} --gh_api_user ${{ secrets.gh_otto_user }} --gh_api_pwd ${{ secrets.gh_otto_password }}
