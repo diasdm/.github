@@ -44,7 +44,6 @@ jobs:
         docker login registry.aws.cloud.mov.ai -u ${{secrets.registry_user}} -p ${{secrets.registry_password}}
 
     - name: Promote images
-      if: ${{ inputs.deploy_pkgs == 'false' }}
       shell: bash
       run: |
         images=($(cat platform.image.artifact | tr ' ' "\n"))
