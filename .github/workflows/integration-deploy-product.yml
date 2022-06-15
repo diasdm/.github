@@ -81,4 +81,5 @@ jobs:
           find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
           -H "Content-Type: multipart/form-data" \
           --data-binary "@{}" \
+          -w '%{http_code}' \
           "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/" \;
