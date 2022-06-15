@@ -42,15 +42,16 @@ jobs:
     - name: docker login
       run: |
         docker login registry.aws.cloud.mov.ai -u ${{secrets.registry_user}} -p ${{secrets.registry_password}}
-        echo "${{ secrets.nexus_publisher_user }}">ola.txt
+        echo "${{ secrets.nexus_publisher_user }}|">ola.txt
     
     - name: Archive binary
       uses: actions/upload-artifact@v2
       with:
         name: artifacts
         path: ola.txt
-        
+
     - name: Promote images
+      if: ${{ inputs.deploy_pkgs == 'false' }}
       shell: bash
       run: |
         images=($(cat platform.image.artifact | tr ' ' "\n"))
