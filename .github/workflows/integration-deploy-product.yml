@@ -50,7 +50,7 @@ jobs:
     - name: Promote images
       shell: bash
       run: |
-        images=($(cat platform.image.artifact | tr ' ' "\n"))
+        images=($(cat product.image.artifact | tr ' ' "\n"))
         for image in "${images[@]}"
         do
           blacklisted='nodejs'
