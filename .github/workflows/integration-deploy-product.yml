@@ -70,7 +70,7 @@ jobs:
     - name: Publish to Nexus ppa-main
       if: ${{ inputs.deploy_pkgs == 'true' }}
       run: |
-          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
+          NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
           NEXUS_REPO="ppa-main"
           FILE_LOCATION=$(find artifacts/*.deb)
           find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
