@@ -338,7 +338,7 @@ jobs:
         cd dist
         gh release download ${{ steps.vars.outputs.tag}} -p *.whl
         gh release download ${{ steps.vars.outputs.tag}} -p *.tar.gz
-        cd artifacts
+        cd ../artifacts
         gh release download ${{ steps.vars.outputs.tag}} -p *.deb
 
       env:
