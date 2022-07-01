@@ -179,7 +179,7 @@ jobs:
   Publish:
     if: ${{ inputs.deploy == 'true' }}
     runs-on: ubuntu-20.04
-    needs:  [Build]
+    needs:  [Test]
     container:
       image: registry.aws.cloud.mov.ai/devops/ros-buildtools-noetic:latest
       options: --user root
