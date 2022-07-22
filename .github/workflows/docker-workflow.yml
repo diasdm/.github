@@ -59,6 +59,7 @@ jobs:
         run: |
           echo $GITHUB_REF
           echo $DOCKER_PUSH
+          echo ${{ steps.get_name.outputs.DOCKER_IMAGE_NAME }}
           if [ "${DOCKER_PUSH}" = "true" ]; then
             if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
               echo ::set-output name=DOCKER_TAG::latest
