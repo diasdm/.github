@@ -48,7 +48,7 @@ jobs:
         id: get_name
         run: |
           image_name=${{ inputs.docker_image }}
-          new_name=$(echo $image_name | sed "s#registry.aws.cloud.mov.ai#ghcr.io/MOV-AI#g") 
+          new_name=$(echo $image_name | sed "s#registry.aws.cloud.mov.ai#ghcr.io/mov-ai#g") 
           echo ::set-output name=DOCKER_IMAGE_NAME::$new_name
 
       - name: "Verify push and tag vars from env"
