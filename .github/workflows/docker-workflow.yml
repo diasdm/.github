@@ -70,6 +70,14 @@ jobs:
             echo ::set-output name=DOCKER_TAG::local
           fi
 
+      - uses: pmorelli92/github-container-registry-build-push@2.0.0
+        name: Build and Publish latest service image
+        with:
+          github-push-secret: ${{secrets.GITHUB_TOKEN}}
+          docker-image-name: ${{ steps.get_name.outputs.DOCKER_IMAGE_NAME }}
+          docker-image-tag: ${{ steps.get_version.outputs.DOCKER_TAG }}
+          dockerfile-path: ${{ inputs.docker_file }}
+
       - name: Build and push:${{ env.DOCKER_PUSH }} of ${{ steps.get_name.outputs.DOCKER_IMAGE_NAME }}:${{ steps.get_version.outputs.DOCKER_TAG }}
         uses: docker/build-push-action@v2
         with:
