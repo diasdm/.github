@@ -5,11 +5,11 @@ on:
       docker_registry:
         required: false
         type: string
-        default: registry.aws.cloud.mov.ai
+        default: ghcr.io/mov-ai
       public_registry:
         required: false
         type: string
-        default: pubregistry.aws.cloud.mov.ai
+        default: ghcr.io/mov-ai
       docker_file:
         required: true
         type: string
