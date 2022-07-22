@@ -45,6 +45,7 @@ jobs:
 #          registry: registry.aws.cloud.mov.ai
 
       - name: replace
+        id: get_name
         run: |
           image_name=${{ inputs.docker_image }}
           new_name=$(echo $image_name | sed "s#registry.aws.cloud.mov.ai#ghcr.io/MOV-AI#g") 
@@ -68,7 +69,7 @@ jobs:
             echo ::set-output name=DOCKER_TAG::local
           fi
 
-      - name: Build and push:${{ env.DOCKER_PUSH }} of ${{ inputs.DOCKER_IMAGE_NAME }}:${{ steps.get_version.outputs.DOCKER_TAG }}
+      - name: Build and push:${{ env.DOCKER_PUSH }} of ${{ steps.get_name.outputs.DOCKER_IMAGE_NAME }}:${{ steps.get_version.outputs.DOCKER_TAG }}
         uses: docker/build-push-action@v2
         with:
           context: .
