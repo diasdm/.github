@@ -108,6 +108,7 @@ jobs:
       run: echo TODO
 
     - name: SonarQube Scan
+      if: ${{ false }}
       uses: SonarSource/sonarqube-scan-action@v1.0.0
       env:
         SONAR_TOKEN: ${{ secrets.sonar_token }}
