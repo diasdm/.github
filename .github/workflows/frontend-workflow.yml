@@ -58,7 +58,7 @@ jobs:
         # Disabling shallow clone is recommended for improving relevancy of reporting
         fetch-depth: 0
         submodules: recursive
-        token: ${{ secrets.npm_token }}
+        #token: ${{ secrets.npm_token }}
 
     - name: Raise App version
       run: |
