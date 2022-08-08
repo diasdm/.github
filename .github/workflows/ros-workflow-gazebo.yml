@@ -96,7 +96,7 @@ jobs:
       run: python3 -m pip install mobros==1.0.1.22 --ignore-installed
 
     - name: Install Mobtest
-      run: python3 -m pip install mobtest==0.0.1.4 --ignore-installed
+      run: python3 -m pip install mobtest==0.0.1.5 --ignore-installed
 
     - name: Setup link to Ros userspace
       run: |
@@ -105,7 +105,7 @@ jobs:
 
     - name: Mobtest validations
       run: |
-        mobtest $(pwd)
+        mobtest --sonar_issues_path ./mobtest-issues.json .
 
     - name: Raise version and validate Ros repository
       run: mobros raise --workspace="$(pwd)"
