@@ -63,16 +63,16 @@ jobs:
         python3 -m black .
         python3 -m flake8
 
+    - name: Run tests
+      run: python3 -m pytest tests/ --cov=metadata_static_analysis --cov-report=xml
+
     - name: Sonar Scan
       if: ${{ !github.event.repository.private }}
-      uses: MOV-AI/action-forward-reports-to-sonar@v0.1
+      uses: MOV-AI/action-forward-reports-to-sonar@feature/python-coverage
       with:
         sonarcloud_token: ${{ secrets.sonarcloud_token }}
         sonarqube_token: ${{ secrets.sonar_token }}
         sonarqube_host_url: https://sonarqube.aws.cloud.mov.ai
-
-    - name: Run tests
-      run: python3 -m pytest
 
     - name: Raise version
       if: ${{ inputs.deploy == 'true' }}
