@@ -147,7 +147,10 @@ jobs:
           submodules: recursive
 
       - name: Install Mobtest
-        run: python3 -m pip install mobtest==0.0.1.5 --ignore-installed
+        run: |
+          python3 -m pip install \
+          -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple \
+          mobtest==0.0.1.5 --ignore-installed
 
       - name: Mobtest validations
         run: |
