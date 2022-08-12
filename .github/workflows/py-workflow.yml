@@ -64,7 +64,7 @@ jobs:
         python3 -m flake8
 
     - name: Run tests
-      run: python3 -m pytest tests/ --cov=metadata_static_analysis --cov-report=xml
+      run: tox
 
     - name: Sonar Scan
       if: ${{ !github.event.repository.private }}
