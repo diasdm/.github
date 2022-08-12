@@ -68,7 +68,7 @@ jobs:
 
     - name: Sonar Scan
       if: ${{ !github.event.repository.private }}
-      uses: MOV-AI/action-forward-reports-to-sonar@feature/python-coverage
+      uses: MOV-AI/action-forward-reports-to-sonar@v0.1
       with:
         sonarcloud_token: ${{ secrets.sonarcloud_token }}
         sonarqube_token: ${{ secrets.sonar_token }}
