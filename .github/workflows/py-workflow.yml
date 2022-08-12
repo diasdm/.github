@@ -73,6 +73,7 @@ jobs:
         sonarcloud_token: ${{ secrets.sonarcloud_token }}
         sonarqube_token: ${{ secrets.sonar_token }}
         sonarqube_host_url: https://sonarqube.aws.cloud.mov.ai
+        sonar_args: '-Dsonar.python.coverage.reportPaths=coverage.xml'
 
     - name: Raise version
       if: ${{ inputs.deploy == 'true' }}
