@@ -154,7 +154,7 @@ jobs:
 
       - name: Mobtest validations
         run: |
-          mobtest repo --sonar_issues_path ./mobtest-issues.json .
+          mobtest repo --issues ./mobtest-issues.json .
 
       - name: SonarQube Scan
         if: ${{ false }}

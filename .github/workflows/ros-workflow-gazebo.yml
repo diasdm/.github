@@ -108,7 +108,7 @@ jobs:
 
     - name: Mobtest validations
       run: |
-        mobtest repo --sonar_issues_path ./mobtest-issues.json .
+        mobtest repo --issues ./mobtest-issues.json .
 
     - name: Raise version and validate Ros repository
       run: mobros raise --workspace="$(pwd)"
