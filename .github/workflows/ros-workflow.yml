@@ -150,11 +150,11 @@ jobs:
         run: |
           python3 -m pip install \
           -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple \
-          mobtest==0.0.2.1 --ignore-installed
+          mobtest==0.0.2.2 --ignore-installed
 
       - name: Mobtest validations
         run: |
-          mobtest --sonar_issues_path ./mobtest-issues.json .
+          mobtest repo --sonar_issues_path ./mobtest-issues.json .
 
       - name: SonarQube Scan
         if: ${{ false }}
