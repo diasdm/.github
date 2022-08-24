@@ -76,7 +76,7 @@ jobs:
         sonar_args: '-Dsonar.python.coverage.reportPaths=coverage.xml'
 
     - name: Raise version
-      if: ${{ inputs.deploy == 'true' }}
+      if: ${{ (inputs.deploy == 'true') && (github.ref != 'refs/heads/dev') }}
       run: bump2version build setup.py --no-tag --no-commit
 
     - name: Find Package details
@@ -93,7 +93,7 @@ jobs:
 
     - name: Push auto raise version
       id: raise
-      if: ${{ inputs.deploy == 'true' }}
+      if: ${{ (inputs.deploy == 'true') && (github.ref != 'refs/heads/dev') }}
       run: |
         git config --global user.name ${{ secrets.auto_commit_user }}
         git config --global user.email ${{ secrets.auto_commit_mail }}
