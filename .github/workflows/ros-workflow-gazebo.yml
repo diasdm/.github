@@ -99,7 +99,7 @@ jobs:
       run: |
           python3 -m pip install \
           -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple \
-          mobtest==0.0.1.5 --ignore-installed
+          mobtest==0.0.2.2 --ignore-installed
 
     - name: Setup link to Ros userspace
       run: |
@@ -108,7 +108,7 @@ jobs:
 
     - name: Mobtest validations
       run: |
-        mobtest --sonar_issues_path ./mobtest-issues.json .
+        mobtest repo --issues ./mobtest-issues.json .
 
     - name: Raise version and validate Ros repository
       run: mobros raise --workspace="$(pwd)"
