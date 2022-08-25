@@ -146,6 +146,9 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.0
+
       - name: Install Mobtest
         run: |
           python3 -m pip install \
