@@ -73,6 +73,7 @@ jobs:
 
     - name: Check if SonarCloud project exists
       if: ${{ !github.event.repository.private }}
+      id: sonar_project
       env:
         GITHUB_ORG: ${{ github.repository_owner }}
         REPO_NAME: ${{ github.event.repository.name }}
@@ -94,17 +95,22 @@ jobs:
         # if -r is not used the returned string is double quoted
         found_proj=$(echo "${json}" | jq -r '.components[0].key')
 
-        echo "found_proj=${found_proj}"
-
-        if [ "${found_proj_num}" -ne 1 ]; then
-            >&2 echo "The number of projects found is ${found_proj_num}"
-            exit 1
+        # project was not found
+        if [ "${found_proj_num}" -eq 0 ]; then
+            echo "SonarCloud project does not exist"
+            echo ::set-output name=exists::false
+            exit 0
         fi
 
-        if [ "${found_proj}" != "${GITHUB_ORG}_${REPO_NAME}" ]; then
-            >&2 echo "The found project ${found_proj} is different from ${GITHUB_ORG}_${REPO_NAME}"
-            exit 1
+        # project was found and the name matches
+        if [ "${found_proj_num}" -eq 1 ] && [ "${found_proj}" != "${GITHUB_ORG}_${REPO_NAME}" ]; then
+            echo "SonarCloud project exists"
+            echo ::set-output name=exists::true
+            exit 0
         fi
+
+        # else error
+        exit 1
 
     - name: SonarCloud Scan
       if: ${{ !github.event.repository.private }}
