@@ -92,9 +92,6 @@ jobs:
 
         found_proj_num=$(echo "${json}" | jq '.components | length')
 
-        # if -r is not used the returned string is double quoted
-        found_proj=$(echo "${json}" | jq -r '.components[0].key')
-
         # project was not found
         if [ "${found_proj_num}" -eq 0 ]; then
             echo "SonarCloud project does not exist"
@@ -102,8 +99,11 @@ jobs:
             exit 0
         fi
 
+        # if -r is not used the returned string is double quoted
+        found_proj=$(echo "${json}" | jq -r '.components[0].key')
+
         # project was found and the name matches
-        if [ "${found_proj_num}" -eq 1 ] && [ "${found_proj}" != "${GITHUB_ORG}_${REPO_NAME}" ]; then
+        if [ "${found_proj_num}" -eq 1 ] && [ "${found_proj}" = "${GITHUB_ORG}_${REPO_NAME}" ]; then
             echo "SonarCloud project exists"
             echo ::set-output name=exists::true
             exit 0
