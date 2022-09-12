@@ -71,28 +71,28 @@ jobs:
         python3 -m black .
         python3 -m flake8
 
-    - name: SonarQube Scan
-      if: ${{ false }}
-      uses: SonarSource/sonarqube-scan-action@v1.0.0
+    - name: SonarCloud Scan
+      if: ${{ !github.event.repository.private }}
+      uses: SonarSource/sonarcloud-github-action@master
       env:
+        GITHUB_TOKEN: ${{ github.token }}  # Needed to get PR information, if any
         SONAR_TOKEN: ${{ secrets.sonar_token }}
-        SONAR_HOST_URL: https://sonarqube.aws.cloud.mov.ai
       with:
         projectBaseDir: ./
         args: >
-          -Dsonar.organization=MOV-AI
-          -Dsonar.projectKey=${{ github.event.repository.name }}
+          -Dsonar.organization=mov-ai
+          -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}
           -Dsonar.verbose=true
           -Dsonar.sources=.
           -Dsonar.scm.provider=git
           -Dsonar.qualitygate.wait=true
           -Dsonar.qualitygate.timeout=300
 
-    - name: Link to SonarQube Dashboard
+    - name: Link to SonarCloud dashboard
+      if: ${{ !github.event.repository.private }}
       shell: bash
       run: |
-        echo "Please check report here: https://sonarqube.aws.cloud.mov.ai/dashboard?id=${{ github.event.repository.name }}"
-      id: sonar_links
+        echo "Please check report here: https://sonarcloud.io/project/overview?id=${{ github.repository_owner }}_${{ github.event.repository.name }}"
 
     - name: Run tests
       run: python3 -m pytest
