@@ -74,11 +74,12 @@ jobs:
       run: |
         python3 -m black --line-length 100 --diff --check .
 
-    - name: Python Linter
-      if: ${{ inputs.skip_linting == 'true' }}
+    - name: Python Linters
       run: |
-        python3 -m pylint *
-        python3 -m flake8
+        python3 -m flake8 --isolated \
+          --exclude .git,__pycache__,dist,venv,.tox \
+          --output-file flake8-report.txt
+        python3 -m pylint --max-complexity 10 --output pylint-report.txt *
 
     - name: SonarCloud Scan
       if: ${{ !github.event.repository.private }}
