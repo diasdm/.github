@@ -72,14 +72,28 @@ jobs:
     - name: Run Black
       if: ${{ inputs.run_black == 'true' }}
       run: |
-        python3 -m black --line-length 100 --diff --check .
+        python3 -m black
+          --line-length 100 \
+          --diff \
+          --check \
+          .
 
     - name: Python Linters
       run: |
-        python3 -m flake8 --isolated \
-          --exclude .git,__pycache__,dist,venv,.tox \
+        python3 -m flake8 \
+          --isolated \
+          --exclude dist,.*\.egg-info,.git,__pycache__,.tox,venv \
+          --max-complexity 10 \
+          --max-line-length 100 \
+          --exit-zero \
           --output-file flake8-report.txt
-        python3 -m pylint --max-complexity 10 --output pylint-report.txt *
+        python3 -m pylint \
+          --ignore-patterns dist,.*\.egg-info,.git,__pycache__,.tox,venv \
+          --max-line-length 100 \
+          --exit-zero \
+          --recursive y \
+          --output pylint-report.txt \
+          .
 
     - name: SonarCloud Scan
       if: ${{ !github.event.repository.private }}
@@ -97,6 +111,8 @@ jobs:
           -Dsonar.scm.provider=git
           -Dsonar.qualitygate.wait=true
           -Dsonar.qualitygate.timeout=300
+          -Dsonar.python.flake8.reportPaths=flake8-report.txt
+          -Dsonar.python.pylint.reportPaths=pylint-report.txt
 
     - name: Link to SonarCloud dashboard
       if: ${{ !github.event.repository.private }}
