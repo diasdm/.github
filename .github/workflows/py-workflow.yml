@@ -79,6 +79,7 @@ jobs:
           .
 
     - name: Python Linters
+      # run linters isolated so no issues are masked from SonarCloud
       run: |
         python3 -m flake8 \
           --isolated \
@@ -87,7 +88,12 @@ jobs:
           --max-line-length 100 \
           --exit-zero \
           --output-file flake8-report.txt
+
+        # pylint seems to not have a way to ignore configuration files
+        # so we need to provide it a dummy one
+        touch dummy-pylint-config
         python3 -m pylint \
+          --rcfile dummy-pylint-config \
           --ignore-patterns dist,.*\.egg-info,.git,__pycache__,.tox,venv \
           --max-line-length 100 \
           --exit-zero \
