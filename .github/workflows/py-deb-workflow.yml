@@ -235,7 +235,7 @@ jobs:
       - name: Publish to Nexus ppa-dev
         shell: bash
         run: |
-            NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
+            NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
             NEXUS_REPO="ppa-dev"
 
             for file in artifacts/*.deb
@@ -267,7 +267,7 @@ jobs:
       - name: Publish to Nexus ppa-testing
         shell: bash
         run: |
-            NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
+            NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
             NEXUS_REPO="ppa-testing"
 
             for file in artifacts/*.deb
@@ -373,11 +373,11 @@ jobs:
       with:
         user: ${{ secrets.nexus_publisher_user }}
         password: ${{ secrets.nexus_publisher_password }}
-        repository_url: https://artifacts.aws.cloud.mov.ai/repository/${{ inputs.prod_publish_pypi }}/
+        repository_url: https://artifacts.cloud.mov.ai/repository/${{ inputs.prod_publish_pypi }}/
   
     - name: Publish to Nexus
       run: |
-          NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
+          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
           NEXUS_REPO="${{ matrix.publish_repo }}"
           FILE_LOCATION=$(find artifacts/*.deb)
           find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \

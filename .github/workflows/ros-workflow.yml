@@ -225,7 +225,7 @@ jobs:
     - name: Publish to Nexus ppa-testing
       shell: bash
       run: |
-          NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
+          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
           NEXUS_REPO="ppa-testing"
 
           for file in artifacts/*.deb
@@ -314,7 +314,7 @@ jobs:
 
     - name: Publish to Nexus ${{ matrix.publish_repo }}
       run: |
-          NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
+          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
           NEXUS_REPO="${{ matrix.publish_repo }}"
           FILE_LOCATION=$(find artifacts/*.deb)
           find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
