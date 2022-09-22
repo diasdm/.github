@@ -100,7 +100,10 @@ jobs:
       run: python3 -m pip install mobros==1.0.1.22 --ignore-installed
 
     - name: Install Mobtest
-      run: python3 -m pip install mobtest==0.0.1.4 --ignore-installed
+      run: |
+          python3 -m pip install \
+          -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple \
+          mobtest==0.0.2.2 --ignore-installed
 
     - name: Setup link to Ros userspace
       run: |
@@ -109,7 +112,7 @@ jobs:
 
     - name: Mobtest validations
       run: |
-        mobtest $(pwd)
+        mobtest repo --issues ./mobtest-issues.json .
 
     - name: Raise version and validate Ros repository
       run: mobros raise --workspace="$(pwd)"
@@ -221,39 +224,6 @@ jobs:
             buildid=$(echo $build_version_section | sed 's/ //g' | sed -e 's/<\w*>'//g | sed -e 's/<\/\w*>'//g)
             VERSION="$main_version-$buildid"
             echo ::set-output name=ros_pkg_version::$VERSION
-
-
-    - name: Publish to Nexus ppa-dev
-      shell: bash
-      run: |
-          NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
-          NEXUS_REPO="ppa-dev"
-
-          for file in artifacts/*.deb
-          do
-            RETURN_CODE=$(curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
-            -H "Content-Type: multipart/form-data" \
-            --data-binary "@$file" \
-            -w '%{http_code}' \
-            "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/")
-
-            #retry
-            if [[ ! "$RETURN_CODE" =~ ^(200|201|202)$ ]]; then
-              echo "Failed upload with $RETURN_CODE. Retrying"
-
-              RETURN_CODE=$(curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
-                -H "Content-Type: multipart/form-data" \
-                --data-binary "@$file" \
-                -w '%{http_code}' \
-                "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/")
-            fi
-
-            if [[ ! "$RETURN_CODE" =~ ^(200|201|202)$ ]]; then
-              echo "Failed upload with $RETURN_CODE. Exiting"
-              exit 1
-            fi
-
-          done
 
     - name: Publish to Nexus ppa-testing
       shell: bash

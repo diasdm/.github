@@ -82,6 +82,7 @@ jobs:
       run: npm run test
 
     - name: SonarQube Scan
+      if: ${{ false }}
       uses: SonarSource/sonarqube-scan-action@v1.0.0
       env:
         SONAR_TOKEN: ${{ secrets.sonar_token }}
@@ -132,11 +133,12 @@ jobs:
         token: ${{ secrets.npm_token }}
         
     - name: Raise App version
+      id: raise
       run: |
         git config --global --add safe.directory $(pwd)
         git config --global user.name '${{ secrets.auto_commit_user }}'
         git config --global user.email '${{ secrets.auto_commit_mail }}'
-        npm version patch -m "Automatic Bump of build version" 
+        npm version prerelease -m "Automatic Bump of build version" 
         git add package.*
         git push
         commit_hash=$(git log --format="%H" -n 1)

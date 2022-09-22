@@ -1,4 +1,4 @@
-name: Build and pack py packages 
+name: Build and pack py packages
 on:
   workflow_call:
     inputs:
@@ -44,11 +44,11 @@ jobs:
     container:
       image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
       credentials:
-        username: ${{secrets.registry_user}} 
+        username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
 
     steps:
-    - name: Checkout    
+    - name: Checkout
       uses: actions/checkout@v2
       with:
         # Disabling shallow clone is recommended for improving relevancy of reporting
@@ -65,27 +65,100 @@ jobs:
         python3 -m black .
         python3 -m flake8
 
-    - name: SonarQube Scan
-      uses: SonarSource/sonarqube-scan-action@v1.0.0
+    - name: Check if SonarCloud project exists
+      if: ${{ !github.event.repository.private }}
+      id: sonar_project
       env:
+        GITHUB_ORG: ${{ github.repository_owner }}
+        REPO_NAME: ${{ github.event.repository.name }}
+        SONAR_ORG: mov-ai
         SONAR_TOKEN: ${{ secrets.sonar_token }}
-        SONAR_HOST_URL: https://sonarqube.aws.cloud.mov.ai
+      run: |
+        json=$( \
+            curl -k -s  \
+                -X POST \
+                -u "${SONAR_TOKEN}:" \
+                -d "projects=${GITHUB_ORG}_${REPO_NAME}&organization=${SONAR_ORG}" \
+                "https://sonarcloud.io/api/projects/search"
+        )
+
+        echo "Project search results: ${json}"
+
+        found_proj_num=$(echo "${json}" | jq '.components | length')
+
+        # project was not found
+        if [ "${found_proj_num}" -eq 0 ]; then
+            echo "SonarCloud project does not exist"
+            echo ::set-output name=exists::false
+            exit 0
+        fi
+
+        # if -r is not used the returned string is double quoted
+        found_proj=$(echo "${json}" | jq -r '.components[0].key')
+
+        # project was found and the name matches
+        if [ "${found_proj_num}" -eq 1 ] && [ "${found_proj}" = "${GITHUB_ORG}_${REPO_NAME}" ]; then
+            echo "SonarCloud project exists"
+            echo ::set-output name=exists::true
+            exit 0
+        fi
+
+        # else error
+        exit 1
+
+    - name: Create SonarCloud project
+      if: ${{ !github.event.repository.private && steps.sonar_project.outputs.exists == 'false' }}
+      env:
+        GITHUB_ORG: ${{ github.repository_owner }}
+        REPO_NAME: ${{ github.event.repository.name }}
+        GITHUB_TOKEN: ${{ github.token }}
+        SONAR_ORG: mov-ai
+        SONAR_TOKEN: ${{ secrets.sonar_token }}
+      run: |
+        # find repository ID
+        json=$(curl \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+          "https://api.github.com/repos/${GITHUB_ORG}/${REPO_NAME}")
+        REPO_ID=$(echo "${json}" | jq .id)
+        echo "Repository ID: ${REPO_ID}"
+
+        # create project
+        curl --include \
+          -X POST \
+          -u "${SONAR_TOKEN}:" \
+          -d "organization=${SONAR_ORG}&installationKeys=${GITHUB_ORG}%2F${REPO_NAME}%7C${REPO_ID}" \
+          "https://sonarcloud.io/api/alm_integration/provision_projects"
+
+        # disable autoscan (it is enabled at project creation)
+        curl --include \
+          -X POST \
+          -u "${SONAR_TOKEN}:" \
+          -d "enable=false&projectKey=${GITHUB_ORG}_${REPO_NAME}" \
+          "https://sonarcloud.io/api/autoscan/activation"
+
+    - name: SonarCloud Scan
+      if: ${{ !github.event.repository.private }}
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ github.token }}  # Needed to get PR information, if any
+        SONAR_TOKEN: ${{ secrets.sonar_token }}
       with:
         projectBaseDir: ./
         args: >
-          -Dsonar.organization=MOV-AI
-          -Dsonar.projectKey=${{ github.event.repository.name }}
+          -Dsonar.organization=mov-ai
+          -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}
           -Dsonar.verbose=true
           -Dsonar.sources=.
           -Dsonar.scm.provider=git
           -Dsonar.qualitygate.wait=true
           -Dsonar.qualitygate.timeout=300
 
-    - name: Link to SonarQube Dashboard
+    - name: Link to SonarCloud dashboard
+      if: ${{ !github.event.repository.private }}
       shell: bash
       run: |
-        echo "Please check report here: https://sonarqube.aws.cloud.mov.ai/dashboard?id=${{ github.event.repository.name }}"
-      id: sonar_links
+        echo "Please check report here: https://sonarcloud.io/project/overview?id=${{ github.repository_owner }}_${{ github.event.repository.name }}"
 
     - name: Run tests
       run: python3 -m pytest
@@ -99,7 +172,7 @@ jobs:
       run: |
         PACKAGE_VERSION=$(cat .bumpversion.cfg | sed s/' '/''/g | grep 'current_version=' | sed s/'current_version='/''/g)
         PACKAGE_NAME=$(cat setup.py | grep name | cut -d '"' -f2)
-        
+
         echo ::set-output name=py_pkg_name::$PACKAGE_NAME
         echo ::set-output name=py_pkg_version::$PACKAGE_VERSION
 
@@ -107,6 +180,7 @@ jobs:
       run: sed -i s/"$(cat setup.py | grep version)"/"    version=\"${{ steps.vars.outputs.py_pkg_version }}\","/g setup.py
 
     - name: Push auto raise version
+      id: raise
       if: ${{ inputs.deploy == 'true' }}
       run: |
         git config --global --add safe.directory $(pwd)
@@ -117,6 +191,8 @@ jobs:
         git commit -m "Automatic Bump of build version"
         git pull
         git push --force-with-lease
+        commit_hash=$(git log --format="%H" -n 1)
+        echo ::set-output name=commit_id::$commit_hash
 
     - name: Enable 4 digit version
       id: releasevars
@@ -154,9 +230,13 @@ jobs:
       if: ${{ inputs.deploy == 'true' }}
       shell: bash
       run: |
-        title="Release of ${{ steps.releasevars.outputs.py_pkg_version }}" 
-        
-        gh release create -p -t "$title" -n "Release notes for ${{ steps.vars.outputs.py_pkg_name }}" ${{ steps.releasevars.outputs.py_pkg_version }}
+        title="Release of ${{ steps.releasevars.outputs.py_pkg_version }}"
+        git config --global --add safe.directory $(pwd)
+
+        gh release create -p -t "$title" -n "Release notes for ${{ steps.vars.outputs.py_pkg_name }}" \
+        --target ${{ steps.raise.outputs.commit_id }} \
+        --generate-notes \
+        ${{ steps.releasevars.outputs.py_pkg_version }}
 
         # add all files in the artifacts folder
         assets=()
@@ -164,7 +244,7 @@ jobs:
           # do nothing if folder is empty
           if [[ $asset != "dist/*" ]]; then
             gh release upload ${{ steps.releasevars.outputs.py_pkg_version }} $asset
-          fi 
+          fi
         done
 
       env:
@@ -180,11 +260,11 @@ jobs:
     container:
       image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
       credentials:
-        username: ${{secrets.registry_user}} 
+        username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
 
     steps:
-    - name: Checkout    
+    - name: Checkout
       uses: actions/checkout@v2
 
     - name: Set tag output
