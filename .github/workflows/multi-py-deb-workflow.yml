@@ -70,7 +70,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         # Disabling shallow clone is recommended for improving relevancy of reporting
         fetch-depth: 0
@@ -131,7 +131,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         # Disabling shallow clone is recommended for improving relevancy of reporting
         fetch-depth: 0
@@ -212,12 +212,13 @@ jobs:
       commit_id: ${{ steps.commit_id.outputs.commit_id }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: install build-requirements
         run: |
+          git config --global --add safe.directory $(pwd)
           python3 -m pip install -r build-requirements.txt
 
       - name: Auto Raise version
@@ -277,7 +278,7 @@ jobs:
       commit_id: ${{ needs.Raise.outputs.commit_id }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: recursive
 
@@ -337,7 +338,7 @@ jobs:
         yum install -y rpm-build rpmdevtools gcc make python38 git
 
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: recursive
 
@@ -462,7 +463,7 @@ jobs:
         password: ${{secrets.registry_password}}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -624,7 +625,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Set tag output
       id: vars

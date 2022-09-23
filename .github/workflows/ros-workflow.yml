@@ -13,6 +13,10 @@ on:
       ros_distro:
         required: true
         type: string
+      prod_publish_repos:
+        required: false
+        type: string
+        default: '["ppa-main"]'
 
 
     secrets:
@@ -46,7 +50,7 @@ jobs:
     if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/devops/ros-buildtools-${{ matrix.distro }}:latest
+      image: registry.aws.cloud.mov.ai/qa/ros-buildtools-${{ matrix.distro }}:v1.1.0
       options: --user root
       credentials:
         username: ${{secrets.registry_user}}
@@ -140,16 +144,6 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      - name: Check if pre-commit config exists
-        id: check_files
-        uses: andstor/file-existence-action@v1
-        with:
-          files: ".pre-commit-config.yaml"
-
-      - name: Run pre-commit
-        if: steps.check_files.outputs.files_exists == 'true'
-        uses: pre-commit/action@v3.0.0
-
       - name: Install Mobtest
         run: |
           python3 -m pip install \
@@ -189,7 +183,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs:  [Test]
     container:
-      image: registry.aws.cloud.mov.ai/devops/ros-buildtools-noetic:latest
+      image: registry.aws.cloud.mov.ai/qa/ros-buildtools-noetic:v1.1.0
       options: --user root
       credentials:
         username: ${{secrets.registry_user}}
@@ -226,8 +220,7 @@ jobs:
             main_version=$(echo $version_section | sed 's/ //g' | sed -e 's/<\w*>'//g | sed -e 's/<\/\w*>'//g)
             buildid=$(echo $build_version_section | sed 's/ //g' | sed -e 's/<\w*>'//g | sed -e 's/<\/\w*>'//g)
             VERSION="$main_version-$buildid"
-            echo ::set-output name=ros_pkg_version::$VERSION
-
+            echo ::set-output name=ros_pkg_version::$VERSION  
 
     - name: Publish to Nexus ppa-testing
       shell: bash
@@ -264,6 +257,7 @@ jobs:
     - name: Commit raise version
       id: raise
       run: |
+        git config --global --add safe.directory $(pwd)
         git config --global user.name '${{ secrets.auto_commit_user }}'
         git config --global user.email '${{ secrets.auto_commit_mail }}'
         git pull
@@ -286,10 +280,14 @@ jobs:
         files: artifacts/*.deb
 
   Release:
+    strategy:
+      matrix:
+        publish_repo: ${{ fromJSON(inputs.prod_publish_repos) }}
     if: ${{ inputs.release == 'true' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/devops/ros-buildtools-noetic:latest
+      image: registry.aws.cloud.mov.ai/qa/ros-buildtools-noetic:v1.1.0
+
       options: --user root
       credentials:
         username: ${{secrets.registry_user}}
@@ -306,17 +304,18 @@ jobs:
       run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
 
     - name: Fetch artifact from github release
-      run: |
+      run: | 
+        git config --global --add safe.directory $(pwd)
         mkdir artifacts
         cd artifacts
         gh release download ${{ steps.vars.outputs.tag}} -p *.deb
       env:
         GITHUB_TOKEN: ${{ secrets.gh_token }}
 
-    - name: Publish to Nexus ppa-main
+    - name: Publish to Nexus ${{ matrix.publish_repo }}
       run: |
           NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
-          NEXUS_REPO="ppa-main"
+          NEXUS_REPO="${{ matrix.publish_repo }}"
           FILE_LOCATION=$(find artifacts/*.deb)
           find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
           -H "Content-Type: multipart/form-data" \
