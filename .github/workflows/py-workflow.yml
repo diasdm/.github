@@ -250,7 +250,7 @@ jobs:
         password: ${{ secrets.nexus_publisher_password }}
         repository_url: https://artifacts.cloud.mov.ai/repository/pypi-experimental/
 
-    - name: Publish package to TestPyPI Testing
+    - name: Publish package to TestPyPI Integration
       if: ${{ inputs.deploy == 'true' }}
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
