@@ -177,9 +177,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: duarte troubleshoot
-        run: ls -la ./dist
-
       - name: Build with args and push:${{ inputs.deploy }}
         if: ${{ steps.get_build_args.outputs.build_args_json != '' }}
         uses: docker/build-push-action@v3
