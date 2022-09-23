@@ -70,7 +70,7 @@ on:
       download_artifact_path:
         required: false
         type: string
-        default: dist
+        default: ./dist
         description: path where package is downloaded
     secrets:
       registry_user:
