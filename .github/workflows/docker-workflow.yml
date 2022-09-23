@@ -178,7 +178,6 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       - name: duarte troubleshoot
-        id: get_build_args
         run: ls -la
 
       - name: Build with args and push:${{ inputs.deploy }}
