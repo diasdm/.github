@@ -14,6 +14,10 @@ on:
         required: false
         type: string
         default: 'false'
+      prod_publish_repos:
+        required: false
+        type: string
+        default: '["ppa-main"]'
 
     secrets:
       auto_commit_user:
@@ -53,16 +57,6 @@ jobs:
 
     - name: install build-requirements
       run: python3 -m pip install -r build-requirements.txt
-
-    - name: Check if pre-commit config exists
-      id: check_files
-      uses: andstor/file-existence-action@v1
-      with:
-        files: ".pre-commit-config.yaml"
-
-    - name: Run pre-commit
-      if: steps.check_files.outputs.files_exists == 'true'
-      uses: pre-commit/action@v3.0.0
 
     - name: Python Linter
       if: ${{ inputs.skip_linting == 'true' }}
@@ -196,6 +190,7 @@ jobs:
       id: raise
       if: ${{ inputs.deploy == 'true' }}
       run: |
+        git config --global --add safe.directory $(pwd)
         git config --global user.name ${{ secrets.auto_commit_user }}
         git config --global user.email ${{ secrets.auto_commit_mail }}
         git add setup.py
@@ -264,6 +259,9 @@ jobs:
 
 
   Release:
+    strategy:
+      matrix:
+        publish_repo: ${{ fromJSON(inputs.prod_publish_repos) }}
     if: ${{ inputs.release == 'true' }}
     runs-on: ubuntu-20.04
     container:
@@ -282,6 +280,7 @@ jobs:
 
     - name: Fetch artifact from github release
       run: |
+        git config --global --add safe.directory $(pwd)
         mkdir dist
         cd dist
         gh release download ${{ steps.vars.outputs.tag}} -p *.whl
@@ -295,9 +294,9 @@ jobs:
         name: packages
         path: dist/*
 
-    - name: Publish package to TestPyPI
+    - name: Publish package to ${{ matrix.publish_repo }}
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: ${{ secrets.nexus_publisher_user }}
         password: ${{ secrets.nexus_publisher_password }}
-        repository_url: https://artifacts.cloud.mov.ai/repository/pypi-edge/
+        repository_url: https://artifacts.cloud.aws.mov.ai/repository/${{ matrix.publish_repo }}/
