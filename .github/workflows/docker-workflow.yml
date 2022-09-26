@@ -70,7 +70,7 @@ on:
       download_artifact_path:
         required: false
         type: string
-        default: dist
+        default: ./dist
         description: path where package is downloaded
     secrets:
       registry_user:
@@ -167,7 +167,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: packages
-          path: inputs.download_artifact_path
+          path: ${{ inputs.download_artifact_path }}
 
       - name: Set up QEMU for multi platform
         if: ${{ contains(inputs.platforms, 'arm') }}
