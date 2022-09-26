@@ -14,11 +14,16 @@ on:
         required: false
         type: string
         default: 'false'
+        description: DEPRECATED - to be removed on v2
+      run_black:
+        required: false
+        type: string
+        default: 'false'
+        description: When 'true' black is run stopping the pipeline if any files are not properly formatted
       prod_publish_repos:
         required: false
         type: string
         default: '["ppa-main"]'
-
     secrets:
       auto_commit_user:
         required: true
@@ -58,12 +63,37 @@ jobs:
     - name: install build-requirements
       run: python3 -m pip install -r build-requirements.txt
 
-    - name: Python Linter
-      if: ${{ inputs.skip_linting == 'true' }}
+    - name: Run Black
+      if: ${{ inputs.run_black == 'true' }}
       run: |
-        python3 -m pylint *
-        python3 -m black .
-        python3 -m flake8
+        python3 -m black
+          --line-length 100 \
+          --diff \
+          --check \
+          .
+
+    - name: Python Linters
+      # run linters isolated so no issues are masked from SonarCloud
+      run: |
+        python3 -m flake8 \
+          --isolated \
+          --exclude dist,.*\.egg-info,.git,__pycache__,.tox,venv \
+          --max-complexity 10 \
+          --max-line-length 100 \
+          --exit-zero \
+          --output-file flake8-report.txt
+
+        # pylint seems to not have a way to ignore configuration files
+        # so we need to provide it a dummy one
+        touch dummy-pylint-config
+        python3 -m pylint \
+          --rcfile dummy-pylint-config \
+          --ignore-patterns dist,.*\.egg-info,.git,__pycache__,.tox,venv \
+          --max-line-length 100 \
+          --exit-zero \
+          --recursive y \
+          --output pylint-report.txt \
+          .
 
     - name: Check if SonarCloud project exists
       if: ${{ !github.event.repository.private }}
@@ -153,6 +183,8 @@ jobs:
           -Dsonar.scm.provider=git
           -Dsonar.qualitygate.wait=true
           -Dsonar.qualitygate.timeout=300
+          -Dsonar.python.flake8.reportPaths=flake8-report.txt
+          -Dsonar.python.pylint.reportPaths=pylint-report.txt
 
     - name: Link to SonarCloud dashboard
       if: ${{ !github.event.repository.private }}
@@ -218,7 +250,7 @@ jobs:
         password: ${{ secrets.nexus_publisher_password }}
         repository_url: https://artifacts.cloud.mov.ai/repository/pypi-experimental/
 
-    - name: Publish package to TestPyPI Testing
+    - name: Publish package to TestPyPI Integration
       if: ${{ inputs.deploy == 'true' }}
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
@@ -272,7 +304,7 @@ jobs:
       run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
 
     - name: Fetch artifact from github release
-      run: | 
+      run: |
         git config --global --add safe.directory $(pwd)
         mkdir dist
         cd dist
@@ -286,7 +318,7 @@ jobs:
       with:
         name: packages
         path: dist/*
-        
+
     - name: Publish package to ${{ matrix.publish_repo }}
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
