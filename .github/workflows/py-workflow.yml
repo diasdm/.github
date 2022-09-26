@@ -95,6 +95,16 @@ jobs:
           --output pylint-report.txt \
           .
 
+    - name: Run tests
+      run: |
+        if [ -f tox.ini ]; then
+            # run tests and generates coverage.xml
+            tox
+        else
+            # run tests
+            python3 -m pytest tests/
+        fi
+
     - name: Check if SonarCloud project exists
       if: ${{ !github.event.repository.private }}
       id: sonar_project
@@ -178,22 +188,19 @@ jobs:
         args: >
           -Dsonar.organization=mov-ai
           -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}
-          -Dsonar.verbose=true
           -Dsonar.sources=.
           -Dsonar.scm.provider=git
           -Dsonar.qualitygate.wait=true
           -Dsonar.qualitygate.timeout=300
           -Dsonar.python.flake8.reportPaths=flake8-report.txt
           -Dsonar.python.pylint.reportPaths=pylint-report.txt
+          -Dsonar.python.coverage.reportPaths=coverage.xml
 
     - name: Link to SonarCloud dashboard
       if: ${{ !github.event.repository.private }}
       shell: bash
       run: |
         echo "Please check report here: https://sonarcloud.io/project/overview?id=${{ github.repository_owner }}_${{ github.event.repository.name }}"
-
-    - name: Run tests
-      run: python3 -m pytest
 
     - name: Raise version
       if: ${{ inputs.deploy == 'true' }}
