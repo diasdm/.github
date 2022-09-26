@@ -72,6 +72,11 @@ on:
         type: string
         default: ./dist
         description: path where package is downloaded
+      target:
+        required: false
+        type: string
+        default:
+        description: string of docker build target
     secrets:
       registry_user:
         required: true
@@ -186,6 +191,7 @@ jobs:
           file: ${{ inputs.docker_file }}
           push: ${{ inputs.deploy }}
           tags: ${{ steps.get_image_names.outputs.DOCKER_IMAGES }}
+          target: ${{ inputs.target }}
           pull: true
           build-args: |
             ${{ fromJson(steps.get_build_args.outputs.build_args_json) }}
@@ -199,6 +205,7 @@ jobs:
           file: ${{ inputs.docker_file }}
           push: ${{ inputs.deploy }}
           tags: ${{ steps.get_image_names.outputs.DOCKER_IMAGES }}
+          target: ${{ inputs.target }}
           pull: true
 
       - name: Snyk check
