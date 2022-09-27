@@ -23,7 +23,7 @@ on:
       prod_publish_repos:
         required: false
         type: string
-        default: '["ppa-main"]'
+        default: '["pypi-edge"]'
     secrets:
       auto_commit_user:
         required: true
