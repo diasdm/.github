@@ -1,4 +1,4 @@
-name: Build and pack py packages 
+name: Build and pack py packages
 on:
   workflow_call:
     inputs:
@@ -48,7 +48,7 @@ jobs:
     container:
       image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
       credentials:
-        username: ${{secrets.registry_user}} 
+        username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
     outputs:
       package_name: ${{ steps.vars.outputs.py_pkg_name }}
@@ -56,7 +56,7 @@ jobs:
       raise_commit : ${{steps.raise.outputs.commit_id}}
 
     steps:
-    - name: Checkout    
+    - name: Checkout
       uses: actions/checkout@v2
       with:
         # Disabling shallow clone is recommended for improving relevancy of reporting
@@ -108,7 +108,7 @@ jobs:
       run: |
         PACKAGE_VERSION=$(cat .bumpversion.cfg | sed s/' '/''/g | grep 'current_version=' | sed s/'current_version='/''/g)
         PACKAGE_NAME=$(cat setup.py | grep name | cut -d '"' -f2)
-        
+
         echo ::set-output name=py_pkg_name::$PACKAGE_NAME
         echo ::set-output name=py_pkg_version::$PACKAGE_VERSION
 
@@ -128,7 +128,7 @@ jobs:
         git pull
         git push --force-with-lease
         commit_hash=$(git log --format="%H" -n 1)
-        echo ::set-output name=commit_id::$commit_hash  
+        echo ::set-output name=commit_id::$commit_hash
 
     - name: Enable 4 digit version
       id: releasevars
@@ -171,7 +171,7 @@ jobs:
       image: registry.aws.cloud.mov.ai/qa/ros-buildtools-noetic:latest
       options: --user root
       credentials:
-        username: ${{secrets.registry_user}} 
+        username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
     outputs:
       package_name: ${{ needs.Build.outputs.package_name }}
@@ -179,7 +179,7 @@ jobs:
       raise_commit: ${{needs.Build.outputs.raise_commit}}
     steps:
 
-    - name: Checkout    
+    - name: Checkout
       uses: actions/checkout@v2
       with:
         submodules: recursive
@@ -212,10 +212,10 @@ jobs:
     container:
       image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
       credentials:
-        username: ${{secrets.registry_user}} 
+        username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
     steps:
-      - name: Checkout    
+      - name: Checkout
         uses: actions/checkout@v2
         with:
           submodules: recursive
@@ -249,7 +249,7 @@ jobs:
               #retry
               if [[ ! "$RETURN_CODE" =~ ^(200|201|202)$ ]]; then
                 echo "Failed upload with $RETURN_CODE. Retrying"
-              
+
                 RETURN_CODE=$(curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
                   -H "Content-Type: multipart/form-data" \
                   --data-binary "@$file" \
@@ -261,9 +261,9 @@ jobs:
                 echo "Failed upload with $RETURN_CODE. Exiting"
                 exit 1
               fi
-              
+
             done
-      
+
       - name: Publish to Nexus ppa-testing
         shell: bash
         run: |
@@ -281,7 +281,7 @@ jobs:
               #retry
               if [[ ! "$RETURN_CODE" =~ ^(200|201|202)$ ]]; then
                 echo "Failed upload with $RETURN_CODE. Retrying"
-              
+
                 RETURN_CODE=$(curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
                   -H "Content-Type: multipart/form-data" \
                   --data-binary "@$file" \
@@ -293,15 +293,15 @@ jobs:
                 echo "Failed upload with $RETURN_CODE. Exiting"
                 exit 1
               fi
-              
+
             done
 
       - name: Create Github Release
         if: ${{ inputs.deploy == 'true' }}
         shell: bash
         run: |
-          title="Release of ${{ needs.Debian-Pack.outputs.package_version }}" 
-          git config --global --add safe.directory $(pwd)          
+          title="Release of ${{ needs.Debian-Pack.outputs.package_version }}"
+          git config --global --add safe.directory $(pwd)
           gh release create -p -t "$title" -n "Release notes for ${{ needs.Debian-Pack.outputs.package_name }}" \
           --target ${{ needs.Debian-Pack.outputs.raise_commit }} \
           --generate-notes \
@@ -313,13 +313,13 @@ jobs:
             # do nothing if folder is empty
             if [[ $asset != "dist/*" ]]; then
               gh release upload ${{ needs.Debian-Pack.outputs.package_version }} $asset
-            fi 
+            fi
           done
           for asset in artifacts/*; do
             # do nothing if folder is empty
             if [[ $asset != "artifacts/*" ]]; then
               gh release upload ${{ needs.Debian-Pack.outputs.package_version }} $asset
-            fi 
+            fi
           done
         env:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
@@ -333,11 +333,11 @@ jobs:
     container:
       image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
       credentials:
-        username: ${{secrets.registry_user}} 
+        username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
 
     steps:
-    - name: Checkout    
+    - name: Checkout
       uses: actions/checkout@v2
 
     - name: Set tag output
@@ -345,7 +345,7 @@ jobs:
       run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
 
     - name: Fetch python artifact from github release
-      run: | 
+      run: |
         mkdir dist
         git config --global --add safe.directory $(pwd)
         cd dist
@@ -367,14 +367,14 @@ jobs:
       with:
         name: artifacts
         path: artifacts/*.deb
-        
+
     - name: Publish package to prod PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: ${{ secrets.nexus_publisher_user }}
         password: ${{ secrets.nexus_publisher_password }}
         repository_url: https://artifacts.cloud.mov.ai/repository/${{ inputs.prod_publish_pypi }}/
-  
+
     - name: Publish to Nexus
       run: |
           NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
