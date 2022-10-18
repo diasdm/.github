@@ -253,7 +253,11 @@ jobs:
       with:
         name: deploy_artifacts_noetic
         path: artifacts/*
-
+    - name: Docker cleanups
+      shell: bash
+      run: |
+        docker system prune -f
+        docker image prune --all -f
   
   Build-Simulator:
     needs: [Validate-boostrap-configs]
@@ -367,6 +371,12 @@ jobs:
         name: deploy_simulator_artifacts
         path: simulator.image.artifact
 
+    - name: Docker cleanups
+      shell: bash
+      run: |
+        docker system prune -f
+        docker image prune --all -f
+
   publish:
     needs: [Build-Spawner, Build-Simulator]
     runs-on: integration-pipeline
@@ -468,6 +478,8 @@ jobs:
             gh release create -p --generate-notes --target "$commit_hash" -t "${{ inputs.product_name }} $product_version" $product_version
             # add all files in the deployment_artifacts folder
             find deployment_artifacts -type f -exec gh release upload $product_version {} \;
+      env:
+        GITHUB_TOKEN: ${{ secrets.gh_token }}
 
     - name: Prepare slack variables
       if: always()
