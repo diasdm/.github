@@ -453,7 +453,7 @@ jobs:
       uses: CasperWA/push-protected@v2
       with:
         token: ${{ secrets.auto_commit_pwd }}
-        branch: ${GITHUB_REF_NAME}
+        branch: ${{ GITHUB_REF_NAME }}
         unprotect_reviews: true
 
     - name: Github Publish
@@ -469,7 +469,7 @@ jobs:
       id: pre_slack
       run: |
             MESSAGE="PIPELINE: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is stable :sunny: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" 
-            MESSAGE_ERR="PIPELINE: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is unstable :rain_cloud: Details: https://github.com/MOV-AI/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            MESSAGE_ERR="PIPELINE: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is unstable :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
             echo ::set-output name=msg::$MESSAGE
             echo ::set-output name=msg_error::$MESSAGE_ERR
 
