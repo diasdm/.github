@@ -383,9 +383,9 @@ jobs:
     needs: [Build-Spawner, Build-Simulator]
     runs-on: integration-pipeline
     steps:
+    - uses: rtCamp/action-cleanup@master
     - name: Checkout
       uses: actions/checkout@v3
-
     - name: unstash raised_meta
       uses: actions/download-artifact@v2
       with:
