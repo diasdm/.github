@@ -446,7 +446,7 @@ jobs:
             
             git add product.version
             git commit -m "Automatic Raise"
-            git push origin HEAD:${GITHUB_REF#refs/heads/}
+            git push origin HEAD:${GITHUB_REF#refs/heads/} --force
             commit_hash=$(git log --format="%H" -n 1)
             gh release create -p --generate-notes --target "$commit_hash" -t "${{ inputs.product_name }} $product_version" $product_version
             # add all files in the deployment_artifacts folder
