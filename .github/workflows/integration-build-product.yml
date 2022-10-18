@@ -477,6 +477,7 @@ jobs:
       shell: bash
       run: |
             commit_hash=$(git log --format="%H" -n 1)
+            product_version=$(cat product.version)
             gh release create -p --generate-notes --target "$commit_hash" -t "${{ inputs.product_name }} $product_version" $product_version
             # add all files in the deployment_artifacts folder
             find deployment_artifacts -type f -exec gh release upload $product_version {} \;
