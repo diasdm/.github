@@ -455,6 +455,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.gh_token }}
 
     - name: Prepare slack variables
+      if: always()
       id: pre_slack
       run: |
             MESSAGE="PIPELINE: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is stable :sunny: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" 
