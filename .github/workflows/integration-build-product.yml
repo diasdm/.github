@@ -446,13 +446,23 @@ jobs:
             
             git add product.version
             git commit -m "Automatic Raise"
-            git push origin HEAD:${GITHUB_REF#refs/heads/} --force
+      env:
+        GITHUB_TOKEN: ${{ secrets.gh_token }}
+
+    - name: Raise App version
+      uses: CasperWA/push-protected@v2
+      with:
+        token: ${{ secrets.auto_commit_pwd }}
+        branch: ${GITHUB_REF_NAME}
+        unprotect_reviews: true
+
+    - name: Github Publish
+      shell: bash
+      run: |
             commit_hash=$(git log --format="%H" -n 1)
             gh release create -p --generate-notes --target "$commit_hash" -t "${{ inputs.product_name }} $product_version" $product_version
             # add all files in the deployment_artifacts folder
             find deployment_artifacts -type f -exec gh release upload $product_version {} \;
-      env:
-        GITHUB_TOKEN: ${{ secrets.gh_token }}
 
     - name: Prepare slack variables
       if: always()
