@@ -254,6 +254,7 @@ jobs:
         name: deploy_artifacts_noetic
         path: artifacts/*
     - name: Docker cleanups
+      if: always()
       shell: bash
       run: |
         docker system prune -f
@@ -372,6 +373,7 @@ jobs:
         path: simulator.image.artifact
 
     - name: Docker cleanups
+      if: always()
       shell: bash
       run: |
         docker system prune -f
