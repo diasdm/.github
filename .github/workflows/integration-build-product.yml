@@ -210,7 +210,7 @@ jobs:
             rm movai_service_version
 
     - name: Run mobtest
-      continue-on-error: ${{ stop_on_mobtest_error }}
+      continue-on-error: ${{ inputs.continue_on_mobtest_error }}
       shell: bash
       run: |
             container_id=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
