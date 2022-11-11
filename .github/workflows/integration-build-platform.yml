@@ -274,7 +274,7 @@ jobs:
           . venv/bin/activate
           pip install -r requirements.txt
           rm -rf results/*
-          pytest --repository_user=${{secrets.registry_user}} --repository_token=${{secrets.registry_password}} --configFileTest --installPath="." --jsonConfigFilePath="../basic-standalone-noetic.json.ci"
+          pytest tests/ -k 'AMR_installation_validator' --installPath="." --jsonConfigFilePath="../basic-standalone-noetic.json.ci"
           deactivate
           rm -R venv
 
