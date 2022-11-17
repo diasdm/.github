@@ -286,6 +286,25 @@ jobs:
           deactivate
           rm -R venv
 
+      - name: Prepare QA Feature File Validation slack message
+        if: always()
+        id: pre_slack
+        run: |
+          MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is unstable :rain_cloud: \
+          Feature File Validation Step FAILED and stopped Pipeline :rain_cloud: \
+          Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} \
+          Validate logs for cause troubleshooting."
+          echo ::set-output name=msg_error::$MESSAGE_ERR
+
+      - name: Slack message failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          channel-id: "C02PB9A9F45"
+          slack-message: ${{ steps.pre_slack.outputs.msg_error }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
+
       - name: Install tests
         id: install
         working-directory: ${{ steps.install_tests_setup.outputs.target_dir }}
