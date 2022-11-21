@@ -87,7 +87,7 @@ jobs:
         if [ -f build-apt-requirements.txt ]; then
           apt update
           apt install -y $(grep -vE "^\s*#" build-apt-requirements.txt  | tr "\n" " ")
-        endif
+        fi
         python3 -m pip install -r build-requirements.txt
 
     - name: Install python package
