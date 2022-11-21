@@ -82,8 +82,11 @@ jobs:
         fetch-depth: 0
         submodules: recursive
 
-    - name: install build-requirements
+    - name: Install build-requirements
       run: python3 -m pip install -r build-requirements.txt
+
+    - name: Install python package
+      run: python3 -m pip install .
 
     - name: Run Black
       if: ${{ inputs.run_black == 'true' }}
