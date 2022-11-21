@@ -90,7 +90,7 @@ jobs:
           if [ "${{ inputs.with_simulation }}" = "true" ];
           then
           integration-pipeline generate_meta_simulator_artifacts \
-                --manifest_platform_base_key product-dependencies \
+                --manifest_platform_base_key product_dependencies \
                 --product_name ${{ inputs.product_name }} \
                 --branch ${GITHUB_REF#refs/heads/} \
                 --update_simulator \
@@ -152,7 +152,7 @@ jobs:
           cp ./platform_configs/product-manifest.yaml product-manifest.yaml
           export PATH="$HOME/.local/bin:$PATH"
           cat product-manifest.yaml
-          integration-pipeline generate_meta_artifacts --update_simulator --override_spawner ${{ inputs.product_name }} --manifest_platform_base_key "product-dependencies"
+          integration-pipeline generate_meta_artifacts --update_simulator --override_spawner ${{ inputs.product_name }} --manifest_platform_base_key "product_dependencies"
 
       - name: Stash manifest
         uses: actions/upload-artifact@v2
