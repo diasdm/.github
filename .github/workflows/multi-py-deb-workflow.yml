@@ -86,6 +86,7 @@ jobs:
       run: |
         if [ -f build-apt-requirements.txt ]; then
           apt update
+          echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
           apt install -y $(grep -vE "^\s*#" build-apt-requirements.txt  | tr "\n" " ")
         fi
         python3 -m pip install -r build-requirements.txt
