@@ -17,6 +17,10 @@ on:
         required: false
         type: string
         default: '["ppa-main"]'
+      build_modes:
+        required: false
+        type: string
+        default: '["release"]'
 
 
     secrets:
@@ -46,7 +50,7 @@ jobs:
     strategy:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
-        build_mode: ["debug","release"]
+        build_mode: ${{ fromJSON(inputs.build_modes) }} 
     if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
