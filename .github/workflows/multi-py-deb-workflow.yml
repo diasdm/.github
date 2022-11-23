@@ -417,6 +417,15 @@ jobs:
     if: ${{ inputs.release == 'false' && inputs.install_test == 'true' }}
     runs-on: ubuntu-20.04
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install test requirements
+        run: |
+          python3 -m pip install -r build-requirements.txt
+
       - name: Prereq Docker
         if: ${{ inputs.install_test_docker == 'true' }}
         run: |
