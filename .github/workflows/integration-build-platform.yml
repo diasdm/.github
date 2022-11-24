@@ -384,7 +384,7 @@ jobs:
             --base_url https://${{ steps.agent_info.outputs.ip }}/ \
             --username ${{ steps.install.outputs.movai_user }} \
             --password ${{ steps.install.outputs.movai_pwd }} \
-            --tb=short
+            --tb=short \
             --jira_report ${{ steps.ui_tests_setup.outputs.report_jira }}
           deactivate
           rm -R venv
