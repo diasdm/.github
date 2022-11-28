@@ -441,9 +441,11 @@ jobs:
 
       - name: Install debian artifacts
         run: |
-          sudo apt update
+          alias apt="sudo apt"
+          export
+          apt update
           cd artifacts/
-          find ./ -name "*.deb" -not -name "*src*" -exec sudo apt install -y {} \;
+          find ./ -name "*.deb" -not -name "*src*" -exec apt install -y {} \;
 
       - name: Download a single artifact
         uses: actions/download-artifact@v2
