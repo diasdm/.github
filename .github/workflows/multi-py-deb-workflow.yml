@@ -442,7 +442,7 @@ jobs:
       - name: Install debian artifacts
         run: |
           alias apt="sudo apt"
-          export
+          export apt
           apt update
           cd artifacts/
           find ./ -name "*.deb" -not -name "*src*" -exec apt install -y {} \;
