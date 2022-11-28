@@ -42,7 +42,7 @@ on:
         required: true
 
 env:
-  CI_INTEGRATION_SCRIPTS_VERSION: "2.1.0.18"
+  CI_INTEGRATION_SCRIPTS_VERSION: "2.1.0.19"
   MOBTEST_VERSION: "0.0.3.2"
   PACKAGE_DEPLOYER_VERSION: "1.0.0.21"
   GITHUB_API_USR: "OttoMation-Movai"
@@ -496,9 +496,9 @@ jobs:
             product_version=$(cat product.version)
             # danger zone. Everything will be deleted.
             git restore product.version
+            git restore product-manifest.yaml
             git pull
             echo "$product_version" > product.version
-
 
             git add product.version
             git commit -m "Automatic Raise"
