@@ -95,7 +95,7 @@ jobs:
                 --branch ${GITHUB_REF#refs/heads/} \
                 --update_simulator \
                 --docker_registry $REGISTRY
-          
+
           mkdir simulator_artifacts
           cp ci_artifacts/* ./simulator_artifacts
           fi
@@ -419,25 +419,25 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@v3
-    
+
     - name: unstash raised_meta
       uses: actions/download-artifact@v2
       with:
         name: raised_meta
         path: platform_configs
-    
+
     - name: unstash deploy_artifacts_noetic
       uses: actions/download-artifact@v2
       with:
         name: deploy_artifacts_noetic
         path: artifacts
-    
+
     - name: unstash manifest
       uses: actions/download-artifact@v2
       with:
         name: manifest
         path: .
-    
+
     - name: unstash deploy_simulator_artifacts
       if: ${{ inputs.with_simulation == 'true' }}
       uses: actions/download-artifact@v2
@@ -501,7 +501,7 @@ jobs:
 
 
             git add product.version
-            git commit -m "Automatic Raise"
+            git commit -m "[skip actions] Automatic Raise"
       env:
         GITHUB_TOKEN: ${{ secrets.gh_token }}
 

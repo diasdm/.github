@@ -221,7 +221,7 @@ jobs:
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.target_dir --output_file /tmp/target_dir.txt
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.version --output_file /tmp/version.txt
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.name --output_file /tmp/repo_name.txt
-          
+
           tests_dir=$(cat /tmp/target_dir.txt)
           tests_version=$(cat /tmp/version.txt)
           tests_repo_name=$(cat /tmp/repo_name.txt)
@@ -272,7 +272,7 @@ jobs:
           ls -la $tests_dir
           echo ::set-output name=target_dir::$tests_dir
           echo ::set-output name=version::$tests_version
-      
+
       - name: Feature File Validation
         working-directory: ${{ steps.ui_tests_setup.outputs.target_dir }}
         shell: bash
@@ -320,7 +320,7 @@ jobs:
 
           #export USERSPACE_FOLDER_PATH="$(pwd)/$USERSPACE_FOLDER_PATH"
           #sudo chmod 777 -Rf $USERSPACE_FOLDER_PATH
-          
+
           #popd
 
           python3 -m venv venv
@@ -416,7 +416,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p artifacts
-          
+
           used_images=($(docker images --format "{{.Repository}}:{{.Tag}}" | tr ' ' "\n"))
           for image in "${used_images[@]}"
           do
@@ -455,12 +455,12 @@ jobs:
         with:
           name: deploy_artifacts_${{ matrix.distro }}
           path: artifacts/*.dploy
-      
+
       - name: Stash QA artifacts
         if: always()
         shell: bash
         run: |
-          
+
           mkdir qa_artifacts
           cp -r install/results/*.log ./qa_artifacts
           cp -r install/results/test_report_*.html ./qa_artifacts
@@ -471,7 +471,7 @@ jobs:
         with:
           name: qa_artifacts
           path: qa_artifacts/*
-      
+
       - name: Remove robots
         if: always()
         shell: bash
@@ -621,7 +621,7 @@ jobs:
           echo "Deleting $(cat aws_artifacts/infra_ids.txt)"
           python3 -m pip install awscli
           export PATH="$HOME/.local/bin:$PATH"
-          aws ec2 terminate-instances --instance-ids $(cat aws_artifacts/infra_ids.txt)                        
+          aws ec2 terminate-instances --instance-ids $(cat aws_artifacts/infra_ids.txt)
           echo "Deleting $(cat aws_artifacts/infra_ids.txt)"
           python3 -m pip install awscli
           export PATH="$HOME/.local/bin:$PATH"
@@ -829,7 +829,7 @@ jobs:
           mv product-manifest.yaml.bck product-manifest.yaml
           git add product.version
           git add product-manifest.yaml
-          git commit -m "Automatic Raise"
+          git commit -m "[skip actions] Automatic Raise"
         env:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
