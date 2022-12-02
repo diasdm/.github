@@ -338,7 +338,7 @@ jobs:
 
   Build-Simulator:
     needs: [Validate-boostrap-configs]
-    runs-on: integration-pipeline-dev
+    runs-on: integration-pipeline
     env:
       DISTRO: noetic
     outputs:
@@ -441,7 +441,7 @@ jobs:
     strategy:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
-    runs-on: integration-pipeline-dev
+    runs-on: integration-pipeline
     steps:
       - uses: rtCamp/action-cleanup@master
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
