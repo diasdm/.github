@@ -561,7 +561,7 @@ jobs:
                 --branch ${GITHUB_REF#refs/heads/}
 
       - name: Push simulator image
-        if: ${{ inputs.with_simulation == 'true' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         id: promote
         shell: bash
         run: |
