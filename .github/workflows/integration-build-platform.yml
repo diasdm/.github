@@ -477,11 +477,13 @@ jobs:
           mkdir qa_artifacts
 
           # install tests artifacts
-          cp -r "${INSTALL_DIR}"/results/*.log ./qa_artifacts
-          cp -r "${INSTALL_DIR}"/results/test_report_*.html ./qa_artifacts
+          mkdir qa_artifacts/install
+          cp -r "${INSTALL_DIR}"/results/*.log ./qa_artifacts/install
+          cp -r "${INSTALL_DIR}"/results/test_report_*.html ./qa_artifacts/install
 
           # flow tests artifacts, they might not exist
-          cp -r "${FLOW_DIR}"/*.log ./qa_artifacts || true
+          mkdir qa_artifacts/flow
+          cp -r "${FLOW_DIR}"/*.log ./qa_artifacts/flow || true
 
       - name: Stash QA artifacts
         if: always()
