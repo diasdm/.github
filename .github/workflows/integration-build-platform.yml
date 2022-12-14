@@ -470,11 +470,20 @@ jobs:
       - name: Stash QA artifacts
         if: always()
         shell: bash
+        env:
+          INSTALL_DIR: ${{ steps.install_tests_setup.outputs.target_dir }}
+          FLOW_DIR: ${{ steps.flow_tests_setup.outputs.target_dir }}
         run: |
-
           mkdir qa_artifacts
-          cp -r install/results/*.log ./qa_artifacts
-          cp -r install/results/test_report_*.html ./qa_artifacts
+
+          # install tests artifacts
+          mkdir qa_artifacts/install
+          cp -r "${INSTALL_DIR}"/results/*.log ./qa_artifacts/install
+          cp -r "${INSTALL_DIR}"/results/test_report_*.html ./qa_artifacts/install
+
+          # flow tests artifacts, they might not exist
+          mkdir qa_artifacts/flow
+          cp -r "${FLOW_DIR}"/*.log ./qa_artifacts/flow || true
 
       - name: Stash QA artifacts
         if: always()
