@@ -404,14 +404,18 @@ jobs:
         working-directory: ${{ steps.flow_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
+          # install test dependencies on host
+          sudp apt install python3-rosnode python3-rosparam python3-rostopic
+          export PYTHONPATH="${PYTHONPATH}:/usr/lib/python3/dist-packages"
+
+          # install test dependencies on spawner
           container_id=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
           docker exec -t "$container_id" bash -c '
             sudo apt update
             sudo apt install -y ros-noetic-movai-qa-node-params=${{ steps.flow_tests_setup.outputs.version }}
           '
-          echo "Movai user: ${{ steps.install.outputs.movai_user }}"
-          echo "Movai password: ${{ steps.install.outputs.movai_pwd }}"
 
+          # run tests
           python3 -m venv venv
           . venv/bin/activate
           python3 -m pip install --upgrade pip
