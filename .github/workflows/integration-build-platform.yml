@@ -405,7 +405,7 @@ jobs:
         shell: bash
         run: |
           # install test dependencies on host
-          sudp apt install python3-rosnode python3-rosparam python3-rostopic
+          sudo apt install python3-rosnode python3-rosparam python3-rostopic
           export PYTHONPATH="${PYTHONPATH}:/usr/lib/python3/dist-packages"
 
           # install test dependencies on spawner
