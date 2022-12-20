@@ -392,7 +392,7 @@ jobs:
 
     - name: Fetch python artifact from github release
       run: |
-        mkdir dist
+        mkdir dist artifacts
         git config --global --add safe.directory $(pwd)
         cd dist
         gh release download ${{ steps.vars.outputs.tag}} -p *.whl
@@ -423,8 +423,12 @@ jobs:
 
     - name: Publish to Nexus
       run: |
-          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
           NEXUS_REPO="${{ matrix.publish_repo }}"
+          if [ "$NEXUS_REPO" != "ppa-public" ]; then
+            NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
+          else
+            NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
+          fi          
           FILE_LOCATION=$(find artifacts/*.deb)
           find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
           -H "Content-Type: multipart/form-data" \
