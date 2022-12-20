@@ -423,7 +423,7 @@ jobs:
           pytest -s \
             --movai-user ${{ steps.install.outputs.movai_user }} \
             --movai-pw ${{ steps.install.outputs.movai_pwd }} \
-            -m 'not simulator' \
+            -m 'not simulator and not exposed_ros' \
             --tb=short
           deactivate
           rm -R venv
