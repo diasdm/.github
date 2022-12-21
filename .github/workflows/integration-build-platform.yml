@@ -409,11 +409,16 @@ jobs:
           export PYTHONPATH="${PYTHONPATH}:/usr/lib/python3/dist-packages"
 
           # install test dependencies on spawner
-          container_id=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
-          docker exec -t "$container_id" bash -c '
+          ## get spawner container name
+          CONTAINER_ID=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
+          ## get apt dependencies
+          APT_DEPS=$(cat apt-requirements.txt | tr "\n" " ")
+          ## install
+          docker exec -t "${CONTAINER_ID}" bash -c "
             sudo apt update
+            sudo apt install -y ${APT_DEPS}
             sudo apt install -y ros-noetic-movai-qa-node-params=${{ steps.flow_tests_setup.outputs.version }}
-          '
+          "
 
           # run tests
           python3 -m venv venv
