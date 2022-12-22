@@ -82,6 +82,10 @@ jobs:
         fetch-depth: 0
         submodules: recursive
 
+    - name: Setup hard link to pip 3.8
+      run: |
+        ln /usr/bin/pip3 /usr/bin/pip3.8
+    
     - name: Install build-requirements
       run: |
         if [ -f build-apt-requirements.txt ]; then
