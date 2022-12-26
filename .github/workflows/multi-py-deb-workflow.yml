@@ -97,9 +97,6 @@ jobs:
         fi
         python3 -m pip install -r build-requirements.txt
 
-    - name: Install python package
-      run: python3 -m pip install .
-
     - name: Run Black
       if: ${{ inputs.run_black == 'true' }}
       run: |
