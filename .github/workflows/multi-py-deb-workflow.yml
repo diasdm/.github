@@ -82,10 +82,8 @@ jobs:
         fetch-depth: 0
         submodules: recursive
 
-    - name: Setup hard link to pip 3.8
+    - name: Create hard link to pip 3.8
       run: |
-        ln -f ${{ matrix.pack_path }}/debian/setup.py setup.py
-        ln -sf ${{ matrix.pack_path }}/debian debian
         ln /usr/bin/pip3 /usr/bin/pip3.8
     
     - name: Install build-requirements
