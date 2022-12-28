@@ -44,6 +44,9 @@ on:
       sonar_token:
         required: true
 
+env:
+  MOBTEST_VERSION: "0.0.3.3"
+
 jobs:
   Build:
     strategy:
@@ -107,7 +110,7 @@ jobs:
       run: |
           python3 -m pip install \
           -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple \
-          mobtest==0.0.2.2 --ignore-installed
+          mobtest==${{ env.MOBTEST_VERSION }} --ignore-installed
 
     - name: Setup link to Ros userspace
       run: |
