@@ -340,7 +340,7 @@ jobs:
           docker image prune --all -f
 
   Build-Simulator:
-    needs: [Validate-boostrap-configs]
+    needs: [Validate-boostrap-configs, Build-Spawner]
     runs-on: integration-pipeline
     env:
       DISTRO: noetic
