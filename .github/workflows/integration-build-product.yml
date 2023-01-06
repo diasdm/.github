@@ -347,31 +347,36 @@ jobs:
     outputs:
       image_name: "${{ steps.pre_simulator_build.outputs.image_name }}"
       skip_simulator: "${{ steps.pre_simulator_build.outputs.skip_simulator_build }}"
-    if: ${{ inputs.with_simulation == 'true' }}
 
     steps:
       - name: Pre clean ups
         uses: rtCamp/action-cleanup@master
+        if: ${{ inputs.with_simulation == 'true' }}
 
       - name: Checkout
         uses: actions/checkout@v3
+        if: ${{ inputs.with_simulation == 'true' }}
 
       - name: Agent info
+        if: ${{ inputs.with_simulation == 'true' }}
         run: |
           echo "public ip: $(curl ipinfo.io/ip)"
           echo "private ip: $(hostname -I | awk '{print $1}')"
 
       - name: Install CI Scripts
+        if: ${{ inputs.with_simulation == 'true' }}
         shell: bash
         run: python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
 
       - name: unstash sim_configs
+        if: ${{ inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v2
         with:
           name: sim_configs
           path: simulator_artifacts
 
       - name: unstash manifest
+        if: ${{ inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v2
         with:
           name: manifest
@@ -379,6 +384,7 @@ jobs:
 
       - name: Prepare Skip variables
         id: pre_simulator_build
+        if: ${{ inputs.with_simulation == 'true' }}
         run: |
           if [ ! -f "simulator_artifacts/version" ]; then
             echo ::set-output name=skip_simulator_build::"true"
@@ -388,7 +394,7 @@ jobs:
           echo ::set-output name=image_name::"${{ env.REGISTRY }}/ci/$(cat simulator_artifacts/simulator_name.ci)"
 
       - name: Lint docker image
-        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' }}
+        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
           wget https://github.com/hadolint/hadolint/releases/download/v2.9.3/hadolint-Linux-x86_64
@@ -396,7 +402,7 @@ jobs:
           ./hadolint-Linux-x86_64 docker/$DISTRO/Dockerfile-simulator -t error
 
       - name: Fetch artifacts
-        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' }}
+        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
           export PATH="$HOME/.local/bin:$PATH"
@@ -408,7 +414,7 @@ jobs:
           if [ ! -d ./models ]; then mkdir -p ./models; fi
 
       - name: Login to Private Registry
-        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' }}
+        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.registry_user }}
@@ -416,13 +422,13 @@ jobs:
           registry: ${{ env.REGISTRY }}
 
       - name: Prepare docker build variables
-        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' }}
+        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
         id: pre_build
         run: |
           echo ::set-output name=base_name::$(cat simulator_artifacts/simulator_base.ci)
 
       - name: Build with args and push
-        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' }}
+        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true'}}
         uses: docker/build-push-action@v3
         with:
           context: .
@@ -450,47 +456,48 @@ jobs:
     runs-on: integration-pipeline
     steps:
       - uses: rtCamp/action-cleanup@master
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
 
       - name: Checkout
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/checkout@v3
 
       - name: Agent info
+        if: ${{ inputs.with_simulation == 'true' }}
         run: |
           echo "public ip: $(curl ipinfo.io/ip)"
           echo "private ip: $(hostname -I | awk '{print $1}')"
 
       - name: unstash raised_meta
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v2
         with:
           name: raised_meta
           path: .
 
       - name: unstash manifest
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v2
         with:
           name: manifest
           path: .
 
       - name: unstash sim_configs
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v2
         with:
           name: sim_configs
           path: simulator_artifacts
 
       - name: unstash robot_jsons_${{ matrix.distro }}
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v2
         with:
           name: robot_jsons_${{ matrix.distro }}
           path: .
 
       - name: Login to Private Registry
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.registry_user }}
@@ -498,14 +505,14 @@ jobs:
           registry: ${{ env.REGISTRY }}
 
       - name: Docker load spawner image
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
           docker pull "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
           docker tag "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
 
       - name: Docker load simulator image
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
           promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g")
@@ -513,7 +520,7 @@ jobs:
           docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
 
       - name: Installation
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
           for robot in $(movai-cli robots list); do
@@ -543,7 +550,7 @@ jobs:
           SIMULATION_ID: "CI"
 
       - name: Run mobtest
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
           container_id=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
