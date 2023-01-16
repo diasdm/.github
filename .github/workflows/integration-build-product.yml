@@ -340,7 +340,7 @@ jobs:
           docker image prune --all -f
 
   Build-Simulator:
-    needs: [Validate-boostrap-configs]
+    needs: [Validate-boostrap-configs, Build-Spawner]
     runs-on: integration-pipeline
     env:
       DISTRO: noetic
@@ -350,14 +350,15 @@ jobs:
 
     steps:
       - name: Pre clean ups
-        if: ${{ inputs.with_simulation == 'true' }}
         uses: rtCamp/action-cleanup@master
+        if: ${{ inputs.with_simulation == 'true' }}
 
       - name: Checkout
-        if: ${{ inputs.with_simulation == 'true' }}
         uses: actions/checkout@v3
+        if: ${{ inputs.with_simulation == 'true' }}
 
       - name: Agent info
+        if: ${{ inputs.with_simulation == 'true' }}
         run: |
           echo "public ip: $(curl ipinfo.io/ip)"
           echo "private ip: $(hostname -I | awk '{print $1}')"
@@ -374,9 +375,16 @@ jobs:
           name: sim_configs
           path: simulator_artifacts
 
-      - name: Prepare Skip variables
+      - name: unstash manifest
         if: ${{ inputs.with_simulation == 'true' }}
+        uses: actions/download-artifact@v2
+        with:
+          name: manifest
+          path: .
+
+      - name: Prepare Skip variables
         id: pre_simulator_build
+        if: ${{ inputs.with_simulation == 'true' }}
         run: |
           if [ ! -f "simulator_artifacts/version" ]; then
             echo ::set-output name=skip_simulator_build::"true"
@@ -403,6 +411,7 @@ jobs:
           --gh_api_user $GITHUB_API_USR \
           --gh_api_pwd ${{ secrets.auto_commit_pwd }} \
           --target_dir "./models"
+          if [ ! -d ./models ]; then mkdir -p ./models; fi
 
       - name: Login to Private Registry
         if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
@@ -419,7 +428,7 @@ jobs:
           echo ::set-output name=base_name::$(cat simulator_artifacts/simulator_base.ci)
 
       - name: Build with args and push
-        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
+        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true'}}
         uses: docker/build-push-action@v3
         with:
           context: .
@@ -447,47 +456,48 @@ jobs:
     runs-on: integration-pipeline
     steps:
       - uses: rtCamp/action-cleanup@master
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
 
       - name: Checkout
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/checkout@v3
 
       - name: Agent info
+        if: ${{ inputs.with_simulation == 'true' }}
         run: |
           echo "public ip: $(curl ipinfo.io/ip)"
           echo "private ip: $(hostname -I | awk '{print $1}')"
 
       - name: unstash raised_meta
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v2
         with:
           name: raised_meta
           path: .
 
       - name: unstash manifest
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v2
         with:
           name: manifest
           path: .
 
       - name: unstash sim_configs
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v2
         with:
           name: sim_configs
           path: simulator_artifacts
 
       - name: unstash robot_jsons_${{ matrix.distro }}
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v2
         with:
           name: robot_jsons_${{ matrix.distro }}
           path: .
 
       - name: Login to Private Registry
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.registry_user }}
@@ -495,14 +505,14 @@ jobs:
           registry: ${{ env.REGISTRY }}
 
       - name: Docker load spawner image
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
           docker pull "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
           docker tag "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
 
       - name: Docker load simulator image
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
           promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g")
@@ -510,7 +520,7 @@ jobs:
           docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
 
       - name: Installation
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
           for robot in $(movai-cli robots list); do
@@ -540,7 +550,7 @@ jobs:
           SIMULATION_ID: "CI"
 
       - name: Run mobtest
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
           container_id=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")

@@ -57,7 +57,7 @@ on:
       xray_secret:
         required: true
 env:
-  CI_INTEGRATION_SCRIPTS_VERSION: "2.1.0.21"
+  CI_INTEGRATION_SCRIPTS_VERSION: "2.1.0.22"
   MOBTEST_VERSION: "0.0.3.3"
   PACKAGE_DEPLOYER_VERSION: "1.0.0.21"
   GITHUB_API_USR: "OttoMation-Movai"
@@ -727,6 +727,7 @@ jobs:
                 --gh_api_user $GITHUB_API_USR \
                 --gh_api_pwd ${{ secrets.auto_commit_pwd }} \
                 --target_dir "./models"
+          if [ ! -d ./models ]; then mkdir -p ./models; fi
 
       - name: Login to Private Registry
         if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' }}
