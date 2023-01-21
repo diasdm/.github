@@ -321,7 +321,7 @@ jobs:
         PKG_VERSION_ANCHOR='$PKG_VERSION'
         sed -i "s/$PKG_VERSION_ANCHOR/${{ needs.Raise.outputs.package_version }}/g" ./debian/postinst
         sed -i "s/$PKG_VERSION_ANCHOR/${{ needs.Raise.outputs.package_version }}/g" ./debian/prerm
-
+        curl -fsSL https://artifacts.cloud.mov.ai/repository/movai-applications/gpg | sudo apt-key add -
         apt update
         install_tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes"
         mk-build-deps --install --root-cmd sudo --tool="${install_tool}" debian/control
