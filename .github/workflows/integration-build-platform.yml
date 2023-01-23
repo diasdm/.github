@@ -378,7 +378,7 @@ jobs:
               --browser_version 91.0 \
               --base_url https://${{ steps.agent_info.outputs.ip }}/ \
               --username ${{ steps.install.outputs.movai_user }} \
-              --password ${{ steps.install.outputs.movai_pwd }}
+              --password ${{ steps.install.outputs.movai_pwd }} \
               --jira_report
           else
               pytest \
