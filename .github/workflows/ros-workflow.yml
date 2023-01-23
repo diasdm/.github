@@ -286,6 +286,11 @@ jobs:
         generate_release_notes: true
         files: artifacts/*.deb
 
+    - name: Add movai-ros-pkg topic to repository
+      run: gh repo edit --add-topic movai-ros-pkg
+      env:
+        GITHUB_TOKEN: ${{ secrets.gh_token }}
+
   Release:
     strategy:
       matrix:
