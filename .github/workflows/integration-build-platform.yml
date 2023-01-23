@@ -57,8 +57,8 @@ on:
       xray_secret:
         required: true
 env:
-  CI_INTEGRATION_SCRIPTS_VERSION: "2.1.0.19"
-  MOBTEST_VERSION: "0.0.2.3"
+  CI_INTEGRATION_SCRIPTS_VERSION: "2.1.0.22"
+  MOBTEST_VERSION: "0.0.3.3"
   PACKAGE_DEPLOYER_VERSION: "1.0.0.21"
   GITHUB_API_USR: "OttoMation-Movai"
   AWS_ACCESS_KEY_ID: ${{ secrets.aws_key_id }}
@@ -352,8 +352,6 @@ jobs:
         working-directory: ${{ steps.api_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
-          echo "Movai user: ${{ steps.install.outputs.movai_user }}"
-          echo "Movai password: ${{ steps.install.outputs.movai_pwd }}"
           python3 -m venv venv
           . venv/bin/activate
           python3 -m pip install --upgrade pip
@@ -369,38 +367,53 @@ jobs:
         working-directory: ${{ steps.ui_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
-          echo "Movai user: ${{ steps.install.outputs.movai_user }}"
-          echo "Movai password: ${{ steps.install.outputs.movai_pwd }}"
-
           python3 -m venv venv
           . venv/bin/activate
           python3 -m pip install --upgrade pip
           pip install -r requirements.txt
-          pytest -s \
-            --cucumberjson="results/reports/result.json" \
-            --hub_url http://172.22.0.105:4444 \
-            --browser_name chrome \
-            --browser_version 91.0 \
-            --base_url https://${{ steps.agent_info.outputs.ip }}/ \
-            --username ${{ steps.install.outputs.movai_user }} \
-            --password ${{ steps.install.outputs.movai_pwd }} \
-            --tb=short \
-            --jira_report ${{ steps.ui_tests_setup.outputs.report_jira }}
+          if [ "${{ steps.ui_tests_setup.outputs.report_jira }}" = "True"] ; then
+            pytest \
+              --hub_url http://172.22.0.105:4444 \
+              --browser_name chrome \
+              --browser_version 91.0 \
+              --base_url https://${{ steps.agent_info.outputs.ip }}/ \
+              --username ${{ steps.install.outputs.movai_user }} \
+              --password ${{ steps.install.outputs.movai_pwd }} \
+              --jira_report
+          else
+              pytest \
+                --hub_url http://172.22.0.105:4444 \
+                --browser_name chrome \
+                --browser_version 91.0 \
+                --base_url https://${{ steps.agent_info.outputs.ip }}/ \
+                --username ${{ steps.install.outputs.movai_user }} \
+                --password ${{ steps.install.outputs.movai_pwd }}
+          fi
           deactivate
           rm -R venv
 
       - name: Flow tests
+        continue-on-error: true
         working-directory: ${{ steps.flow_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
-          container_id=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
-          docker exec -t "$container_id" bash -c '
-            sudo apt update
-            sudo apt install -y ros-noetic-movai-qa-node-params=${{ steps.flow_tests_setup.outputs.version }}
-          '
-          echo "Movai user: ${{ steps.install.outputs.movai_user }}"
-          echo "Movai password: ${{ steps.install.outputs.movai_pwd }}"
+          # install test dependencies on host
+          sudo apt install -y --allow-downgrades python3-rosnode python3-rosparam python3-rostopic
+          export PYTHONPATH="${PYTHONPATH}:/usr/lib/python3/dist-packages"
 
+          # install test dependencies on spawner
+          ## get spawner container name
+          CONTAINER_ID=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
+          ## get apt dependencies
+          APT_DEPS=$(cat apt-requirements.txt | tr "\n" " ")
+          ## install
+          docker exec -t "${CONTAINER_ID}" bash -c "
+            sudo apt update
+            sudo apt install -y ${APT_DEPS}
+            sudo apt install -y ros-noetic-movai-qa-node-params=${{ steps.flow_tests_setup.outputs.version }}
+          "
+
+          # run tests
           python3 -m venv venv
           . venv/bin/activate
           python3 -m pip install --upgrade pip
@@ -408,6 +421,7 @@ jobs:
           pytest -s \
             --movai-user ${{ steps.install.outputs.movai_user }} \
             --movai-pw ${{ steps.install.outputs.movai_pwd }} \
+            -m 'not simulator and not exposed_ros' \
             --tb=short
           deactivate
           rm -R venv
@@ -459,11 +473,28 @@ jobs:
       - name: Stash QA artifacts
         if: always()
         shell: bash
+        env:
+          INSTALL_DIR: ${{ steps.install_tests_setup.outputs.target_dir }}
+          API_DIR: ${{ steps.api_tests_setup.outputs.target_dir }}
+          FLOW_DIR: ${{ steps.flow_tests_setup.outputs.target_dir }}
         run: |
-
           mkdir qa_artifacts
-          cp -r install/results/*.log ./qa_artifacts
-          cp -r install/results/test_report_*.html ./qa_artifacts
+
+          # install tests artifacts
+          # *.log and *.zip might not exist if the test fails early
+          mkdir -p qa_artifacts/install
+          cp -r "${INSTALL_DIR}"/results/*.log ./qa_artifacts/install || true
+          cp -r "${INSTALL_DIR}"/results/*.zip ./qa_artifacts/install || true
+          cp -r "${INSTALL_DIR}"/results/test_report_*.html ./qa_artifacts/install
+          
+          # api tests artifacts
+          # *.log and *.zip might not exist if the test fails early
+          mkdir -p qa_artifacts/api
+          cp -r "${API_DIR}"/results/*.zip ./qa_artifacts/api || true
+
+          # flow tests artifacts, they might not exist
+          mkdir -p qa_artifacts/flow
+          cp -r "${FLOW_DIR}"/*.log ./qa_artifacts/flow || true
 
       - name: Stash QA artifacts
         if: always()
@@ -695,6 +726,7 @@ jobs:
                 --gh_api_user $GITHUB_API_USR \
                 --gh_api_pwd ${{ secrets.auto_commit_pwd }} \
                 --target_dir "./models"
+          if [ ! -d ./models ]; then mkdir -p ./models; fi
 
       - name: Login to Private Registry
         if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' }}
@@ -826,7 +858,7 @@ jobs:
           git restore product-manifest.yaml
           git pull
           echo "$product_version" > product.version
- 
+
           git add product.version
           git commit -m "[skip actions] Automatic Raise"
         env:

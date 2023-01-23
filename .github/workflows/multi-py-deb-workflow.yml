@@ -82,6 +82,10 @@ jobs:
         fetch-depth: 0
         submodules: recursive
 
+    - name: Create hard link to pip 3.8
+      run: |
+        ln /usr/bin/pip3 /usr/bin/pip3.8
+    
     - name: Install build-requirements
       run: |
         if [ -f build-apt-requirements.txt ]; then
@@ -90,9 +94,6 @@ jobs:
           apt install -y $(grep -vE "^\s*#" build-apt-requirements.txt  | tr "\n" " ")
         fi
         python3 -m pip install -r build-requirements.txt
-
-    - name: Install python package
-      run: python3 -m pip install .
 
     - name: Run Black
       if: ${{ inputs.run_black == 'true' }}
@@ -320,7 +321,7 @@ jobs:
         PKG_VERSION_ANCHOR='$PKG_VERSION'
         sed -i "s/$PKG_VERSION_ANCHOR/${{ needs.Raise.outputs.package_version }}/g" ./debian/postinst
         sed -i "s/$PKG_VERSION_ANCHOR/${{ needs.Raise.outputs.package_version }}/g" ./debian/prerm
-
+        curl -fsSL https://artifacts.cloud.mov.ai/repository/movai-applications/gpg | sudo apt-key add -
         apt update
         install_tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes"
         mk-build-deps --install --root-cmd sudo --tool="${install_tool}" debian/control
@@ -482,6 +483,7 @@ jobs:
             -Dsonar.scm.provider=git
             -Dsonar.qualitygate.wait=true
             -Dsonar.qualitygate.timeout=300
+            -Dsonar.python.version=3
             -Dsonar.python.flake8.reportPaths=flake8-report.txt
             -Dsonar.python.pylint.reportPaths=pylint-report.txt
             -Dsonar.python.coverage.reportPaths=coverage.xml
