@@ -231,7 +231,6 @@ jobs:
           ls -la $tests_dir
           echo ::set-output name=target_dir::$tests_dir
 
-
       - name: Setup QA API tests
         id: api_tests_setup
         shell: bash
@@ -486,7 +485,7 @@ jobs:
           cp -r "${INSTALL_DIR}"/results/*.log ./qa_artifacts/install || true
           cp -r "${INSTALL_DIR}"/results/*.zip ./qa_artifacts/install || true
           cp -r "${INSTALL_DIR}"/results/test_report_*.html ./qa_artifacts/install
-          
+
           # api tests artifacts
           # *.log and *.zip might not exist if the test fails early
           mkdir -p qa_artifacts/api
@@ -609,7 +608,6 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           integration-pipeline get_yml_value --file staging/hosts --key fleet.children.managers.hosts.manager.ansible_host --output_file ./staging/manager_private_ip.txt
 
-
       - name: Setup ansible installation
         id: ansible_install_setup
         shell: bash
@@ -636,7 +634,8 @@ jobs:
         run: |
           echo "${{ secrets.ssh_pem_fleet_aws_vm }}" > ~/.ssh/aws_slave.pem
           sudo chmod 600 ~/.ssh/aws_slave.pem
-          python3 -m venv ansible-venv
+          apt install -y python3.9 python3.9-venv
+          python3.9 -m venv ansible-venv
           source ansible-venv/bin/activate
           python3 -m pip install -r requirements.txt
           ansible-galaxy collection install -r requirements.yml
@@ -644,6 +643,24 @@ jobs:
           execution_status=$?
           deactivate
           exit $execution_status
+
+      - name: Stash Fleet QA artifacts
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p fleet_qa_artifacts/install
+
+          # install fleet_tests artifacts
+          for fleet_host in "manager" "member1" "member2"; do
+            ansible $fleet_host -i ../staging/hosts --key-file ~/.ssh/aws_slave.pem -m shell -a 'journalctl -u movai-service' > fleet_qa_artifacts/install/$fleet_host.log || true
+          done
+
+      - name: Stash Fleet QA artifacts
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: fleet_qa_artifacts
+          path: fleet_qa_artifacts/*
 
       - name: Teardown remote vms (AWS)
         if: ${{ false }}
