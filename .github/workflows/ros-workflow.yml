@@ -28,6 +28,8 @@ on:
         required: true
       auto_commit_mail:
         required: true
+      auto_commit_pwd:
+        required: false
       registry_user:
         required: true
       registry_password:
@@ -290,7 +292,7 @@ jobs:
     - name: Add movai-ros-pkg topic to repository
       run: gh repo edit --add-topic movai-ros-pkg
       env:
-        GITHUB_TOKEN: ${{ secrets.gh_token }}
+        GITHUB_TOKEN: ${{ secrets.auto_commit_pwd }}
 
   Release:
     strategy:
