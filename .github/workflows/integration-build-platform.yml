@@ -645,7 +645,7 @@ jobs:
           deactivate
           exit $execution_status
 
-      - name: Stash Fleet QA artifacts
+      - name: Collect Fleet QA artifacts
         working-directory: ${{ steps.ansible_install_setup.outputs.target_dir }}
         if: always()
         shell: bash
@@ -663,7 +663,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: fleet_qa_artifacts
-          path: fleet_qa_artifacts/*
+          path: ${{ steps.ansible_install_setup.outputs.target_dir }}/fleet_qa_artifacts/*
 
       - name: Teardown remote vms (AWS)
         if: ${{ false }}
