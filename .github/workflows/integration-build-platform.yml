@@ -646,6 +646,7 @@ jobs:
           exit $execution_status
 
       - name: Stash Fleet QA artifacts
+        working-directory: ${{ steps.ansible_install_setup.outputs.target_dir }}
         if: always()
         shell: bash
         run: |
