@@ -186,6 +186,7 @@ jobs:
         id: sonar_links
 
   Publish:
+    permissions: write-all
     if: ${{ inputs.deploy == 'true' }}
     runs-on: ubuntu-20.04
     needs:  [Test]
