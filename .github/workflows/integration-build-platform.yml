@@ -639,7 +639,7 @@ jobs:
           python3.9 -m venv ansible-venv
           source ansible-venv/bin/activate
           python3 -m pip install -r requirements.txt
-          ansible-galaxy collection install -r requirements.yml
+          ansible-galaxy install -r requirements.yml
           ansible-playbook install.yml -i ../staging/hosts --key-file ~/.ssh/aws_slave.pem --extra-vars=@"$(pwd)/.."/product-manifest.yaml -e fleet_domain_dns="" -e "{\"proxycerts__remote_redis_servers_fqn\": [$(cat ../staging/manager_private_ip.txt)]}" --skip-tags "ufw,hardening"
           execution_status=$?
           deactivate
