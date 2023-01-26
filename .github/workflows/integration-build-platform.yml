@@ -317,8 +317,8 @@ jobs:
         run: |
           MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is unstable :rain_cloud: \
           QA Feature File Validation Step FAILED and stopped Pipeline :rain_cloud: \
-          Install tests feature file validation: ${{ steps.feature_file_install.outcome }}
-          UI tests feature file validation: ${{ steps.feature_file_ui.outcome }}
+          Install tests feature file validation: ${{ steps.feature_file_install.outcome }} \
+          UI tests feature file validation: ${{ steps.feature_file_ui.outcome }} \
           Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} \
           Validate logs for cause troubleshooting."
           echo ::set-output name=msg_error::$MESSAGE_ERR
