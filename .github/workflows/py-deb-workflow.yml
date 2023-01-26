@@ -215,11 +215,7 @@ jobs:
     needs: [Build]
     runs-on: ubuntu-20.04
     container:
-<<<<<<< HEAD
-      image: registry.aws.cloud.mov.ai/qa/ros-buildtools-noetic:v1.1.9
-=======
       image: registry.aws.cloud.mov.ai/qa/ros-buildtools-noetic:v1.1.10
->>>>>>> bd2a75913d049595a426006004a995c2a2875ccb
       options: --user root
       credentials:
         username: ${{secrets.registry_user}}
