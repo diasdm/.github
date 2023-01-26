@@ -46,7 +46,7 @@ on:
         required: true
 
 env:
-  MOBTEST_VERSION: "0.0.3.3"
+  MOBTEST_VERSION: "0.0.4.1"
 
 jobs:
   Build:
@@ -57,7 +57,11 @@ jobs:
     if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
+<<<<<<< HEAD
       image: registry.aws.cloud.mov.ai/qa/ros-buildtools-${{ matrix.distro }}:v1.1.9
+=======
+      image: registry.aws.cloud.mov.ai/qa/ros-buildtools-${{ matrix.distro }}:v1.1.10
+>>>>>>> bd2a75913d049595a426006004a995c2a2875ccb
       options: --user root
       credentials:
         username: ${{secrets.registry_user}}
@@ -190,7 +194,11 @@ jobs:
     runs-on: ubuntu-20.04
     needs:  [Test]
     container:
+<<<<<<< HEAD
       image: registry.aws.cloud.mov.ai/qa/ros-buildtools-noetic:v1.1.9
+=======
+      image: registry.aws.cloud.mov.ai/qa/ros-buildtools-noetic:v1.1.10
+>>>>>>> bd2a75913d049595a426006004a995c2a2875ccb
       options: --user root
       credentials:
         username: ${{secrets.registry_user}}
@@ -293,8 +301,12 @@ jobs:
     if: ${{ inputs.release == 'true' }}
     runs-on: ubuntu-20.04
     container:
+<<<<<<< HEAD
       image: registry.aws.cloud.mov.ai/qa/ros-buildtools-noetic:v1.1.9
 
+=======
+      image: registry.aws.cloud.mov.ai/qa/ros-buildtools-noetic:v1.1.10
+>>>>>>> bd2a75913d049595a426006004a995c2a2875ccb
       options: --user root
       credentials:
         username: ${{secrets.registry_user}}
