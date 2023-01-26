@@ -621,7 +621,6 @@ jobs:
           TF_VAR_vm_gateway: "172.22.0.1"
           TF_VAR_ip_mask: 24
           TF_VAR_bios: "seabios"
-          TF_VAR_scsihw: "virtio-scsi-pci"
 
           TF_VAR_template_name: "ubuntu-2004-cloudinit-template1"
           TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.manager_prefix }}
