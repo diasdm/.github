@@ -580,7 +580,7 @@ jobs:
         shell: bash
         run: |
           provision_infra_dir=provision_scripts
-          provision_infra_version=0.0.1-30
+          provision_infra_version=0.0.1-31
           provision_infra_repo_name=devops-tf-proxmox-fleet
 
           rm -rf $provision_infra_dir
@@ -620,6 +620,8 @@ jobs:
           TF_VAR_proxmox_host: "hel"
           TF_VAR_vm_gateway: "172.22.0.1"
           TF_VAR_ip_mask: 24
+          TF_VAR_bios: "seabios"
+          TF_VAR_scsihw: "virtio-scsi-pci"
 
           TF_VAR_template_name: "ubuntu-2004-cloudinit-template1"
           TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.manager_prefix }}
