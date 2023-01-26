@@ -661,10 +661,11 @@ jobs:
         shell: bash
         run: |
           stripped_ips=$(echo ${{ inputs.fleet_ips }} | sed "s;\[;;g" | sed "s;];;g" | sed "s; ;;g")
-          IFS=',' read -r -a stripped_ips_arr <<< $quack
+          IFS=',' read -r -a stripped_ips_arr <<< $stripped_ips
           for ip in "${stripped_ips_arr[@]}"
           do
-            ssh-keygen -f ~/.ssh/known_hosts -R $element
+            ssh-keygen -f ~/.ssh/known_hosts -R $ip
+            ssh-keyscan -H $ip >> ~/.ssh/known_hosts
           done
 
 
