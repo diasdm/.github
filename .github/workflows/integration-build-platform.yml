@@ -653,7 +653,7 @@ jobs:
           TF_VAR_ip_mask: 24
           TF_VAR_bios: "seabios"
           TF_VAR_pool: "IP-Temp-VMs"
-          TF_VAR_tags: "IP-Fleet"
+          TF_VAR_tags: "ip-fleet"
 
           TF_VAR_fleet_hosts_user: "ubuntu"
           TF_VAR_template_name: "ubuntu-2004-cloudinit-template1"
