@@ -286,7 +286,7 @@ jobs:
       - name: Feature Install File Validation
         id: feature_file_install
         working-directory: ${{ steps.install_tests_setup.outputs.target_dir }}
-        if: ${{ steps.install_tests_setup.outputs.jira_report }} == 'True'
+        if: steps.install_tests_setup.outputs.jira_report == 'True'
         shell: bash
         run: |
           python3 -m venv venv
@@ -301,7 +301,7 @@ jobs:
       - name: Feature UI File Validation
         id: feature_file_ui
         working-directory: ${{ steps.ui_tests_setup.outputs.target_dir }}
-        if: ${{ steps.ui_tests_setup.outputs.jira_report }} == 'True'
+        if: steps.ui_tests_setup.outputs.jira_report == 'True'
         shell: bash
         run: |
           python3 -m venv venv
