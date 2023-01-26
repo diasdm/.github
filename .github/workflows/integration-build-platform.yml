@@ -280,8 +280,6 @@ jobs:
           ls -la $tests_dir
           echo ::set-output name=target_dir::$tests_dir
           echo ::set-output name=version::$tests_version
-          echo ${{ steps.install_tests_setup.outputs.jira_report }}
-          echo ${{ steps.ui_tests_setup.outputs.jira_report }}
 
       - name: Feature Install File Validation
         id: feature_file_install
