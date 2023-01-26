@@ -660,6 +660,14 @@ jobs:
         working-directory: ${{ steps.ansible_install_setup.outputs.target_dir }}
         shell: bash
         run: |
+          stripped_ips=$(echo ${{ inputs.fleet_ips }} | sed "s;\[;;g" | sed "s;];;g" | sed "s; ;;g")
+          IFS=',' read -r -a stripped_ips_arr <<< $quack
+          for ip in "${stripped_ips_arr[@]}"
+          do
+            ssh-keygen -f ~/.ssh/known_hosts -R $element
+          done
+
+
           echo "${{ secrets.ssh_pem_fleet_aws_vm }}" > ~/.ssh/aws_slave.pem
           sudo chmod 600 ~/.ssh/aws_slave.pem
           while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
