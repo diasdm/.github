@@ -580,7 +580,7 @@ jobs:
         shell: bash
         run: |
           provision_infra_dir=provision_scripts
-          provision_infra_version=0.0.1-29
+          provision_infra_version=0.0.1-30
           provision_infra_repo_name=devops-tf-proxmox-fleet
 
           rm -rf $provision_infra_dir
@@ -607,7 +607,7 @@ jobs:
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
         shell: bash
         run: |
-          terraform init
+          terraform init -backend-config="key=hel-fleet-${{ steps.infra_names.outputs.manager_prefix }}.tfstate" 
           terraform plan
           terraform apply -auto-approve
         env:
