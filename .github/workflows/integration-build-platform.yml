@@ -12,6 +12,9 @@ on:
         required: false
         type: boolean
         default: false
+      debug_fleet_keep_alive:
+        required: false
+        type: boolean
       fleet_ips:
         required: true
         type: string
@@ -677,10 +680,10 @@ jobs:
           python3 -m pip install awscli
           export PATH="$HOME/.local/bin:$PATH"
           aws ec2 terminate-instances --instance-ids $(cat aws_artifacts/infra_ids.txt)
-
+          
       - name: Teardown remote vms (Proxmox)
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
-        if: always()
+        if: $ {{ success() || cancelled() || ( !debug_fleet_keep_alive && failure() ) }}
         shell: bash
         run: terraform destroy -auto-approve
         env:
