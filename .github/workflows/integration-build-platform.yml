@@ -280,8 +280,6 @@ jobs:
           ls -la $tests_dir
           echo ::set-output name=target_dir::$tests_dir
           echo ::set-output name=version::$tests_version
-          echo ${{ steps.install_tests_setup.outputs.jira_report }}
-          echo ${{ steps.ui_tests_setup.outputs.jira_report }}
 
       - name: Feature Install File Validation
         id: feature_file_install
@@ -357,9 +355,9 @@ jobs:
           pip install -r requirements.txt
           rm -rf results/*
           if [ "${{ steps.install_tests_setup.outputs.jira_report }}" = "True"] ; then
-            pytest tests/ -k 'AMR_installation_validator' --installPath="." --jsonConfigFilePath="../basic-standalone-noetic.json.ci" --jira_report
+            pytest tests/ -k '${{ steps.install_tests_setup.outputs.test_set }}' --installPath="." --jsonConfigFilePath="../basic-standalone-noetic.json.ci" --jira_report
           else
-            pytest tests/ -k 'AMR_installation_validator' --installPath="." --jsonConfigFilePath="../basic-standalone-noetic.json.ci"
+            pytest tests/ -k '${{ steps.install_tests_setup.outputs.test_set }}' --installPath="." --jsonConfigFilePath="../basic-standalone-noetic.json.ci"
           fi
           deactivate
           rm -R venv
