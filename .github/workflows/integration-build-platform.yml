@@ -890,7 +890,7 @@ jobs:
           docker image prune --all -f
 
   publish:
-    needs: [Standalone-Validations, Fleet-Validations, Build-Simulator]
+    needs: [Validations, Fleet-Validations, Build-Simulator]
     runs-on: integration-pipeline
     steps:
       - name: Cleanup Workspace
