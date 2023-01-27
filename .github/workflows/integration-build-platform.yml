@@ -737,7 +737,7 @@ jobs:
           docker system prune -f
           docker image prune --all -f
  
-  Validations-Install-Tests:
+  Validation-Install-Tests:
     needs: [Standalone-Validations]
     runs-on: integration-pipeline
     steps:
@@ -973,7 +973,7 @@ jobs:
           docker system prune -f
           docker image prune --all -f
 
-  Validations-API-Tests:
+  Validation-API-Tests:
     needs: [Standalone-Validations]
     runs-on: integration-pipeline
     steps:
@@ -1114,7 +1114,7 @@ jobs:
           docker system prune -f
           docker image prune --all -f
 
-  Validations-Flow-Tests:
+  Validation-Flow-Tests:
     needs: [Standalone-Validations]
     runs-on: integration-pipeline
     steps:
@@ -1275,8 +1275,8 @@ jobs:
           docker image prune --all -f
 
   Validations-Finish:
+    needs: [Validation-UI-Tests, Validation-Install-Tests, Validation-API-Tests, Validation-Flow-Tests]
     runs-on: ubuntu-20.04
-    needs: [Validate-boostrap-configs]
     steps:
       - name: Pass through
         run: echo "Pass"
