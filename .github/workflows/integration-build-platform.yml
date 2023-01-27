@@ -880,6 +880,8 @@ jobs:
           ansible-galaxy install -r requirements.yml --timeout 120
 
           stripped_ips=$(echo ${{ inputs.fleet_ips }} | sed "s;\[;;g" | sed "s;];;g" | sed "s; ;;g")
+          touch ~/.ssh/known_hosts
+          sudo chmod 600 ~/.ssh/known_hosts
           IFS=',' read -r -a stripped_ips_arr <<< $stripped_ips
           for ip in "${stripped_ips_arr[@]}"
           do

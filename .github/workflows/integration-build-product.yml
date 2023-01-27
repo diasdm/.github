@@ -595,7 +595,7 @@ jobs:
 
   publish:
     needs: [Install-Robot, Install-Simulator-Robot]
-    runs-on: integration-pipeline-dev
+    runs-on: integration-pipeline
     steps:
       - uses: rtCamp/action-cleanup@master
 
