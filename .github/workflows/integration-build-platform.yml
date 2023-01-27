@@ -145,9 +145,19 @@ jobs:
         with:
           name: raised_meta
           path: platform_configs/*
-
   Standalone-Validations:
+    runs-on: ubuntu-20.04
     needs: [Validate-boostrap-configs]
+    steps:
+      - name: Agent info
+        id: agent_info
+        run: |
+          ip=$(hostname -I | awk '{print $1}')
+          echo $ip
+          echo ::set-output name=ip::$ip
+
+  Validations:
+    needs: [Standalone-Validations]
     strategy:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
@@ -887,7 +897,12 @@ jobs:
         uses: rtCamp/action-cleanup@master
       - name: Checkout
         uses: actions/checkout@v3
-
+      - name: Agent info
+        id: agent_info
+        run: |
+          ip=$(hostname -I | awk '{print $1}')
+          echo $ip
+          echo ::set-output name=ip::$ip
       - name: unstash robot_configs
         uses: actions/download-artifact@v2
         with:
@@ -925,6 +940,8 @@ jobs:
         run: |
           set -m
           set -e
+
+          export PATH="$HOME/.local/bin:$PATH"
           git config --global --add safe.directory $(pwd)
           git config --global user.name '${{ secrets.auto_commit_user }}'
           git config --global user.email '${{ secrets.auto_commit_mail }}'
@@ -935,7 +952,6 @@ jobs:
 
           mkdir -p deployment_artifacts
           package-deployer join --dploy_workspace "$(pwd)/artifacts"
-          export PATH="$HOME/.local/bin:$PATH"
           integration-pipeline get_image_list_from_manifest --manifest_platform_base_key product_components --docker_registry $REGISTRY
           cp *.json deployment_artifacts
           cp artifacts/merged.dploy deployment_artifacts/deployable.dploy
