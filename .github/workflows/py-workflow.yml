@@ -132,7 +132,10 @@ jobs:
           -Dsonar.python.flake8.reportPaths=flake8-report.txt
           -Dsonar.python.pylint.reportPaths=pylint-report.txt
           -Dsonar.python.coverage.reportPaths=coverage.xml
-          -Dsonar.tests=./tests
+          -Dsonar.sources=.
+          -Dsonar.tests=.
+          -Dsonar.test.inclusions=tests/**/*
+          -Dsonar.exclusions=tests/**/*
 
     - name: Link to SonarCloud dashboard
       shell: bash
