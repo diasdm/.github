@@ -1157,20 +1157,24 @@ jobs:
         run: |
           qa_key=flow_tests
 
-          rm -f /tmp/target_dir.txt /tmp/version.txt /tmp/repo_name.txt
+          rm -f /tmp/target_dir.txt /tmp/version.txt /tmp/repo_name.txt /tmp/test_set.txt
           export PATH="$HOME/.local/bin:$PATH"
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.target_dir --output_file /tmp/target_dir.txt
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.version --output_file /tmp/version.txt
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.name --output_file /tmp/repo_name.txt
+          integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.test_set --output_file /tmp/test_set.txt
+
           tests_dir=$(cat /tmp/target_dir.txt)
           tests_version=$(cat /tmp/version.txt)
           tests_repo_name=$(cat /tmp/repo_name.txt)
+          test_set=$(cat /tmp/test_set.txt)
 
           rm -rf $tests_repo_name
           integration-pipeline fetch_by_tag --repo $tests_repo_name --version $tests_version --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $tests_dir
           ls -la $tests_dir
           echo ::set-output name=target_dir::$tests_dir
           echo ::set-output name=version::$tests_version
+          echo ::set-output name=test_set::$test_set
 
       - name: Install
         id: install
@@ -1205,7 +1209,6 @@ jobs:
           rm movai_service_version
 
       - name: Flow tests
-        continue-on-error: true
         working-directory: ${{ steps.flow_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
@@ -1233,7 +1236,7 @@ jobs:
           pytest -s \
             --movai-user ${{ steps.install.outputs.movai_user }} \
             --movai-pw ${{ steps.install.outputs.movai_pwd }} \
-            -m 'not simulator and not exposed_ros' \
+            -m '${{ steps.flow_tests_setup.outputs.test_set }}' \
             --tb=short
           deactivate
           rm -R venv
