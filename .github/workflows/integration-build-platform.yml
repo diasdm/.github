@@ -741,18 +741,20 @@ jobs:
         run: |
           qa_key=flow_tests
 
-          rm -f /tmp/target_dir.txt /tmp/version.txt /tmp/repo_name.txt /tmp/test_set.txt
+          rm -f /tmp/target_dir.txt /tmp/version.txt /tmp/repo_name.txt /tmp/test_set.txt /tmp/spawner_install_pkgs.txt
           export PATH="$HOME/.local/bin:$PATH"
 
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.target_dir --output_file /tmp/target_dir.txt
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.version --output_file /tmp/version.txt
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.name --output_file /tmp/repo_name.txt
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.test_set --output_file /tmp/test_set.txt
+          integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.spawner_install_pkgs --output_file /tmp/spawner_install_pkgs.txt
 
           tests_dir=$(cat /tmp/target_dir.txt)
           tests_version=$(cat /tmp/version.txt)
           tests_repo_name=$(cat /tmp/repo_name.txt)
           test_set=$(cat /tmp/test_set.txt)
+          spawner_install_pkgs=$(cat /tmp/spawner_install_pkgs.txt)
 
           rm -rf $tests_repo_name
           integration-pipeline fetch_by_tag --repo $tests_repo_name --version $tests_version --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $tests_dir
@@ -761,6 +763,7 @@ jobs:
           echo ::set-output name=target_dir::$tests_dir
           echo ::set-output name=version::$tests_version
           echo ::set-output name=test_set::$test_set
+          echo ::set-output name=spawner_install_pkgs::$spawner_install_pkgs
 
       - name: Install
         id: install
@@ -811,7 +814,7 @@ jobs:
           docker exec -t "${CONTAINER_ID}" bash -c "
             sudo apt update
             sudo apt install -y ${APT_DEPS}
-            sudo apt install -y ros-noetic-movai-qa-node-params=${{ steps.flow_tests_setup.outputs.version }}
+            sudo apt install -y ${{ steps.flow_tests_setup.outputs.spawner_install_pkgs }}
           "
 
           # run tests
