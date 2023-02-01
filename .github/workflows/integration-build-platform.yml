@@ -220,12 +220,14 @@ jobs:
           echo ::set-output name=test_set::$test_set
 
           # setup venv in a step that is always executed
+          pushd "${{ steps.ui_tests_setup.outputs.target_dir }}"
           rm -rf venv
           python3 -m venv venv
           . venv/bin/activate
           python3 -m pip install --upgrade pip
           pip install -r requirements.txt
           deactivate
+          popd
 
       - name: Feature File Validation
         id: feature_file_ui
@@ -401,12 +403,14 @@ jobs:
           echo ::set-output name=test_set::$test_set
 
           # setup venv in a step that is always executed
+          pushd "${{ steps.install_tests_setup.outputs.target_dir }}"
           rm -rf venv
           python3 -m venv venv
           . venv/bin/activate
           python3 -m pip install --upgrade pip
           pip install -r requirements.txt
           deactivate
+          popd
 
       - name: Feature File Validation
         id: feature_file_install
@@ -624,12 +628,14 @@ jobs:
           echo ::set-output name=target_dir::$tests_dir
 
           # setup venv in a step that is always executed
+          pushd "${{ steps.api_tests_setup.outputs.target_dir }}"
           rm -rf venv
           python3 -m venv venv
           . venv/bin/activate
           python3 -m pip install --upgrade pip
           pip install -r requirements.txt
           deactivate
+          popd
 
       - name: Install
         id: install
@@ -778,12 +784,14 @@ jobs:
           echo ::set-output name=spawner_install_pkgs::$spawner_install_pkgs
 
           # setup venv in a step that is always executed
+          pushd "${{ steps.flow_tests_setup.outputs.target_dir }}"
           rm -rf venv
           python3 -m venv venv
           . venv/bin/activate
           python3 -m pip install --upgrade pip
           pip install -r requirements.txt
           deactivate
+          popd
 
       - name: Install
         id: install
