@@ -220,7 +220,7 @@ jobs:
           echo ::set-output name=test_set::$test_set
 
           # setup venv in a step that is always executed
-          pushd "${{ steps.ui_tests_setup.outputs.target_dir }}"
+          pushd "${tests_dir}"
           rm -rf venv
           python3 -m venv venv
           . venv/bin/activate
@@ -403,7 +403,7 @@ jobs:
           echo ::set-output name=test_set::$test_set
 
           # setup venv in a step that is always executed
-          pushd "${{ steps.install_tests_setup.outputs.target_dir }}"
+          pushd "${tests_dir}"
           rm -rf venv
           python3 -m venv venv
           . venv/bin/activate
@@ -628,7 +628,7 @@ jobs:
           echo ::set-output name=target_dir::$tests_dir
 
           # setup venv in a step that is always executed
-          pushd "${{ steps.api_tests_setup.outputs.target_dir }}"
+          pushd "${tests_dir}"
           rm -rf venv
           python3 -m venv venv
           . venv/bin/activate
@@ -784,7 +784,7 @@ jobs:
           echo ::set-output name=spawner_install_pkgs::$spawner_install_pkgs
 
           # setup venv in a step that is always executed
-          pushd "${{ steps.flow_tests_setup.outputs.target_dir }}"
+          pushd "${tests_dir}"
           rm -rf venv
           python3 -m venv venv
           . venv/bin/activate
