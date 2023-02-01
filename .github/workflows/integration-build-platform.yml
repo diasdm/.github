@@ -1293,16 +1293,6 @@ jobs:
           SIMULATION_ID: "CI"
 
       - name: Collect Installed components
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
-        shell: bash
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          cd simulator_artifacts
-          integration-pipeline publish_simulator_state_artifacts \
-                --product_name ${{ inputs.product_name }} \
-                --branch ${GITHUB_REF#refs/heads/}
-
-      - name: Collect Installed components
         shell: bash
         run: |
           mkdir -p artifacts
@@ -1348,7 +1338,7 @@ jobs:
 
 
   publish:
-    needs: [Validations-Finish, Fleet-Validations, Build-Simulator]
+    needs: [Validations-Finish, Fleet-Validations, Install-Simulator-Robot]
     runs-on: integration-pipeline
     steps:
       - name: Cleanup Workspace
@@ -1377,6 +1367,12 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: deploy_artifacts_noetic
+          path: artifacts
+
+      - name: unstash deploy_artifacts_simulator_noetic
+        uses: actions/download-artifact@v2
+        with:
+          name: deploy_artifacts_simulator_noetic
           path: artifacts
 
       - name: unstash deploy_simulator_artifacts
