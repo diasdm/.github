@@ -219,17 +219,23 @@ jobs:
           echo ::set-output name=jira_report::$jira_report
           echo ::set-output name=test_set::$test_set
 
+          # setup venv in a step that is always executed
+          pushd "${tests_dir}"
+          rm -rf venv
+          python3 -m venv venv
+          . venv/bin/activate
+          python3 -m pip install --upgrade pip
+          pip install -r requirements.txt
+          deactivate
+          popd
+
       - name: Feature File Validation
         id: feature_file_ui
         working-directory: ${{ steps.ui_tests_setup.outputs.target_dir }}
         if: steps.ui_tests_setup.outputs.jira_report == 'True'
         shell: bash
         run: |
-          rm -rf venv
-          python3 -m venv venv
           . venv/bin/activate
-          python3 -m pip install --upgrade pip
-          pip install -r requirements.txt
 
           python3 testcasemanagement/testcase_importer.py --target "${{ steps.ui_tests_setup.outputs.test_set }}"
           python3 testcasemanagement/feature_file_processor.py --validate
@@ -396,17 +402,23 @@ jobs:
           echo ::set-output name=jira_report::$jira_report
           echo ::set-output name=test_set::$test_set
 
+          # setup venv in a step that is always executed
+          pushd "${tests_dir}"
+          rm -rf venv
+          python3 -m venv venv
+          . venv/bin/activate
+          python3 -m pip install --upgrade pip
+          pip install -r requirements.txt
+          deactivate
+          popd
+
       - name: Feature File Validation
         id: feature_file_install
         working-directory: ${{ steps.install_tests_setup.outputs.target_dir }}
         if: steps.install_tests_setup.outputs.jira_report == 'True'
         shell: bash
         run: |
-          rm -rf venv
-          python3 -m venv venv
           . venv/bin/activate
-          python3 -m pip install --upgrade pip
-          pip install -r requirements.txt
 
           python3 testcasemanagement/testcase_importer.py --target "${{ steps.install_tests_setup.outputs.test_set }}"
           python3 testcasemanagement/feature_file_processor.py --validate
@@ -615,6 +627,16 @@ jobs:
 
           echo ::set-output name=target_dir::$tests_dir
 
+          # setup venv in a step that is always executed
+          pushd "${tests_dir}"
+          rm -rf venv
+          python3 -m venv venv
+          . venv/bin/activate
+          python3 -m pip install --upgrade pip
+          pip install -r requirements.txt
+          deactivate
+          popd
+
       - name: Install
         id: install
         shell: bash
@@ -648,11 +670,7 @@ jobs:
         working-directory: ${{ steps.api_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
-          rm -rf venv
-          python3 -m venv venv
           . venv/bin/activate
-          python3 -m pip install --upgrade pip
-          pip install -r requirements.txt
 
           pytest src/tests \
               --base_url https://${{ steps.agent_info.outputs.ip }} \
@@ -765,6 +783,16 @@ jobs:
           echo ::set-output name=test_set::$test_set
           echo ::set-output name=spawner_install_pkgs::$spawner_install_pkgs
 
+          # setup venv in a step that is always executed
+          pushd "${tests_dir}"
+          rm -rf venv
+          python3 -m venv venv
+          . venv/bin/activate
+          python3 -m pip install --upgrade pip
+          pip install -r requirements.txt
+          deactivate
+          popd
+
       - name: Install
         id: install
         shell: bash
@@ -818,11 +846,7 @@ jobs:
           "
 
           # run tests
-          rm -rf venv
-          python3 -m venv venv
           . venv/bin/activate
-          python3 -m pip install --upgrade pip
-          pip install -r requirements.txt
 
           pytest -s \
             --movai-user ${{ steps.install.outputs.movai_user }} \
