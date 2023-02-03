@@ -184,7 +184,9 @@ jobs:
           echo ::set-output name=base_name::$(cat ci_artifacts/spawner_base_name_${{ matrix.distro }}.ci)
           echo ::set-output name=base_version::$(cat ci_artifacts/spawner_base_version_${{ matrix.distro }}.ci)
           echo ::set-output name=raised_version::$(cat product.version)
-
+          
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
       - name: Build with args and push
         uses: docker/build-push-action@v3
         with:
