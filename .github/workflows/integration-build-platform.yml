@@ -1264,7 +1264,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
 
       - name: Setup QA Flow tests
-        id: flow_tests_setup
+        id: sim_flow_tests_setup
         shell: bash
         run: |
           qa_key=flow_tests
@@ -1340,7 +1340,7 @@ jobs:
           SIMULATION_ID: "CI"
 
       - name: Flow tests
-        working-directory: ${{ steps.flow_tests_setup.outputs.target_dir }}
+        working-directory: ${{ steps.sim_flow_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
           # install test dependencies on host
@@ -1356,7 +1356,7 @@ jobs:
           docker exec -t "${CONTAINER_ID}" bash -c "
             sudo apt update
             sudo apt install -y ${APT_DEPS}
-            sudo apt install -y ${{ steps.flow_tests_setup.outputs.spawner_install_pkgs }}
+            sudo apt install -y ${{ steps.sim_flow_tests_setup.outputs.spawner_install_pkgs }}
           "
 
           # run tests
