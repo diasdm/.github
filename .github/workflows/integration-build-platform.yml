@@ -1452,7 +1452,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Update release notes
-        continue-on-error: true
         shell: bash
         run: |
           # release version
@@ -1465,7 +1464,7 @@ jobs:
           PRS=$(echo "${ORIGINAL_RN}" | sed -rn "s/.*https:\/\/github\.com\/${{ github.repository_owner }}\/${{ github.event.repository.name }}\/pull\/([0-9]+).*/\1/p" | tr '\n' ' ')
           # change to array
           PRS=($PRS)
-          echo "Found the following PRs: ${PRS}"
+          echo "Found the following PRs: ${PRS[@]}"
 
           # new release notes file
           rm -rf notes.txt
@@ -1491,7 +1490,7 @@ jobs:
               echo "No PRs." >> notes.txt
           else
               # PRs exist
-              echo "${ORIGINAL_RN}" | grep "\* .*@.* in https://github.com/${{ github.repository_owner }}/" >> notes.txt
+              echo "${ORIGINAL_RN}" | grep "\* .* by @.* in https://github.com/${{ github.repository_owner }}/" >> notes.txt
           fi
           echo "" >> notes.txt
 
