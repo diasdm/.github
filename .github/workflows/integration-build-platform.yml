@@ -1304,6 +1304,7 @@ jobs:
           popd
 
       - name: Installation
+        id: install
         shell: bash
         run: |
           for robot in $(movai-cli robots list); do
