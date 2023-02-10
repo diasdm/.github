@@ -1415,6 +1415,22 @@ jobs:
           name: deploy_artifacts_simulator_noetic
           path: artifacts/*.dploy
 
+      - name: Remove robots
+        if: always()
+        shell: bash
+        run: |
+          for robot in $(movai-cli robots list); do
+            movai-cli robots stop $robot
+            sleep 5
+            movai-cli robots remove $robot
+          done || true
+
+      - name: Docker cleanups
+        if: always()
+        shell: bash
+        run: |
+          docker system prune -f
+          docker image prune --all -f
 
   publish:
     needs: [Validations-Finish, Fleet-Validations, Simulator-Validations]
