@@ -120,7 +120,7 @@ jobs:
         mobros pack --workspace="$(pwd)" --mode ${{ matrix.build_mode }}
 
     - name: Run Catkin tests
-      if: ${{ !inputs.run_catkin_tests }}
+      if: ${{ inputs.run_catkin_tests }}
       shell: bash
       run: |
         cd $ROS1_USER_WS
