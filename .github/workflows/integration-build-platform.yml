@@ -293,6 +293,7 @@ jobs:
           echo ::set-output name=movai_pwd::$MOVAI_PWD
 
       - name: UI tests
+        timeout-minutes: 120
         working-directory: ${{ steps.ui_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
@@ -444,6 +445,7 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
 
       - name: Install tests
+        timeout-minutes: 45
         id: install
         working-directory: ${{ steps.install_tests_setup.outputs.target_dir }}
         shell: bash
@@ -667,6 +669,7 @@ jobs:
           echo ::set-output name=movai_pwd::$MOVAI_PWD
 
       - name: API tests
+        timeout-minutes: 30
         working-directory: ${{ steps.api_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
@@ -826,6 +829,7 @@ jobs:
           rm movai_service_version
 
       - name: Flow tests
+        timeout-minutes: 30
         working-directory: ${{ steps.flow_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
