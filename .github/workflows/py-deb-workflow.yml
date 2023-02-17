@@ -68,6 +68,9 @@ jobs:
         fetch-depth: 0
         submodules: recursive
 
+    - name: Upgrade pip
+      run: python3 -m pip install pip --upgrade
+
     - name: Install build-requirements
       run: python3 -m pip install -r build-requirements.txt
 
