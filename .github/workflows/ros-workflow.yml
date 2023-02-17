@@ -61,7 +61,7 @@ jobs:
     if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/qa/ros-buildtools-${{ matrix.distro }}:v1.1.10
+      image: registry.aws.cloud.mov.ai/qa/ros-buildtools-${{ matrix.distro }}:v2.0.0
       options: --user root
       credentials:
         username: ${{secrets.registry_user}}
@@ -101,7 +101,7 @@ jobs:
         fi
 
     - name: Install Mobros
-      run: python3 -m pip install mobros==1.0.1.22 --ignore-installed
+      run: python3 -m pip install mobros==2.0.0.4 --ignore-installed
 
     - name: Setup link to Ros userspace
       run: |
@@ -110,6 +110,11 @@ jobs:
 
     - name: Raise version and validate Ros repository
       run: mobros raise --workspace="$(pwd)"
+
+    - name: Install build Requirements
+      run: | 
+        sudo apt update
+        sudo mobros install-build-dependencies
 
     - name: Build
       run: mobros build --mode ${{ matrix.build_mode }}
