@@ -1344,7 +1344,8 @@ jobs:
         env:
           SIMULATION_ID: "CI"
 
-      - name: Flow tests
+      - name: Simulator tests
+        timeout-minutes: 30
         working-directory: ${{ steps.sim_flow_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
