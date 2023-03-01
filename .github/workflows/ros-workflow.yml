@@ -101,7 +101,10 @@ jobs:
         fi
 
     - name: Install Mobros
-      run: python3 -m pip install mobros==2.0.0.4 --ignore-installed
+      run: |
+        python3 -m pip install \
+        -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple \
+        mobros==2.0.0.4 --ignore-installed
 
     - name: Setup link to Ros userspace
       run: |
