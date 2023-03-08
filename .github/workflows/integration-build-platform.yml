@@ -1040,6 +1040,30 @@ jobs:
         working-directory: ${{ steps.ansible_install_setup.outputs.target_dir }}
         shell: bash
         run: |
+
+          function ensure_agent_up(){
+            vm_ip=$1
+            i="0"
+            max=15
+            success=1
+            while [ $success -ne 0 ]
+            do
+            echo "Checking if $vm_ip is reachable ($i/$max)"
+            ping -c1 $vm_ip &>/dev/null
+            success=$?
+            
+            if [ $i -lt $max ]
+            then
+              i=$[$i+1]
+            else
+              echo "Timeout waiting for $vm_ip"
+              exit 1
+            fi
+
+            sleep 2
+            done
+
+          }
           echo "${{ secrets.ssh_pem_fleet_aws_vm }}" > ~/.ssh/aws_slave.pem
           sudo chmod 600 ~/.ssh/aws_slave.pem
           while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
@@ -1055,6 +1079,7 @@ jobs:
           IFS=',' read -r -a stripped_ips_arr <<< $stripped_ips
           for ip in "${stripped_ips_arr[@]}"
           do
+            ensure_agent_up $ip
             ssh-keygen -f ~/.ssh/known_hosts -R $ip
             ssh-keyscan -H $ip >> ~/.ssh/known_hosts
           done
