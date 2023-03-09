@@ -243,7 +243,6 @@ jobs:
       run: |
         dch -b -v "${{ needs.Build.outputs.package_version }}" "Auto created package version ${{ needs.Build.outputs.package_version }}"
         PKG_VERSION_ANCHOR='$PKG_VERSION'
-        ./debian/postinst
         if test -f "./debian/postinst"; then
           sed -i "s/$PKG_VERSION_ANCHOR/${{ needs.Build.outputs.package_version }}/g" ./debian/postinst
         fi
