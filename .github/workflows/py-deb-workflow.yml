@@ -243,8 +243,15 @@ jobs:
       run: |
         dch -b -v "${{ needs.Build.outputs.package_version }}" "Auto created package version ${{ needs.Build.outputs.package_version }}"
         PKG_VERSION_ANCHOR='$PKG_VERSION'
-        sed -i "s/$PKG_VERSION_ANCHOR/${{ needs.Build.outputs.package_version }}/g" ./debian/postinst
-        sed -i "s/$PKG_VERSION_ANCHOR/${{ needs.Build.outputs.package_version }}/g" ./debian/prerm
+        ./debian/postinst
+        if test -f "./debian/postinst"; then
+          sed -i "s/$PKG_VERSION_ANCHOR/${{ needs.Build.outputs.package_version }}/g" ./debian/postinst
+        fi
+
+        if test -f "./debian/prerm"; then
+          sed -i "s/$PKG_VERSION_ANCHOR/${{ needs.Build.outputs.package_version }}/g" ./debian/prerm
+        fi
+
         dpkg-buildpackage -nc -d -b -rfakeroot -us -uc -tc
         mkdir artifacts && \
         cp ../*.deb artifacts
