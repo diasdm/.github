@@ -1002,10 +1002,10 @@ jobs:
           TF_VAR_tags: "ip-fleet"
 
           TF_VAR_fleet_hosts_user: "ubuntu"
-          TF_VAR_template_name: "ubuntu-2004-cloudinit-template1"
+          TF_VAR_template_name: "ubuntu-2004-cloudinit-template2"
           TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.manager_prefix }}
           TF_VAR_fleet_manager_memory: 8192
-          TF_VAR_template_name_no_gpu: "ubuntu-2004-cloudinit-template1"
+          TF_VAR_template_name_no_gpu: "ubuntu-2004-cloudinit-template2"
           TF_VAR_fleet_worker_name_prefix: ${{ steps.infra_names.outputs.worker_prefix }}
           TF_VAR_fleet_worker_memory: 8192
 
