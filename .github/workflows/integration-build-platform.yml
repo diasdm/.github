@@ -301,6 +301,7 @@ jobs:
 
           if [ "${{ steps.ui_tests_setup.outputs.jira_report }}" == "True" ] ; then
             pytest \
+              -ra \
               --hub_url http://172.22.0.105:4444 \
               --browser_name chrome \
               --browser_version 91.0 \
@@ -310,6 +311,7 @@ jobs:
               --jira_report
           else
               pytest \
+                -ra \
                 --hub_url http://172.22.0.105:4444 \
                 --browser_name chrome \
                 --browser_version 91.0 \
@@ -457,11 +459,13 @@ jobs:
 
           if [ "${{ steps.install_tests_setup.outputs.jira_report }}" == "True" ] ; then
             pytest tests/ \
+              -ra \
               -k '${{ steps.install_tests_setup.outputs.test_set }}' \
               --installPath="." --jsonConfigFilePath="../basic-standalone-noetic.json.ci" \
               --jira_report
           else
             pytest tests/ \
+              -ra \
               -k '${{ steps.install_tests_setup.outputs.test_set }}' \
               --installPath="." --jsonConfigFilePath="../basic-standalone-noetic.json.ci"
           fi
@@ -676,6 +680,7 @@ jobs:
           . venv/bin/activate
 
           pytest src/tests \
+              -ra \              
               --base_url https://${{ steps.agent_info.outputs.ip }} \
               --username ${{ steps.install.outputs.movai_user }} \
               --password ${{ steps.install.outputs.movai_pwd }}
@@ -848,7 +853,9 @@ jobs:
           # run tests
           . venv/bin/activate
 
-          pytest -s \
+          pytest \
+            -s \
+            -ra \
             --movai-user ${{ steps.install.outputs.movai_user }} \
             --movai-pw ${{ steps.install.outputs.movai_pwd }} \
             -m '${{ steps.flow_tests_setup.outputs.test_set }}' \
@@ -1051,7 +1058,7 @@ jobs:
             echo "Checking if $vm_ip is reachable ($i/$max)"
             ping -c1 $vm_ip &>/dev/null
             success=$?
-            
+
             if [ $i -lt $max ]
             then
               i=$[$i+1]
@@ -1385,7 +1392,9 @@ jobs:
           # run tests
           . venv/bin/activate
 
-          pytest -s \
+          pytest \
+            -s \
+            -ra \
             --movai-user ${{ steps.install.outputs.movai_user }} \
             --movai-pw ${{ steps.install.outputs.movai_pwd }} \
             -m 'simulator' \
