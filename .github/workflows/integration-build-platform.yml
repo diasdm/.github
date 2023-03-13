@@ -680,7 +680,6 @@ jobs:
           . venv/bin/activate
 
           pytest src/tests \
-              -ra \              
               --base_url https://${{ steps.agent_info.outputs.ip }} \
               --username ${{ steps.install.outputs.movai_user }} \
               --password ${{ steps.install.outputs.movai_pwd }}
