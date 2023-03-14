@@ -190,6 +190,7 @@ jobs:
       - name: Prepare docker build variables
         id: pre_build
         run: |
+          docker pull registry.hel.mov.ai/qa/spawner-base-noetic:v2.2.18
           echo ::set-output name=base_name::$(cat ci_artifacts/spawner_base_name_${{ matrix.distro }}.ci)
           echo ::set-output name=base_version::$(cat ci_artifacts/spawner_base_version_${{ matrix.distro }}.ci)
           echo ::set-output name=raised_version::$(cat product.version)
