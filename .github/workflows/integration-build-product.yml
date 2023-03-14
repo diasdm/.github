@@ -205,6 +205,8 @@ jobs:
           push: true
           tags: "${{ env.PUSH_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ steps.pre_build.outputs.raised_version }}"
           pull: true
+          add-hosts: |
+            registry.hel.mov.ai:172.22.0.106
           build-args: |
             DOCKER_REGISTRY=${{ env.REGISTRY }}
             BASE_IMAGE=${{ steps.pre_build.outputs.base_name }}
