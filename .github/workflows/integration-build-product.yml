@@ -190,7 +190,6 @@ jobs:
       - name: Prepare docker build variables
         id: pre_build
         run: |
-          docker pull registry.hel.mov.ai/qa/spawner-base-noetic:v2.2.18
           echo ::set-output name=base_name::$(cat ci_artifacts/spawner_base_name_${{ matrix.distro }}.ci)
           echo ::set-output name=base_version::$(cat ci_artifacts/spawner_base_version_${{ matrix.distro }}.ci)
           echo ::set-output name=raised_version::$(cat product.version)
@@ -470,21 +469,36 @@ jobs:
         if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
         id: pre_build
         run: |
+          push_name=$(echo "${{ steps.pre_simulator_build.outputs.image_name }}" | sed "s-${{ env.REGISTRY }}-${{ env.PUSH_REGISTRY }}-g")
           echo ::set-output name=base_name::$(cat simulator_artifacts/simulator_base.ci)
+          echo ::set-output name=push_name::$push_name
 
-      - name: Build with args and push
+      # - name: Build with args and push
+      #   if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true'}}
+      #   uses: docker/build-push-action@v3
+      #   with:
+      #     context: .
+      #     platforms: linux/amd64
+      #     file: docker/${{ env.DISTRO }}/Dockerfile-simulator
+      #     push: true
+      #     tags: ${{ steps.pre_simulator_build.outputs.image_name }}
+      #     pull: true
+      #     build-args: |
+      #       BASE_IMAGE=${{ steps.pre_build.outputs.base_name }}
+      #       CI_SCRIPT_VERSION=${{ env.CI_INTEGRATION_SCRIPTS_VERSION }}
+
+      - name: Docker build
         if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true'}}
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          platforms: linux/amd64
-          file: docker/${{ env.DISTRO }}/Dockerfile-simulator
-          push: true
-          tags: ${{ steps.pre_simulator_build.outputs.image_name }}
-          pull: true
-          build-args: |
-            BASE_IMAGE=${{ steps.pre_build.outputs.base_name }}
-            CI_SCRIPT_VERSION=${{ env.CI_INTEGRATION_SCRIPTS_VERSION }}
+        shell: bash
+        run: |
+          docker build --add-host ${{ env.REGISTRY }}:172.22.0.106 \
+            --build-arg BASE_IMAGE=${{ steps.pre_build.outputs.base_name }} \
+            --build-arg CI_SCRIPT_VERSION=${{ env.CI_INTEGRATION_SCRIPTS_VERSION }} \
+            --file docker/${{ env.DISTRO }}/Dockerfile-simulator \
+            --platform linux/amd64 \
+            --tag ${{ steps.pre_build.outputs.push_name }} \
+            --pull \
+            --push .
 
       - name: Docker cleanups
         if: always()
