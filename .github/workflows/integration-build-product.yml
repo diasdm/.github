@@ -197,22 +197,35 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      - name: Build with args and push
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          platforms: linux/amd64
-          file: docker/${{ matrix.distro }}/Dockerfile
-          push: true
-          tags: "${{ env.PUSH_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ steps.pre_build.outputs.raised_version }}"
-          pull: true
-          add-hosts: |
-            registry.hel.mov.ai:172.22.0.106
-          build-args: |
-            DOCKER_REGISTRY=${{ env.REGISTRY }}
-            BASE_IMAGE=${{ steps.pre_build.outputs.base_name }}
-            TAG=${{ steps.pre_build.outputs.base_version }}
-            CI_SCRIPT_VERSION=${{ env.CI_INTEGRATION_SCRIPTS_VERSION }}
+      - name: Docker build
+        shell: bash
+        run: |
+          docker build --add-host ${{ env.REGISTRY }}:172.22.0.106 \
+            --build-arg DOCKER_REGISTRY=${{ env.REGISTRY }} \
+            --build-arg BASE_IMAGE=${{ steps.pre_build.outputs.base_name }} \
+            --build-arg TAG=${{ steps.pre_build.outputs.base_version }} \
+            --build-arg CI_SCRIPT_VERSION=${{ env.CI_INTEGRATION_SCRIPTS_VERSION }} \
+            --file docker/${{ matrix.distro }}/Dockerfile \
+            --platform linux/amd64 \
+            --tag ${{ env.PUSH_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ steps.pre_build.outputs.raised_version }} \
+            --pull \
+            --push .
+      # - name: Build with args and push
+      #   uses: docker/build-push-action@v3
+      #   with:
+      #     context: .
+      #     platforms: linux/amd64
+      #     file: docker/${{ matrix.distro }}/Dockerfile
+      #     push: true
+      #     tags: ""
+      #     pull: true
+      #     add-hosts: |
+      #       registry.hel.mov.ai:172.22.0.106
+      #     build-args: |
+      #       DOCKER_REGISTRY=${{ env.REGISTRY }}
+      #       BASE_IMAGE=${{ steps.pre_build.outputs.base_name }}
+      #       TAG=${{ steps.pre_build.outputs.base_version }}
+      #       CI_SCRIPT_VERSION=${{ env.CI_INTEGRATION_SCRIPTS_VERSION }}
 
       - name: Stash robot_jsons_${{ matrix.distro }}
         uses: actions/upload-artifact@v2
