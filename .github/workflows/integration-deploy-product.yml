@@ -27,6 +27,10 @@ on:
       gh_token:
         required: true
 
+env:
+  REGISTRY: registry.hel.mov.ai
+  PUSH_REGISTRY: registry.cloud.mov.ai
+
 jobs:
   Deploy-product:
     runs-on: ubuntu-20.04
@@ -47,16 +51,12 @@ jobs:
         fileName: "*"
         token: ${{ secrets.gh_token }}
 
-    - name: docker login
-      run: |
-        docker login registry.aws.cloud.mov.ai -u ${{secrets.registry_user}} -p ${{secrets.registry_password}}
-        echo "${{ secrets.nexus_publisher_user }} e ${{ secrets.nexus_publisher_password }}">ola.txt
-    
-    - name: Archive binary
-      uses: actions/upload-artifact@v2
+    - name: Login to ${{ env.PUSH_REGISTRY }} Registry
+      uses: docker/login-action@v1
       with:
-        name: artifacts
-        path: ola.txt
+        username: ${{ secrets.nexus_publisher_user }}
+        password: ${{ secrets.nexus_publisher_password }}
+        registry: ${{ env.PUSH_REGISTRY }}
 
     - name: Promote images
       shell: bash
