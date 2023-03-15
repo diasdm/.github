@@ -311,9 +311,11 @@ jobs:
           mkdir -p userspace/
           export USERSPACE_FOLDER_PATH="$(pwd)/userspace"
           integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key services_version --output_file movai_service_version
-          wget https://movai-scripts.s3.amazonaws.com/QuickStart.bash
-          chmod +x ./QuickStart.bash
-          ./QuickStart.bash --apps $(cat movai_service_version) $CONFIG_FILE_NAME
+          integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key quickstart_version --output_file quickstart_version
+          wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat quickstart_version).bash
+          chmod +x ./QuickStart_$(cat quickstart_version).bash
+          ./QuickStart_$(cat quickstart_version).bash --apps $(cat movai_service_version) $CONFIG_FILE_NAME
+
           execution_status=$?
           exit $execution_status
           rm movai_service_version
@@ -608,10 +610,12 @@ jobs:
 
           export PATH="$HOME/.local/bin:$PATH"
           integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key services_version --output_file movai_service_version
+          integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key quickstart_version --output_file quickstart_version
 
-          wget https://movai-scripts.s3.amazonaws.com/QuickStart.bash
-          chmod +x ./QuickStart.bash
-          ./QuickStart.bash --apps $(cat movai_service_version) $CONFIG_FILE_NAME
+          wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat quickstart_version).bash
+          chmod +x ./QuickStart_$(cat quickstart_version).bash
+          ./QuickStart_$(cat quickstart_version).bash --apps $(cat movai_service_version) $CONFIG_FILE_NAME
+
           execution_status=$?
           exit $execution_status
           rm movai_service_version
