@@ -93,7 +93,7 @@ jobs:
 
           if [ "${{ inputs.forward_platform }}" = "true" ];
           then
-            merge_manifest_args="$merge_manifest_args --merge_sub_prod_dep_keys 'platform_config,platform_components,installion'"
+            merge_manifest_args="$merge_manifest_args --merge_sub_prod_dep_keys platform_config,platform_components,installion"
           fi
 
           if [ "${{ inputs.with_simulation }}" = "false" ];
