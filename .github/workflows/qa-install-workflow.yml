@@ -5,16 +5,20 @@ on:
       test_config_file:
         required: true
         type: string
+        description: Test JIRA ID of installation using config file
       test_set:
         required: true
         type: string
+        description: Install tests test set
       tests_to_validate:
         required: true
         type: string
+        description: Test JIRA ID of cucumber tests to be validated
       nightly:
         required: false
         type: boolean
-        default: false    
+        default: false
+        description: If it is a nightly execution
     secrets:
       auto_commit_user:
         required: true
@@ -40,18 +44,13 @@ on:
         required: true
 
 env:
-  GITHUB_API_USR: "OttoMation-Movai"
-  REGISTRY: registry.cloud.mov.ai
-  TEST_CONFIG_FILE_INSTALL: ${{ inputs.test_config_file }}
-  TEST_SET: ${{ inputs.test_set }}
-  TESTS_TO_VALIDATE: ${{ inputs.tests_to_validate }}
   XRAY_CLIENTID: ${{ secrets.xray_clientid }}
   XRAY_SECRET: ${{ secrets.xray_secret }}
   JIRA_USERNAME: ${{ secrets.jira_username }}
   JIRA_PASSWORD: ${{ secrets.jira_password }}
 
 jobs:
-  Validate-boostrap-configs:
+  Run-tests:
     runs-on: integration-pipeline
     steps:
       - name: Checkout
@@ -82,7 +81,7 @@ jobs:
           # install tests requirements in venv
           pip install -r requirements.txt
 
-          python3 testcasemanagement/testcase_importer.py --target "${{ env.TESTS_TO_VALIDATE }}"
+          python3 testcasemanagement/testcase_importer.py --target "${{ inputs.tests_to_validate }}"
           python3 testcasemanagement/feature_file_processor.py --validate
 
           # deactivate venv
@@ -117,7 +116,7 @@ jobs:
           rm -rf results/*
 
           pytest_args=" tests/"
-          pytest_args="$pytest_args -k ${{ env.TEST_CONFIG_FILE_INSTALL }}"
+          pytest_args="$pytest_args -k ${{ inputs.test_config_file }}"
           pytest_args="$pytest_args --installPath=."
           pytest_args="$pytest_args --jsonConfigFilePath=config/platform_example_script.json"
           pytest_args="$pytest_args --full_clean"
@@ -155,7 +154,7 @@ jobs:
           # tests execution
           pytest \
             tests/ \
-            -k ${{ env.TEST_SET }}
+            -k ${{ inputs.test_set }}
 
           # remove virtual environment
           deactivate
