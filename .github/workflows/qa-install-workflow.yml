@@ -145,8 +145,7 @@ jobs:
           fi
 
           # tests execution
-          pytest \
-            "${pytest_args}"
+          pytest ${pytest_args}
 
           # remove virtual environment
           deactivate
