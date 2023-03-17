@@ -105,19 +105,12 @@ jobs:
           # delete results folder
           rm -rf results/*
 
-          pytest_args=" tests/"
-          pytest_args="$pytest_args -k ${{ inputs.test_config_file }}"
-          pytest_args="$pytest_args --installPath=."
-          pytest_args="$pytest_args --jsonConfigFilePath=config/platform_example_script.json"
-          pytest_args="$pytest_args --full_clean"
-
-          if [ "${{ inputs.nightly }}" = "true" ];
-          then
-            pytest_args="$pytest_args --nightly_arg"
-          fi
-
           # tests execution
-          pytest $pytest_args
+          pytest \
+            tests/ \
+            -k ${{ inputs.test_config_file }} \
+            --installPath="." \
+            --jsonConfigFilePath="config/platform_example_script.json" --full_clean
 
           # remove virtual environment
           deactivate
@@ -141,10 +134,19 @@ jobs:
           # activate venv
           . venv/bin/activate
 
+          # arguments
+          pytest_args=" tests/"
+          pytest_args="${pytest_args} -k ${{ inputs.test_set }}"
+
+          # when nightly fail on xpassed to give visibility to issues
+          if [ "${{ inputs.nightly }}" = "true" ];
+          then
+            pytest_args="${pytest_args} --runxfail"
+          fi
+
           # tests execution
           pytest \
-            tests/ \
-            -k ${{ inputs.test_set }}
+            "${pytest_args}"
 
           # remove virtual environment
           deactivate
@@ -185,7 +187,7 @@ jobs:
       - name: Slack message success
         uses: slackapi/slack-github-action@v1.23.0
         with:
-          channel-id: 'C02U028NMB7'
+          channel-id: 'C03UR8XKNBB'
           slack-message: ${{ steps.pre_slack.outputs.msg }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
@@ -194,7 +196,7 @@ jobs:
         if: failure()
         uses: slackapi/slack-github-action@v1.23.0
         with:
-          channel-id: 'C02U028NMB7'
+          channel-id: 'C03UR8XKNBB'
           slack-message: ${{ steps.pre_slack.outputs.msg_error }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
