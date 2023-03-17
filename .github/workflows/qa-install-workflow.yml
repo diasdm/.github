@@ -1,0 +1,195 @@
+name: Install Tests
+on:
+  workflow_call:
+    inputs:
+
+      test_config_file:
+        required: true
+        type: string
+      test_set:
+        required: true
+        type: string
+      tests_to_validate:
+        required: true
+        type: string
+      nightly:
+        required: false
+        type: boolean
+        default: false    
+    secrets:
+      auto_commit_user:
+        required: true
+      auto_commit_mail:
+        required: true
+      auto_commit_pwd:
+        required: true
+      registry_user:
+        required: true
+      registry_password:
+        required: true
+      gh_token:
+        required: true
+      slack_token_id:
+        required: true
+      jira_username:
+        required: true
+      jira_password:
+        required: true
+      xray_clientid:
+        required: true
+      xray_secret:
+        required: true
+
+env:
+  GITHUB_API_USR: "OttoMation-Movai"
+  REGISTRY: registry.cloud.mov.ai
+  TEST_CONFIG_FILE_INSTALL: ${{ inputs.test_config_file }}
+  TEST_SET: ${{ inputs.test_set }}
+  TESTS_TO_VALIDATE: ${{ inputs.tests_to_validate }}
+  XRAY_CLIENTID: ${{ secrets.xray_clientid }}
+  XRAY_SECRET: ${{ secrets.xray_secret }}
+  JIRA_USERNAME: ${{ secrets.jira_username }}
+  JIRA_PASSWORD: ${{ secrets.jira_password }}
+
+jobs:
+  Validate-boostrap-configs:
+    runs-on: integration-pipeline
+     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Agent info
+        id: agent_info
+        run: |
+          ip=$(hostname -I | awk '{print $1}')
+          echo $ip
+          echo ::set-output name=ip::$ip
+
+      - name: Update/upgrade host packages
+        run: |
+          while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
+          sudo apt-get update
+          while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
+          sudo apt-get upgrade -y
+
+      - name: Feature file validation
+        shell: bash
+        run: |
+          # create virtual environment
+          rm -rf venv
+          python3 -m venv venv
+          . venv/bin/activate
+
+          # install tests requirements in venv
+          pip install -r requirements.txt
+
+          python3 testcasemanagement/testcase_importer.py --target "${{ env.TESTS_TO_VALIDATE }}"
+          python3 testcasemanagement/feature_file_processor.py --validate
+
+          # deactivate venv
+          deactivate
+
+      - name: Prepare QA Feature File Validation slack message
+        if: always()
+        id: pre_slack
+        run: |
+          MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build is unstable :rain_cloud: \
+          Feature File Validation Step FAILED and stopped install tests Pipeline :rain_cloud: \
+          Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} \
+          Validate logs for cause troubleshooting."
+          echo ::set-output name=msg_error::$MESSAGE_ERR
+
+      - name: Slack message failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          channel-id: "C02PB9A9F45"
+          slack-message: ${{ steps.pre_slack.outputs.msg_error }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
+
+      - name: Install tests using config file with full clean
+        shell: bash
+        run: |
+          # activate venv
+          . venv/bin/activate
+
+          # delete results folder
+          rm -rf results/*
+
+          pytest_args=" tests/"
+          pytest_args="$pytest_args -k ${{ env.TEST_CONFIG_FILE_INSTALL }}"
+          pytest_args="$pytest_args --installPath=."
+          pytest_args="$pytest_args --jsonConfigFilePath=config/platform_example_script.json"
+          pytest_args="$pytest_args --full_clean"
+
+          if [ "${{ inputs.nightly }}" = "true" ];
+          then
+            pytest_args="$pytest_args --nightly_arg"
+          fi
+
+          # tests execution
+          pytest $pytest_args
+
+          # remove virtual environment
+          deactivate
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: install_config_file
+          path: ./results/*
+
+      - name: Clean results folder
+        if: always()
+        shell: bash
+        run: |
+          rm -rf ./results/*
+
+      - name: Install tests suite
+        shell: bash
+        run: |
+          # activate venv
+          . venv/bin/activate
+
+          # tests execution
+          pytest \
+            tests/ \
+            -k ${{ env.TEST_SET }}
+
+          # remove virtual environment
+          deactivate
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: install_suite
+          path: ./results/*
+
+      - name: Prepare slack variables
+        if: always()
+        id: pre_slack
+        run: |
+          MESSAGE=":white_check_mark: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is stable :sunny: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is unstable :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          echo ::set-output name=msg::$MESSAGE
+          echo ::set-output name=msg_error::$MESSAGE_ERR
+
+      - name: Slack message success
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          channel-id: 'C02U028NMB7'
+          slack-message: ${{ steps.pre_slack.outputs.msg }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
+
+      - name: Slack message failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          channel-id: 'C02U028NMB7'
+          slack-message: ${{ steps.pre_slack.outputs.msg_error }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
