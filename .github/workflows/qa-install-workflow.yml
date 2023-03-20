@@ -19,6 +19,11 @@ on:
         type: boolean
         default: false
         description: If it is a nightly execution
+      create_test_execution:
+        required: false
+        type: boolean
+        default: false
+        description: Create test execution in JIRA
     secrets:
       gh_token:
         required: true
@@ -144,6 +149,12 @@ jobs:
           if [ "${{ inputs.nightly }}" = "true" ];
           then
             pytest_args="${pytest_args} --runxfail"
+          fi
+
+          # when requested, create test execution
+          if [ "${{ inputs.create_test_execution }}" = "true" ];
+          then
+            pytest_args="${pytest_args} --jira_report"
           fi
 
           # tests execution
