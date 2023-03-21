@@ -48,6 +48,10 @@ jobs:
   Run-tests:
     runs-on: integration-pipeline
     steps:
+      - name: Slack message failure
+        if: inputs.nightly
+        run: |
+            echo "${{ inputs.nightly == 'true' }}"
       - name: Checkout
         uses: actions/checkout@v3
 
@@ -197,7 +201,7 @@ jobs:
           echo ::set-output name=msg_error::$MESSAGE_ERR
 
       - name: Slack message success
-        if: ${{ inputs.nightly == 'true' }}
+        if: ${{ inputs.nightly }}
         uses: slackapi/slack-github-action@v1.23.0
         with:
           channel-id: 'C03UR8XKNBB'
@@ -206,7 +210,7 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
 
       - name: Slack message failure
-        if: ${{ inputs.nightly == 'true' && failure() }}
+        if: ${{ inputs.nightly && failure() }}
         uses: slackapi/slack-github-action@v1.23.0
         with:
           channel-id: 'C03UR8XKNBB'
