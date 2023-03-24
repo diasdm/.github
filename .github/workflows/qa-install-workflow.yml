@@ -136,7 +136,7 @@ jobs:
           rm -rf ./results/*
 
       - name: Install tests suite
-        timeout-minutes: 30
+        timeout-minutes: 70
         shell: bash
         run: |
           # activate venv
