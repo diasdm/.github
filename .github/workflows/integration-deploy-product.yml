@@ -62,13 +62,13 @@ jobs:
       shell: bash
       run: |
         images=($(cat product.image.artifact | tr ' ' "\n"))
-        OLD_REGISTRY=registry.cloud.mov.ai
+        # OLD_REGISTRY=registry.cloud.mov.ai
         for image in "${images[@]}"
         do
           blacklisted='nodejs'
 
           if [[ "$image" != *"$blacklisted"* ]]; then
-            image=$(echo $image | sed "s|$OLD_REGISTRY|registry.aws.cloud.mov.ai|g")
+            # image=$(echo $image | sed "s|$OLD_REGISTRY|$PUSH_REGISTRY|g")
             target=$(echo $image | sed 's|/qa/|/prod/|g')
             target=$(echo $target | sed 's|/devops/|/prod/|g')
             docker pull $image
