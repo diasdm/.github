@@ -480,7 +480,7 @@ jobs:
           username: ${{ secrets.registry_user }}
           password: ${{ secrets.registry_password }}
           registry: ${{ env.PUSH_REGISTRY }}
-  
+
       - name: Prepare docker build variables
         if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
         id: pre_build
@@ -599,10 +599,10 @@ jobs:
         shell: bash
         run: |
           promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g")
-          
+
           docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
           docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
-          
+
 
       - name: Installation
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
@@ -886,7 +886,7 @@ jobs:
       - name: Slack message success
         uses: slackapi/slack-github-action@v1.23.0
         with:
-          channel-id: 'C02U028NMB7'
+          channel-id: 'C050L85R6VC'
           slack-message: ${{ steps.pre_slack.outputs.msg }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
@@ -895,7 +895,7 @@ jobs:
         if: failure()
         uses: slackapi/slack-github-action@v1.23.0
         with:
-          channel-id: 'C02U028NMB7'
+          channel-id: 'C050L85R6VC'
           slack-message: ${{ steps.pre_slack.outputs.msg_error }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
