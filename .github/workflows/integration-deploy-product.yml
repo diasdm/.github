@@ -26,7 +26,8 @@ on:
         required: false
       gh_token:
         required: true
-
+env:
+  PACKAGE_DEPLOYER_VERSION: "1.0.0.25"
 jobs:
   Deploy-product:
     runs-on: ubuntu-20.04
@@ -81,7 +82,7 @@ jobs:
     - name: Install package deployer
       if: ${{ inputs.deploy_pkgs == 'true' }}
       run: |
-        python3 -m pip install -i https://artifacts.cloud.mov.ai/repository/pypi-edge/simple --extra-index-url https://pypi.org/simple movai-package-deployer==1.0.0.20
+        python3 -m pip install -i https://artifacts.cloud.mov.ai/repository/pypi-edge/simple --extra-index-url https://pypi.org/simple movai-package-deployer==${{ env.PACKAGE_DEPLOYER_VERSION }} --ignore-installed
         
     - name: Download staging packages
       if: ${{ inputs.deploy_pkgs == 'true' && inputs.self_deployment_pkgs == 'false' }}
