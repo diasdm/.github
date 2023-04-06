@@ -431,6 +431,9 @@ jobs:
         id: pre_build
         run: |
           echo ::set-output name=base_name::$(cat simulator_artifacts/simulator_base.ci)
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
       - name: Build with args and push
         if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true'}}
