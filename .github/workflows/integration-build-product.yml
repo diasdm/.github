@@ -503,6 +503,9 @@ jobs:
       #       BASE_IMAGE=${{ steps.pre_build.outputs.base_name }}
       #       CI_SCRIPT_VERSION=${{ env.CI_INTEGRATION_SCRIPTS_VERSION }}
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
       - name: Docker build
         if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true'}}
         shell: bash
