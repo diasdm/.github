@@ -704,7 +704,7 @@ jobs:
           docker image prune --all -f
 
   publish:
-    needs: [Install-Robot]
+    needs: [Install-Robot, Install-Simulator-Robot]
     runs-on: integration-pipeline
     steps:
       - uses: rtCamp/action-cleanup@master
@@ -735,12 +735,12 @@ jobs:
           name: manifest
           path: .
 
-      # - name: unstash deploy_simulator_artifacts
-      #   if: ${{ inputs.with_simulation == 'true' }}
-      #   uses: actions/download-artifact@v2
-      #   with:
-      #     name: deploy_simulator_artifacts
-      #     path: .
+      - name: unstash deploy_simulator_artifacts
+        if: ${{ inputs.with_simulation == 'true' }}
+        uses: actions/download-artifact@v2
+        with:
+          name: deploy_simulator_artifacts
+          path: .
 
       - name: Install CI Scripts
         shell: bash
@@ -777,13 +777,13 @@ jobs:
           rm -rf pkgs_deployable pkgs_undeployable
 
           cp artifacts/*.json deployment_artifacts
-          # if [ "${{ inputs.with_simulation }}" = "true" ];
-          # then
-          #   echo -e "$(cat ./artifacts/product-noetic.image.artifact)\n$(cat ./simulator.image.artifact)" > deployment_artifacts/product.image.artifact
-          # else
-          #   cp ./artifacts/product-noetic.image.artifact deployment_artifacts/product.image.artifact
-          # fi
-          cp ./artifacts/product-noetic.image.artifact deployment_artifacts/product.image.artifact
+          if [ "${{ inputs.with_simulation }}" = "true" ];
+          then
+            echo -e "$(cat ./artifacts/product-noetic.image.artifact)\n$(cat ./simulator.image.artifact)" > deployment_artifacts/product.image.artifact
+          else
+            cp ./artifacts/product-noetic.image.artifact deployment_artifacts/product.image.artifact
+          fi
+          #cp ./artifacts/product-noetic.image.artifact deployment_artifacts/product.image.artifact
           cp deployment_artifacts/product.image.artifact ./
 
           integration-pipeline patch_manifest_with_spawner
