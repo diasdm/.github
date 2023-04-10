@@ -370,13 +370,14 @@ jobs:
             } >> /tmp/manifest.txt
             mkdir /tmp/workspace
             python3 -m tools.backup -p /tmp/workspace/ -m /tmp/manifest.txt -a export -i
-            zip -r /tmp/metadata.zip /tmp/workspace/
+            
           ' || true
             docker cp $container_id:/tmp/deployable.dploy artifacts/${{ inputs.product_name }}-${{ matrix.distro }}-deployable.dploy
             docker cp $container_id:/tmp/undeployable.dploy artifacts/${{ inputs.product_name }}-${{ matrix.distro }}-3rdParty.dploy
             
-            mkdir metadata_artifact
-            docker cp $container_id:/tmp/metadata.zip metadata_artifact/metadata.zip 
+            mkdir -p metadata_artifact tmp_meta
+            docker cp -r $container_id:/tmp/workspace/ ./tmp_meta/
+            tar cvzf ./metadata_artifact/metadata.tar.gz ./tmp_meta/
             CONFIG_FILE_NAME=${{ inputs.product_name }}-${{ matrix.distro }}.json
 
             echo "$PUSH_REGISTRY/qa/${{ inputs.product_name }}-${{ matrix.distro }}:$(cat product.version)">artifacts/product-${{ matrix.distro }}.image.artifact
@@ -819,7 +820,7 @@ jobs:
           cat product-manifest.yaml
           cp product-manifest.yaml deployment_artifacts
 
-          cp metadata.zip deployment_artifacts
+          cp metadata.tar.gz deployment_artifacts
 
           product_version=$(cat product.version)
           # danger zone. Everything will be deleted.
