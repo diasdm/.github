@@ -376,7 +376,7 @@ jobs:
             docker cp $container_id:/tmp/undeployable.dploy artifacts/${{ inputs.product_name }}-${{ matrix.distro }}-3rdParty.dploy
             
             mkdir -p metadata_artifact tmp_meta
-            docker cp -r $container_id:/tmp/workspace/ ./tmp_meta/
+            docker cp $container_id:/tmp/workspace/ ./tmp_meta/
             tar cvzf ./metadata_artifact/metadata.tar.gz ./tmp_meta/
             CONFIG_FILE_NAME=${{ inputs.product_name }}-${{ matrix.distro }}.json
 
