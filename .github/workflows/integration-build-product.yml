@@ -357,9 +357,26 @@ jobs:
             python3 -m pip install -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple movai-package-deployer==${{ env.PACKAGE_DEPLOYER_VERSION }} --ignore-installed
             package-deployer scan
             ls -la /tmp
+
+            {
+                echo 'Annotation:*'
+                echo 'Callback:*'
+                echo 'Configuration:*'
+                echo 'Flow:*'
+                echo 'GraphicScene:*'
+                echo 'Layout:*'
+                echo 'Node:*'
+                echo 'Package:*'
+            } >> /tmp/manifest.txt
+            mkdir /tmp/workspace
+            python3 -m tools.backup -p /tmp/workspace/ -m /tmp/manifest.txt -a export -i
+            zip -r /tmp/metadata.zip /tmp/workspace/
           ' || true
             docker cp $container_id:/tmp/deployable.dploy artifacts/${{ inputs.product_name }}-${{ matrix.distro }}-deployable.dploy
             docker cp $container_id:/tmp/undeployable.dploy artifacts/${{ inputs.product_name }}-${{ matrix.distro }}-3rdParty.dploy
+            
+            mkdir metadata_artifact
+            docker cp $container_id:/tmp/metadata.zip metadata_artifact/metadata.zip 
             CONFIG_FILE_NAME=${{ inputs.product_name }}-${{ matrix.distro }}.json
 
             echo "$PUSH_REGISTRY/qa/${{ inputs.product_name }}-${{ matrix.distro }}:$(cat product.version)">artifacts/product-${{ matrix.distro }}.image.artifact
@@ -367,6 +384,12 @@ jobs:
       - name: Push spawner image
         shell: bash
         run: docker push "${{ env.PUSH_REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
+
+      - name: Stash project metadata
+        uses: actions/upload-artifact@v2
+        with:
+          name: project_metadata
+          path: metadata_artifact/*
 
       - name: Stash deploy_artifacts_noetic
         uses: actions/upload-artifact@v2
@@ -735,6 +758,12 @@ jobs:
           name: manifest
           path: .
 
+      - name: unstash project metadata
+        uses: actions/download-artifact@v2
+        with:
+          name: project_metadata
+          path: .
+
       - name: unstash deploy_simulator_artifacts
         if: ${{ inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v2
@@ -789,6 +818,8 @@ jobs:
           integration-pipeline patch_manifest_with_spawner
           cat product-manifest.yaml
           cp product-manifest.yaml deployment_artifacts
+
+          cp metadata.zip deployment_artifacts
 
           product_version=$(cat product.version)
           # danger zone. Everything will be deleted.
