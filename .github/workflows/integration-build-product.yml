@@ -368,16 +368,16 @@ jobs:
                 echo 'Node:*'
                 echo 'Package:*'
             } >> /tmp/manifest.txt
-            mkdir /tmp/workspace
-            python3 -m tools.backup -p /tmp/workspace/ -m /tmp/manifest.txt -a export -i
+            mkdir /tmp/proj_metadata
+            python3 -m tools.backup -p /tmp/proj_metadata/ -m /tmp/manifest.txt -a export -i
             
           ' || true
             docker cp $container_id:/tmp/deployable.dploy artifacts/${{ inputs.product_name }}-${{ matrix.distro }}-deployable.dploy
             docker cp $container_id:/tmp/undeployable.dploy artifacts/${{ inputs.product_name }}-${{ matrix.distro }}-3rdParty.dploy
             
             mkdir -p metadata_artifact tmp_meta
-            docker cp $container_id:/tmp/workspace/ ./tmp_meta/
-            tar cvzf ./metadata_artifact/metadata.tar.gz ./tmp_meta/
+            docker cp $container_id:/tmp/proj_metadata/ ./
+            tar cvzf ./metadata_artifact/metadata.tar.gz ./proj_metadata
             CONFIG_FILE_NAME=${{ inputs.product_name }}-${{ matrix.distro }}.json
 
             echo "$PUSH_REGISTRY/qa/${{ inputs.product_name }}-${{ matrix.distro }}:$(cat product.version)">artifacts/product-${{ matrix.distro }}.image.artifact
