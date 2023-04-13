@@ -653,6 +653,11 @@ jobs:
           integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key services_version --output_file movai_service_version
           integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key quickstart_version --output_file quickstart_version
 
+          # replace registry with the one used for CICD
+          json_reg=$(grep registry $CONFIG_FILE_NAME | head -n 1 | cut -d ':' -f 2 | tr -d '," ')
+          cicd_reg="${{ env.REGISTRY }}"
+          sed -i "s/$json_reg/$cicd_reg/g" $CONFIG_FILE_NAME
+          
           wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat quickstart_version).bash
           chmod +x ./QuickStart_$(cat quickstart_version).bash
           ./QuickStart_$(cat quickstart_version).bash --apps $(cat movai_service_version) $CONFIG_FILE_NAME
