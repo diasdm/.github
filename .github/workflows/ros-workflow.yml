@@ -25,6 +25,18 @@ on:
         required: false
         type: boolean
         default: true
+      MOBTEST_VERSION:
+        required: false
+        type: string
+        default: "0.0.4.1"
+      ROS_BUILDTOOLS_TAG:
+        required: false
+        type: string
+        default: "v2.0.1"
+      MOBROS_VERSION:
+        required: false
+        type: string
+        default: "2.0.0.23"
 
 
     secrets:
@@ -49,11 +61,6 @@ on:
       sonar_token:
         required: true
 
-env:
-  MOBTEST_VERSION: "0.0.4.1"
-  ROS_BUILDTOOLS_TAG: "v2.0.1"
-  MOBROS_VERSION: "2.0.0.23"
-
 jobs:
   Build:
     strategy:
@@ -63,7 +70,7 @@ jobs:
     if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.cloud.mov.ai/qa/ros-buildtools-${{ matrix.distro }}:${{ env.ROS_BUILDTOOLS_TAG }}
+      image: registry.cloud.mov.ai/qa/ros-buildtools-${{ matrix.distro }}:${{ inputs.ROS_BUILDTOOLS_TAG }}
       options: --user root
       credentials:
         username: ${{secrets.registry_user}}
@@ -106,7 +113,7 @@ jobs:
       run: |
         python3 -m pip install \
         -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple \
-        mobros==$MOBROS_VERSION --ignore-installed
+        mobros==${{ inputs.MOBROS_VERSION }} --ignore-installed
 
     - name: Setup link to Ros userspace
       run: |
@@ -176,7 +183,7 @@ jobs:
         run: |
           python3 -m pip install \
           -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple \
-          mobtest==$MOBTEST_VERSION --ignore-installed
+          mobtest==${{ inputs.MOBTEST_VERSION }} --ignore-installed
 
       - name: Mobtest validations
         run: |
@@ -216,7 +223,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs:  [Test]
     container:
-      image: registry.cloud.mov.ai/qa/ros-buildtools-noetic:${{ env.ROS_BUILDTOOLS_TAG }}
+      image: registry.cloud.mov.ai/qa/ros-buildtools-noetic:${{ inputs.ROS_BUILDTOOLS_TAG }}
       options: --user root
       credentials:
         username: ${{secrets.registry_user}}
@@ -239,7 +246,7 @@ jobs:
         ls -la .
 
     - name: Install Mobros
-      run: python3 -m pip install mobros==$MOBROS_VERSION --ignore-installed
+      run: python3 -m pip install mobros==${{ inputs.MOBROS_VERSION }} --ignore-installed
 
     - name: Raise version and validate Ros repository
       run: mobros raise --workspace="$(pwd)"
@@ -319,7 +326,7 @@ jobs:
     if: ${{ inputs.release == 'true' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.cloud.mov.ai/qa/ros-buildtools-noetic:${{ env.ROS_BUILDTOOLS_TAG }}
+      image: registry.cloud.mov.ai/qa/ros-buildtools-noetic:${{ inputs.ROS_BUILDTOOLS_TAG }}
       options: --user root
       credentials:
         username: ${{secrets.registry_user}}
