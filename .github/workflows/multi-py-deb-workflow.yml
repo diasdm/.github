@@ -44,6 +44,15 @@ on:
         required: false
         type: string
         default: 'false'
+      prod_publish_repos:
+        required: false
+        type: string
+        default: '["ppa-main"]'
+      prod_publish_pypi:
+        required: false
+        type: string
+        default: 'pypi-edge'
+
     secrets:
       auto_commit_user:
         required: false # only when deploy true
@@ -533,8 +542,8 @@ jobs:
           find artifacts/ -name "*.rpm" -not -name "*src*" -print0 | xargs -0 -n1 -r yum install -y
 
   Publish:
-    needs: [Raise, Debian-Pack, Rpm-Pack]
-    if: ${{ always() && inputs.deploy == 'true' }}
+    needs: [Raise, Debian-Pack, Rpm-Pack, Debian-Test]
+    if: ${{ inputs.deploy == 'true' }}
     runs-on: ubuntu-20.04
     container:
       image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
@@ -742,19 +751,58 @@ jobs:
         name: artifacts
         path: artifacts/*.rpm
 
-    - name: Publish package to TestPyPI
+    - name: Publish package to prod PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: ${{ secrets.nexus_publisher_user }}
         password: ${{ secrets.nexus_publisher_password }}
-        repository_url: https://artifacts.cloud.mov.ai/repository/pypi-edge/
+        repository_url: https://artifacts.cloud.mov.ai/repository/${{ inputs.prod_publish_pypi }}/
 
-    - name: Publish to Nexus ppa-main
+    - name: Publish to Nexus
+      shell: bash
       run: |
-          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
-          NEXUS_REPO="ppa-main"
-          FILE_LOCATION=$(find artifacts/*.deb)
-          find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
-          -H "Content-Type: multipart/form-data" \
-          --data-binary "@{}" \
-          "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/" \;
+            NEXUS_REPO="${{ matrix.publish_repo }}"
+            if [ "$NEXUS_REPO" != "ppa-public" ]; then
+              NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
+            else
+              NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
+            fi
+
+            for file in artifacts/*.deb
+            do
+              RETURN_CODE=$(curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
+              -H "Content-Type: multipart/form-data" \
+              --data-binary "@$file" \
+              -w '%{http_code}' \
+              "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/")
+
+              #retry
+              if [[ ! "$RETURN_CODE" =~ ^(200|201|202)$ ]]; then
+                echo "Failed upload with $RETURN_CODE. Retrying"
+
+                RETURN_CODE=$(curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
+                  -H "Content-Type: multipart/form-data" \
+                  --data-binary "@$file" \
+                  -w '%{http_code}' \
+                  "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/")
+              fi
+
+              if [[ ! "$RETURN_CODE" =~ ^(200|201|202)$ ]]; then
+                echo "Failed upload with $RETURN_CODE. Exiting"
+                exit 1
+              fi
+
+            done
+    # - name: Publish to Nexus
+    #   run: |
+    #       NEXUS_REPO="${{ matrix.publish_repo }}"
+    #       if [ "$NEXUS_REPO" != "ppa-public" ]; then
+    #         NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
+    #       else
+    #         NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
+    #       fi
+    #       FILE_LOCATION=$(find artifacts/*.deb)
+    #       find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
+    #       -H "Content-Type: multipart/form-data" \
+    #       --data-binary "@{}" \
+    #       "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/" \;
