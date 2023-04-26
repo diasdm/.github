@@ -1,0 +1,195 @@
+name: UI Tests
+on:
+  workflow_call:
+    inputs:
+      install_tests_ref:
+        required: true
+        type: string
+        description: Install tests reference to use
+      test_set:
+        required: true
+        type: string
+        description: Test set to execute
+    secrets:
+      gh_token:
+        required: true
+      slack_token_id:
+        required: true
+      jira_username:
+        required: true
+      jira_password:
+        required: true
+      xray_clientid:
+        required: true
+      xray_secret:
+        required: true
+
+jobs:
+  Run-tests:
+    runs-on: integration-pipeline
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Agent info
+        id: agent_info
+        run: |
+          ip=$(hostname -I | awk '{print $1}')
+          echo $ip
+          echo ::set-output name=ip::$ip
+
+      - name: Update/upgrade host packages
+        run: |
+          while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
+          sudo apt-get update
+          while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
+          sudo apt-get upgrade -y
+
+      - name: Setup venv
+        shell: bash
+        run: |
+          # create virtual environment
+          rm -rf venv
+          python3 -m venv venv
+          . venv/bin/activate
+
+          # install tests requirements in venv
+          pip install -r requirements.txt
+
+          # deactivate venv
+          deactivate
+
+      - name: Setup QA install tests
+        uses: actions/checkout@v3
+        with:
+          repository: MOV-AI/qa_install_tests
+          ref: refs/heads/${{ inputs.install_tests_ref }}
+          path: qa_install_tests
+          token: ${{ secrets.gh_token }}
+
+      - name: Install tests
+        id: install
+        working-directory: qa_install_tests
+        shell: bash
+        run: |
+          # create virtual environment for testing
+          python3 -m venv venv
+          . venv/bin/activate
+
+          # install tests requirements in venv
+          pip install -r requirements.txt
+
+          # tests execution
+          pytest tests/ \
+            -k 'AMR_installation_validator' \
+            --installPath="." \
+            --jsonConfigFilePath="config/platform_example_script.json"
+
+          # remove virtual environment
+          deactivate
+          rm -rf venv
+
+          user=$(cat results/credentials.txt | awk -F: '{print $1}')
+          pwd=$(cat results/credentials.txt | awk -F: '{print $2}')
+          echo ::set-output name=movai_user::$user
+          echo ::set-output name=movai_pwd::$pwd
+
+      - name: UI tests
+        id: ui
+        shell: bash
+        run: |
+          # activate venv
+          . venv/bin/activate
+
+          # tests execution
+          pytest \
+            --ignore qa_install_tests \
+            --hub_url http://172.22.0.105:4444 \
+            --base_url https://${{ steps.agent_info.outputs.ip }}/ \
+            --username ${{ steps.install.outputs.movai_user }} \
+            --password ${{ steps.install.outputs.movai_pwd }}
+
+          # remove virtual environment
+          deactivate
+
+      - name: Feature file validation
+        shell: bash
+        env:
+          XRAY_CLIENTID: ${{ secrets.xray_clientid }}
+          XRAY_SECRET: ${{ secrets.xray_secret }}
+          JIRA_USERNAME: ${{ secrets.jira_username }}
+          JIRA_PASSWORD: ${{ secrets.jira_password }}
+        run: |
+          # done at the end so that during development it fails
+          # only after UI tests are run
+
+          # activate venv
+          . venv/bin/activate
+
+          # install tests requirements in venv
+          pip install -r requirements.txt
+
+          python3 testcasemanagement/testcase_importer.py --target ${{ inputs.test_set }}
+          python3 testcasemanagement/feature_file_processor.py --validate
+
+          # deactivate venv
+          deactivate
+
+      - name: Prepare QA Feature File Validation slack message
+        if: always()
+        id: pre_slack
+        run: |
+          MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build is unstable :rain_cloud: \
+          Feature File Validation Step FAILED and stopped Pipeline :rain_cloud: \
+          Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} \
+          Validate logs for cause troubleshooting."
+          echo ::set-output name=msg_error::$MESSAGE_ERR
+
+      - name: Slack message failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          channel-id: "C02PB9A9F45"
+          slack-message: ${{ steps.pre_slack.outputs.msg_error }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
+
+      - name: Collect artifacts
+        if: always()
+        shell: bash
+        env:
+          INSTALL_DIR: ${{ steps.install_tests_setup.outputs.target_dir }}
+          FLOW_DIR: ${{ steps.flow_tests_setup.outputs.target_dir }}
+        run: |
+          mkdir qa_artifacts
+
+          # install tests artifacts
+          # *.log and *.zip might not exist if the test fails early
+          mkdir -p qa_artifacts/install
+          cp -r qa_install_tests/results/*.log ./qa_artifacts/install || true
+          cp -r qa_install_tests/results/*.zip ./qa_artifacts/install || true
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: qa_artifacts
+          path: qa_artifacts/*
+
+      - name: Remove robots
+        if: always()
+        shell: bash
+        run: |
+          for robot in $(movai-cli robots list); do
+            movai-cli robots stop $robot
+            sleep 5
+            movai-cli robots remove $robot
+          done || true
+
+      - name: Docker cleanups
+        if: always()
+        shell: bash
+        run: |
+          docker system prune -f
+          docker image prune --all -f

@@ -9,7 +9,7 @@ on:
       test_set:
         required: true
         type: string
-        description: Install tests test set
+        description: Test set to execute
       tests_to_validate:
         required: true
         type: string
@@ -38,12 +38,6 @@ on:
       xray_secret:
         required: true
 
-env:
-  XRAY_CLIENTID: ${{ secrets.xray_clientid }}
-  XRAY_SECRET: ${{ secrets.xray_secret }}
-  JIRA_USERNAME: ${{ secrets.jira_username }}
-  JIRA_PASSWORD: ${{ secrets.jira_password }}
-
 jobs:
   Run-tests:
     runs-on: integration-pipeline
@@ -68,6 +62,11 @@ jobs:
 
       - name: Feature file validation
         shell: bash
+        env:
+          XRAY_CLIENTID: ${{ secrets.xray_clientid }}
+          XRAY_SECRET: ${{ secrets.xray_secret }}
+          JIRA_USERNAME: ${{ secrets.jira_username }}
+          JIRA_PASSWORD: ${{ secrets.jira_password }}
         run: |
           # create virtual environment
           rm -rf venv
