@@ -1015,6 +1015,24 @@ jobs:
           TF_VAR_fleet_worker_name_prefix: ${{ steps.infra_names.outputs.worker_prefix }}
           TF_VAR_fleet_worker_memory: 8192
 
+      - name: Prepare Devops provisioning slack message
+        if: always()
+        id: pre_slack_infra
+        run: |
+          MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is being impacted by an infrastructural issue. \
+          Provisioning of fleet infrastructure failed. Please take a look! \
+          Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          echo ::set-output name=msg_error::$MESSAGE_ERR
+
+      - name: Slack message failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          channel-id: "G0102LEV1CL"
+          slack-message: ${{ steps.pre_slack_infra.outputs.msg_error }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
+
       - name: Apply ansible inventory
         shell: bash
         run: |
