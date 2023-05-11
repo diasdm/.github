@@ -873,6 +873,7 @@ jobs:
           # flow tests artifacts, they might not exist
           mkdir -p qa_artifacts/flow
           cp -r "${FLOW_DIR}"/*.log ./qa_artifacts/flow || true
+          cp -r "${FLOW_DIR}"/*.tar ./qa_artifacts/flow || true
 
       - name: Stash QA artifacts
         if: always()
