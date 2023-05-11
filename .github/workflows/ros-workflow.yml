@@ -308,9 +308,9 @@ jobs:
         git commit -m "[skip actions] Automatic Bump of build version"
     
     - name: Prepare raise variables
-        id: pre_raise
-        run: |
-          echo ::set-output name=branch::${GITHUB_REF#refs/heads/}
+      id: pre_raise
+      run: |
+        echo ::set-output name=branch::${GITHUB_REF#refs/heads/}
 
     - name: Raise App version
       uses: CasperWA/push-protected@v2
