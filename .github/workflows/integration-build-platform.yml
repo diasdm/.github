@@ -166,7 +166,7 @@ jobs:
         run: |
           ip=$(hostname -I | awk '{print $1}')
           echo $ip
-          echo ::set-output name=ip::$ip
+          echo "ip=${ip}" >> $GITHUB_OUTPUT
 
       - name: Install CI Scripts
         shell: bash
@@ -215,9 +215,9 @@ jobs:
           integration-pipeline fetch_by_tag --repo $tests_repo_name --version $tests_version --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $tests_dir
           ls -la $tests_dir
 
-          echo ::set-output name=target_dir::$tests_dir
-          echo ::set-output name=jira_report::$jira_report
-          echo ::set-output name=test_set::$test_set
+          echo "target_dir=${tests_dir}" >> $GITHUB_OUTPUT
+          echo "jira_report=${jira_report}" >> $GITHUB_OUTPUT
+          echo "test_set=${test_set}" >> $GITHUB_OUTPUT
 
           # setup venv in a step that is always executed
           pushd "${tests_dir}"
@@ -249,7 +249,7 @@ jobs:
           MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is unstable :rain_cloud: \
           UI tests feature file validation: ${{ steps.feature_file_ui.outcome }} \
           Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          echo ::set-output name=msg_error::$MESSAGE_ERR
+          echo "msg_error=${MESSAGE_ERR}" >> $GITHUB_OUTPUT
 
       - name: Slack message failure
         if: failure()
@@ -289,8 +289,8 @@ jobs:
             movai-cli robots user "$robot" "$MOVAI_USER" "$MOVAI_PWD"
           done
 
-          echo ::set-output name=movai_user::$MOVAI_USER
-          echo ::set-output name=movai_pwd::$MOVAI_PWD
+          echo "movai_user=${MOVAI_USER}" >> $GITHUB_OUTPUT
+          echo "movai_pwd=${MOVAI_PWD}" >> $GITHUB_OUTPUT
 
       - name: UI tests
         timeout-minutes: 120
@@ -353,7 +353,7 @@ jobs:
         run: |
           ip=$(hostname -I | awk '{print $1}')
           echo $ip
-          echo ::set-output name=ip::$ip
+          echo "ip=${ip}" >> $GITHUB_OUTPUT
 
       - name: Install CI Scripts
         shell: bash
@@ -401,9 +401,9 @@ jobs:
           integration-pipeline fetch_by_tag --repo $tests_repo_name --version $tests_version --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $tests_dir
           ls -la $tests_dir
 
-          echo ::set-output name=target_dir::$tests_dir
-          echo ::set-output name=jira_report::$jira_report
-          echo ::set-output name=test_set::$test_set
+          echo "target_dir=${tests_dir}" >> $GITHUB_OUTPUT
+          echo "jira_report=${jira_report}" >> $GITHUB_OUTPUT
+          echo "test_set=${test_set}" >> $GITHUB_OUTPUT
 
           # setup venv in a step that is always executed
           pushd "${tests_dir}"
@@ -435,7 +435,7 @@ jobs:
           MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is unstable :rain_cloud: \
           Install tests feature file validation: ${{ steps.feature_file_install.outcome }} \
           Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          echo ::set-output name=msg_error::$MESSAGE_ERR
+          echo "msg_error=${MESSAGE_ERR}" >> $GITHUB_OUTPUT
 
       - name: Slack message failure
         if: failure()
@@ -475,8 +475,8 @@ jobs:
           user=$(cat results/credentials.txt | awk -F: '{print $1}')
           pwd=$(cat results/credentials.txt | awk -F: '{print $2}')
 
-          echo ::set-output name=movai_user::$user
-          echo ::set-output name=movai_pwd::$pwd
+          echo "movai_user=${user}" >> $GITHUB_OUTPUT
+          echo "movai_pwd=${pwd}" >> $GITHUB_OUTPUT
 
       - name: Run mobtest
         continue-on-error: ${{ inputs.continue_on_mobtest_error }}
@@ -587,7 +587,7 @@ jobs:
         run: |
           ip=$(hostname -I | awk '{print $1}')
           echo $ip
-          echo ::set-output name=ip::$ip
+          echo "ip=${ip}" >> $GITHUB_OUTPUT
 
       - name: Install CI Scripts
         shell: bash
@@ -631,7 +631,7 @@ jobs:
           integration-pipeline fetch_by_tag --repo $tests_repo_name --version $tests_version --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $tests_dir
           ls -la $tests_dir
 
-          echo ::set-output name=target_dir::$tests_dir
+          echo "target_dir=${tests_dir}" >> $GITHUB_OUTPUT
 
           # setup venv in a step that is always executed
           pushd "${tests_dir}"
@@ -669,8 +669,8 @@ jobs:
             movai-cli robots user "$robot" "$MOVAI_USER" "$MOVAI_PWD"
           done
 
-          echo ::set-output name=movai_user::$MOVAI_USER
-          echo ::set-output name=movai_pwd::$MOVAI_PWD
+          echo "movai_user=${MOVAI_USER}" >> $GITHUB_OUTPUT
+          echo "movai_pwd=${MOVAI_PWD}" >> $GITHUB_OUTPUT
 
       - name: API tests
         timeout-minutes: 30
@@ -737,7 +737,7 @@ jobs:
         run: |
           ip=$(hostname -I | awk '{print $1}')
           echo $ip
-          echo ::set-output name=ip::$ip
+          echo "ip=${ip}" >> $GITHUB_OUTPUT
 
       - name: Install CI Scripts
         shell: bash
@@ -783,9 +783,9 @@ jobs:
           integration-pipeline fetch_by_tag --repo $tests_repo_name --version $tests_version --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $tests_dir
           ls -la $tests_dir
 
-          echo ::set-output name=target_dir::$tests_dir
-          echo ::set-output name=version::$tests_version
-          echo ::set-output name=test_set::$test_set
+          echo "target_dir=${tests_dir}" >> $GITHUB_OUTPUT
+          echo "version=${tests_version}" >> $GITHUB_OUTPUT
+          echo "test_set=${test_set}" >> $GITHUB_OUTPUT
 
           # setup venv in a step that is always executed
           pushd "${tests_dir}"
@@ -823,8 +823,8 @@ jobs:
             movai-cli robots user "$robot" "$MOVAI_USER" "$MOVAI_PWD"
           done
 
-          echo ::set-output name=movai_user::$MOVAI_USER
-          echo ::set-output name=movai_pwd::$MOVAI_PWD
+          echo "movai_user=${MOVAI_USER}" >> $GITHUB_OUTPUT
+          echo "movai_pwd=${MOVAI_PWD}" >> $GITHUB_OUTPUT
           execution_status=$?
           exit $execution_status
           rm movai_service_version
@@ -873,6 +873,7 @@ jobs:
           # flow tests artifacts, they might not exist
           mkdir -p qa_artifacts/flow
           cp -r "${FLOW_DIR}"/*.log ./qa_artifacts/flow || true
+          cp -r "${FLOW_DIR}"/*.tar ./qa_artifacts/flow || true
 
       - name: Stash QA artifacts
         if: always()
@@ -919,7 +920,7 @@ jobs:
         run: |
           ip=$(hostname -I | awk '{print $1}')
           echo $ip
-          echo ::set-output name=ip::$ip
+          echo "ip=${ip}" >> $GITHUB_OUTPUT
 
       - name: Install CI Scripts
         shell: bash
@@ -970,7 +971,7 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           integration-pipeline fetch_by_tag --repo $provision_infra_repo_name --version $provision_infra_version --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $provision_infra_dir
           ls -la $provision_infra_dir
-          echo ::set-output name=target_dir::"$provision_infra_dir/hosts/generic/"
+          echo "target_dir=${provision_infra_dir}/hosts/generic/" >> $GITHUB_OUTPUT
 
       - name: Define Instance names
         id: infra_names
@@ -983,8 +984,8 @@ jobs:
           echo "$local_manager_prefix"
           echo "$local_worker_prefix"
 
-          echo ::set-output name=manager_prefix::$local_manager_prefix
-          echo ::set-output name=worker_prefix::$local_worker_prefix
+          echo "manager_prefix=${local_manager_prefix}" >> $GITHUB_OUTPUT
+          echo "worker_prefix=${local_worker_prefix}" >> $GITHUB_OUTPUT
 
       - name: Provision remote vms (Proxmox)
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
@@ -1022,7 +1023,7 @@ jobs:
           MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is being impacted by an infrastructural issue. \
           Provisioning of fleet infrastructure failed. Please take a look! \
           Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          echo ::set-output name=msg_error::$MESSAGE_ERR
+          echo "msg_error=${MESSAGE_ERR}" >> $GITHUB_OUTPUT
 
       - name: Slack message failure
         if: failure()
@@ -1058,7 +1059,7 @@ jobs:
           rm -rf $install_infra_repo_name
           integration-pipeline fetch_by_tag --repo $install_infra_repo_name --version $install_infra_version --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $install_infra_dir
           ls -la $install_infra_dir
-          echo ::set-output name=target_dir::$install_infra_dir
+          echo "target_dir=${install_infra_dir}" >> $GITHUB_OUTPUT
 
       - name: Ansible install platform
         working-directory: ${{ steps.ansible_install_setup.outputs.target_dir }}
@@ -1182,7 +1183,7 @@ jobs:
         run: |
           ip=$(hostname -I | awk '{print $1}')
           echo $ip
-          echo ::set-output name=ip::$ip
+          echo "ip=${ip}" >> $GITHUB_OUTPUT
 
       - name: Install CI Scripts
         shell: bash
@@ -1198,9 +1199,9 @@ jobs:
         id: pre_simulator_build
         run: |
           if [ ! -f "simulator_artifacts/version" ]; then
-            echo ::set-output name=skip_simulator_build::"true"
+            echo "skip_simulator_build=true" >> $GITHUB_OUTPUT
           else
-            echo ::set-output name=skip_simulator_build::"false"
+            echo "skip_simulator_build=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Lint docker image
@@ -1235,8 +1236,8 @@ jobs:
         if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' }}
         id: pre_build
         run: |
-          echo ::set-output name=image_name::$(cat simulator_artifacts/simulator_name.ci)
-          echo ::set-output name=base_name::$(cat simulator_artifacts/simulator_base.ci)
+          echo "image_name=$(cat simulator_artifacts/simulator_name.ci)" >> $GITHUB_OUTPUT
+          echo "base_name=$(cat simulator_artifacts/simulator_base.ci)" >> $GITHUB_OUTPUT
 
       - name: Build with args and push:${{ inputs.deploy }}
         if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' }}
@@ -1342,9 +1343,9 @@ jobs:
           integration-pipeline fetch_by_tag --repo $tests_repo_name --version $tests_version --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $tests_dir
           ls -la $tests_dir
 
-          echo ::set-output name=target_dir::$tests_dir
-          echo ::set-output name=version::$tests_version
-          echo ::set-output name=test_set::$test_set
+          echo "target_dir=${tests_dir}" >> $GITHUB_OUTPUT
+          echo "version=${tests_version}" >> $GITHUB_OUTPUT
+          echo "test_set=${test_set}" >> $GITHUB_OUTPUT
 
           # setup venv in a step that is always executed
           pushd "${tests_dir}"
@@ -1388,8 +1389,8 @@ jobs:
             movai-cli robots user "$robot" "$MOVAI_USER" "$MOVAI_PWD"
           done
 
-          echo ::set-output name=movai_user::$MOVAI_USER
-          echo ::set-output name=movai_pwd::$MOVAI_PWD
+          echo "movai_user=${MOVAI_USER}" >> $GITHUB_OUTPUT
+          echo "movai_pwd=${MOVAI_PWD}" >> $GITHUB_OUTPUT
         env:
           SIMULATION_ID: "CI"
 
@@ -1500,7 +1501,7 @@ jobs:
         run: |
           ip=$(hostname -I | awk '{print $1}')
           echo $ip
-          echo ::set-output name=ip::$ip
+          echo "ip=${ip}" >> $GITHUB_OUTPUT
       - name: unstash robot_configs
         uses: actions/download-artifact@v2
         with:
@@ -1581,7 +1582,7 @@ jobs:
       - name: Prepare raise variables
         id: pre_raise
         run: |
-          echo ::set-output name=branch::${GITHUB_REF#refs/heads/}
+          echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
 
       - name: Raise App version
         uses: CasperWA/push-protected@v2
@@ -1667,8 +1668,8 @@ jobs:
         run: |
           MESSAGE=":white_check_mark: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is stable :sunny: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is unstable :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          echo ::set-output name=msg::$MESSAGE
-          echo ::set-output name=msg_error::$MESSAGE_ERR
+          echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
+          echo "msg_error=${MESSAGE_ERR}" >> $GITHUB_OUTPUT
 
       - name: Slack message success
         uses: slackapi/slack-github-action@v1.23.0
