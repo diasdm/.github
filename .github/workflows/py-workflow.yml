@@ -30,7 +30,7 @@ on:
       auto_commit_mail:
         required: false # only when deploy true
       auto_commit_password:
-        required: false # only when deploy true
+        required: false 
       registry_user:
         required: true
       registry_password:
