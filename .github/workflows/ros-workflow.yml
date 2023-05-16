@@ -64,10 +64,8 @@ on:
         required: true
       aws_access_key_id:
         required: false
-        default: "n/a"
       aws_secret_access_key:
         required: false
-        default: "n/a"
 
 
 env:
