@@ -62,6 +62,18 @@ on:
         required: true
       sonar_token:
         required: true
+      aws_access_key_id:
+        required: false
+        default: "n/a"
+      aws_secret_access_key:
+        required: false
+        default: "n/a"
+
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.aws_access_key_id }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.aws_secret_access_key }}
+  AWS_DEFAULT_REGION: "eu-west-1"
 
 jobs:
 
