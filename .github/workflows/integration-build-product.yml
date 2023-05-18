@@ -20,6 +20,10 @@ on:
         required: false
         type: boolean
         default: false
+      propagate_project:
+        required: false
+        type: boolean
+        default: false
 
     secrets:
       auto_commit_user:
@@ -907,6 +911,15 @@ jobs:
 
           # set new release notes
           gh release edit "${product_version}" --notes-file notes.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.gh_token }}
+
+      - name: Propagate release
+        continue-on-error: true
+        if: ${{ inputs.propagate_project }}
+        shell: bash
+        run: |
+          gh workflow run "Propagate EE" --repo MOV-AI/qa-automations
         env:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
