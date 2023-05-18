@@ -323,6 +323,7 @@ jobs:
           deactivate
 
       - name: Save docker container logs
+        if: always()
         working-directory: ${{ steps.ui_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
@@ -724,6 +725,7 @@ jobs:
           deactivate
 
       - name: Save docker container logs
+        if: always()
         working-directory: ${{ steps.api_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
@@ -917,6 +919,7 @@ jobs:
           deactivate
 
       - name: Save docker container logs
+        if: always()
         working-directory: ${{ steps.flow_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
