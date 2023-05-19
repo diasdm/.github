@@ -749,6 +749,7 @@ jobs:
 
           # get existent release body
           ORIGINAL_RN=$(gh release view "${product_version}" --json body | jq -r .body)
+          echo -e "ORIGINAL_RN:\n ${ORIGINAL_RN}"
 
           # get release PRs
           PRS=$(echo "${ORIGINAL_RN}" | sed -rn "s/.*https:\/\/github\.com\/${{ github.repository_owner }}\/${{ github.event.repository.name }}\/pull\/([0-9]+).*/\1/p" | tr '\n' ' ')
