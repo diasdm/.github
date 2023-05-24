@@ -142,26 +142,43 @@ jobs:
           # remove virtual environment
           deactivate
 
-      - name: Collect artifacts
+      - name: Save docker container logs
         if: always()
         shell: bash
-        env:
-          INSTALL_DIR: ${{ steps.install_tests_setup.outputs.target_dir }}
-          FLOW_DIR: ${{ steps.flow_tests_setup.outputs.target_dir }}
         run: |
-          mkdir qa_artifacts
+          # for sanity
+          docker ps -a
 
-          # install tests artifacts
+          # backend
+          CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^backend-.*")
+          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
+
+          # spawner
+          CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^spawner-.*")
+          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
+
+      - name: Stash QA artifacts
+        if: always()
+        shell: bash
+        run: |
+          # cleanup
+          rm -rf qa_artifacts
+
+          # tests artifacts
           # *.log and *.zip might not exist if the test fails early
-          mkdir -p qa_artifacts/install
-          cp -r qa_install_tests/results/*.log ./qa_artifacts/install || true
-          cp -r qa_install_tests/results/*.zip ./qa_artifacts/install || true
+          mkdir -p qa_artifacts
+          cp -r "*.log ./qa_artifacts || true
 
-      - name: Upload artifacts
+          # install
+          cp -r qa_install_tests/results/*.log ./qa_artifacts/install || true
+          cp -r qa_install_tests/results/*.zip ./qa_artifacts || true
+          cp -r qa_install_tests/results/test_report_*.html ./qa_artifacts || true
+
+      - name: Stash QA artifacts
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: qa_artifacts
+          name: qa_artifacts_ui_tests
           path: qa_artifacts/*
 
       - name: Remove robots
