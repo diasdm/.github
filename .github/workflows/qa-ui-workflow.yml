@@ -174,7 +174,7 @@ jobs:
           cp -r qa_install_tests/results/*.zip ./qa_artifacts || true
           cp -r qa_install_tests/results/test_report_*.html ./qa_artifacts || true
 
-      - name: Stash QA artifacts
+      - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v2
         with:
