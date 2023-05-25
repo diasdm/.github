@@ -752,7 +752,7 @@ jobs:
           echo -e "ORIGINAL_RN:\n ${ORIGINAL_RN}"
 
           # get release PRs
-          PRS=$(echo "${ORIGINAL_RN}" | sed -rn "s/.*https:\/\/github\.com\/${{ github.repository_owner }}\/${{ github.event.repository.name }}\/pull\/([0-9]+).*/\1/p" | tr '\n' ' ')
+          PRS=$(echo "${ORIGINAL_RN}" | sed -rn "s/.* by @.* in https:\/\/github\.com\/${{ github.repository_owner }}\/${{ github.event.repository.name }}\/pull\/([0-9]+).*/\1/p" | tr '\n' ' ')
           # change to array
           PRS=($PRS)
           echo "Found the following PRs: ${PRS[@]}"
