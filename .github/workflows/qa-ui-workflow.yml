@@ -170,9 +170,10 @@ jobs:
           cp -r *.log ./qa_artifacts || true
 
           # install
-          cp -r qa_install_tests/results/*.log ./qa_artifacts/install || true
-          cp -r qa_install_tests/results/*.zip ./qa_artifacts || true
-          cp -r qa_install_tests/results/test_report_*.html ./qa_artifacts || true
+          mkdir -p qa_artifacts/install
+          cp -r qa_install_tests/results/*.log ./qa_artifacts/install/ || true
+          cp -r qa_install_tests/results/*.zip ./qa_artifacts/install/ || true
+          cp -r qa_install_tests/results/test_report_*.html ./qa_artifacts/install/ || true
 
       - name: Upload artifacts
         if: always()
