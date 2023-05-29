@@ -506,6 +506,19 @@ jobs:
         run: |
           echo "Please check report here: https://sonarcloud.io/project/overview?id=${{ github.repository_owner }}_${{ github.event.repository.name }}"
 
+      - name: Store logs of journalctl
+        shell: bash
+        if: always()
+        run: |
+          journalctl -u movai-service > ./movai-service-journal.log || true
+
+      - name: Stash logs of journalctl
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: debian_test_journal
+          path: *.log
+
 
   Rpm-Test:
     needs: [Raise, Rpm-Pack]
@@ -540,6 +553,19 @@ jobs:
       - name: Install rpm artifacts
         run: |
           find artifacts/ -name "*.rpm" -not -name "*src*" -print0 | xargs -0 -n1 -r yum install -y
+
+      - name: Store logs of journalctl
+        shell: bash
+        if: always()
+        run: |
+          journalctl -u movai-service > ./movai-service-journal.log || true
+
+      - name: Stash logs of journalctl
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: rpm_test_journal
+          path: *.log
 
   Publish:
     needs: [Raise, Debian-Pack, Rpm-Pack, Debian-Test]
