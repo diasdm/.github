@@ -510,14 +510,15 @@ jobs:
         shell: bash
         if: always()
         run: |
-          journalctl -u movai-service > ./movai-service-journal.log || true
+          mkdir -p logs
+          journalctl -u movai-service > ./logs/movai-service-journal.log || true
 
       - name: Stash logs of journalctl
         if: always()
         uses: actions/upload-artifact@v2
         with:
           name: debian_test_journal
-          path: *.log
+          path: ./logs/*
 
 
   Rpm-Test:
@@ -558,14 +559,15 @@ jobs:
         shell: bash
         if: always()
         run: |
-          journalctl -u movai-service > ./movai-service-journal.log || true
+          mkdir -p logs
+          journalctl -u movai-service > ./logs/movai-service-journal.log || true
 
       - name: Stash logs of journalctl
         if: always()
         uses: actions/upload-artifact@v2
         with:
           name: rpm_test_journal
-          path: *.log
+          path: ./logs/*
 
   Publish:
     needs: [Raise, Debian-Pack, Rpm-Pack, Debian-Test]
