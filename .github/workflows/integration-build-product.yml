@@ -12,10 +12,6 @@ on:
         required: false
         type: string
         default: true
-      continue_on_mobtest_error:
-        required: false
-        type: boolean
-        default: false
       is_external_project:
         required: false
         type: boolean
@@ -342,7 +338,6 @@ jobs:
           rm movai_service_version
 
       - name: Run mobtest
-        continue-on-error: ${{ inputs.continue_on_mobtest_error }}
         shell: bash
         run: |
           container_id=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
@@ -681,7 +676,6 @@ jobs:
 
       - name: Run mobtest
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
-        continue-on-error: ${{ inputs.continue_on_mobtest_error }}
         shell: bash
         run: |
           container_id=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")

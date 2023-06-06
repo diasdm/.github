@@ -8,10 +8,6 @@ on:
       ros_distro:
         required: true
         type: string
-      continue_on_mobtest_error:
-        required: false
-        type: boolean
-        default: false
       debug_fleet_keep_alive:
         required: false
         type: boolean
@@ -516,7 +512,6 @@ jobs:
           echo "movai_pwd=${pwd}" >> $GITHUB_OUTPUT
 
       - name: Run mobtest
-        continue-on-error: ${{ inputs.continue_on_mobtest_error }}
         shell: bash
         run: |
           container_id=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
