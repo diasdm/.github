@@ -310,8 +310,8 @@ jobs:
               --browser_name chrome \
               --browser_version 91.0 \
               --base_url https://${{ steps.agent_info.outputs.ip }}/ \
-              --username ${{ steps.install.outputs.movai_user }} \
-              --password ${{ steps.install.outputs.movai_pwd }} \
+              --movai-user ${{ steps.install.outputs.movai_user }} \
+              --movai-pw ${{ steps.install.outputs.movai_pwd }} \
               --jira_report
           else
               pytest \
@@ -320,8 +320,8 @@ jobs:
                 --browser_name chrome \
                 --browser_version 91.0 \
                 --base_url https://${{ steps.agent_info.outputs.ip }}/ \
-                --username ${{ steps.install.outputs.movai_user }} \
-                --password ${{ steps.install.outputs.movai_pwd }}
+                --movai-user ${{ steps.install.outputs.movai_user }} \
+                --movai-pw ${{ steps.install.outputs.movai_pwd }}
           fi
 
           deactivate
