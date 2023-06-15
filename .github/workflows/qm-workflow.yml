@@ -62,7 +62,7 @@ jobs:
         run: |
           echo "${{ secrets.ssh_ci_pem }}" > ~/.ssh/aws_slave.pem
           echo "${{ secrets.ssh_ci_pub_key }}" > ~/.ssh/aws_slave.pub
-          
+
           sudo chmod 600 ~/.ssh/aws_slave.pem
           sudo chmod 600 ~/.ssh/aws_slave.pub
           python3 -m venv ansible-venv
@@ -108,7 +108,7 @@ jobs:
           git commit -m "[skip actions] Automatic Bump of template id"
           git push --force-with-lease
         working-directory: "ansible"
-      
+
       - name: Teardown
         if: failure()
         shell: bash

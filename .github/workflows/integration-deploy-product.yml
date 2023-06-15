@@ -9,7 +9,7 @@ on:
       self_deployment_pkgs:
         required: false
         type: string
-        default: 'false' 
+        default: 'false'
 
     secrets:
       registry_user:
@@ -32,7 +32,7 @@ jobs:
   Deploy-product:
     runs-on: ubuntu-20.04
     steps:
-    - name: Checkout    
+    - name: Checkout
       uses: actions/checkout@v2
 
     - name: Set tag output
@@ -52,7 +52,7 @@ jobs:
       run: |
         docker login registry.aws.cloud.mov.ai -u ${{secrets.registry_user}} -p ${{secrets.registry_password}}
         echo "${{ secrets.nexus_publisher_user }} e ${{ secrets.nexus_publisher_password }}">ola.txt
-    
+
     - name: Archive binary
       uses: actions/upload-artifact@v2
       with:
@@ -69,7 +69,7 @@ jobs:
           blacklisted='nodejs'
 
           if [[ "$image" != *"$blacklisted"* ]]; then
-            
+
             image=$(echo $image | sed "s|$OLD_REGISTRY|registry.aws.cloud.mov.ai|g")
             target=$(echo $image | sed 's|/qa/|/prod/|g')
             target=$(echo $target | sed 's|/devops/|/prod/|g')
@@ -83,7 +83,7 @@ jobs:
       if: ${{ inputs.deploy_pkgs == 'true' }}
       run: |
         python3 -m pip install -i https://artifacts.cloud.mov.ai/repository/pypi-edge/simple --extra-index-url https://pypi.org/simple movai-package-deployer==${{ env.PACKAGE_DEPLOYER_VERSION }} --ignore-installed
-        
+
     - name: Download staging packages
       if: ${{ inputs.deploy_pkgs == 'true' && inputs.self_deployment_pkgs == 'false' }}
       run: |
