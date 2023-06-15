@@ -293,11 +293,11 @@ jobs:
         working-directory: ${{ steps.ui_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
-          . venv/bin/activate
-
           # install test dependencies on host
           sudo apt install -y --allow-downgrades python3-rosnode python3-rosparam python3-rostopic
           export PYTHONPATH="${PYTHONPATH}:/usr/lib/python3/dist-packages"
+
+          . venv/bin/activate
 
           # install test dependencies on spawner
           if [ -f apt-requirements.txt ]; then
@@ -765,11 +765,11 @@ jobs:
         working-directory: ${{ steps.api_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
-          . venv/bin/activate
-
-          # install ros
+          # install test dependencies on host
           sudo apt install -y --allow-downgrades python3-rosnode python3-rosparam python3-rostopic
           export PYTHONPATH="${PYTHONPATH}:/usr/lib/python3/dist-packages"
+
+          . venv/bin/activate
 
           pytest src/tests \
               --base_url https://${{ steps.agent_info.outputs.ip }} \
