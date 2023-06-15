@@ -131,6 +131,10 @@ jobs:
         id: ui
         shell: bash
         run: |
+          # install test dependencies on host
+          sudo apt install -y --allow-downgrades python3-rosnode python3-rosparam python3-rostopic
+          export PYTHONPATH="${PYTHONPATH}:/usr/lib/python3/dist-packages"
+
           # activate venv
           . venv/bin/activate
 
