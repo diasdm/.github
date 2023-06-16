@@ -25,7 +25,7 @@ on:
         required: false
         type: boolean
         default: true
-      propagate_to_project:
+      propagate_to_projects:
         required: false
         type: boolean
         default: false
@@ -367,7 +367,7 @@ jobs:
         files: artifacts/*.deb
 
     - name: Propagate release
-      if: ${{ inputs.propagate_to_project }}
+      if: ${{ inputs.propagate_to_projects }}
       continue-on-error: true
       shell: bash
       run: |
