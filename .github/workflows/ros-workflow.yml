@@ -376,7 +376,7 @@ jobs:
           -f repo_name=${GITHUB_REPOSITORY#*/} \
           -f repo_version=${{ steps.vars.outputs.ros_pkg_version }}
       env:
-        GITHUB_TOKEN: ${{ secrets.gh_token }}
+        GITHUB_TOKEN: ${{ secrets.auto_commit_pwd }}
 
   Release:
     strategy:
