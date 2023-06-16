@@ -143,8 +143,8 @@ jobs:
             --ignore qa_install_tests \
             --hub_url http://selenoid-ui.hel.mov.ai \
             --base_url https://${{ steps.agent_info.outputs.ip }}/ \
-            --username ${{ steps.install.outputs.movai_user }} \
-            --password ${{ steps.install.outputs.movai_pwd }}
+            --movai-user ${{ steps.install.outputs.movai_user }} \
+            --movai-pw ${{ steps.install.outputs.movai_pwd }}
 
           # remove virtual environment
           deactivate
