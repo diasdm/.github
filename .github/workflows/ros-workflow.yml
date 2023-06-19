@@ -138,7 +138,7 @@ jobs:
 
     - name: Install Mobros
       run: |
-        sudo apt install -y mobros==${{ inputs.MOBROS_VERSION }}
+        sudo apt install -y mobros=${{ inputs.MOBROS_VERSION }}
 
     - name: Setup link to Ros userspace
       run: |
