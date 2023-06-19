@@ -40,7 +40,7 @@ on:
       MOBROS_VERSION:
         required: false
         type: string
-        default: "2.0.0.29"
+        default: "2.0.1.4"
 
 
     secrets:
@@ -138,9 +138,7 @@ jobs:
 
     - name: Install Mobros
       run: |
-        python3 -m pip install \
-        -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple \
-        mobros==${{ inputs.MOBROS_VERSION }} --ignore-installed
+        sudo apt install -y mobros==${{ inputs.MOBROS_VERSION }}
 
     - name: Setup link to Ros userspace
       run: |
