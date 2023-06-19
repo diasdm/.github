@@ -40,7 +40,7 @@ on:
       MOBROS_VERSION:
         required: false
         type: string
-        default: "2.0.0.31"
+        default: "2.0.1.5"
 
 
     secrets:
