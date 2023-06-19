@@ -152,7 +152,7 @@ jobs:
     - name: Install build Requirements
       run: |
         sudo apt update
-        sudo mobros install-build-dependencies
+        sudo mobros install-build-dependencies --workspace="$(pwd)"
 
     - name: Build
       run: mobros build --mode ${{ matrix.build_mode }}
