@@ -390,6 +390,7 @@ jobs:
         run: docker push "${{ env.PUSH_REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
 
       - name: Stash project metadata
+
         if: always()
         uses: actions/upload-artifact@v3
         with:
@@ -521,7 +522,6 @@ jobs:
           #echo ::set-output name=push_name::$push_name
           echo "base_name=$(cat simulator_artifacts/simulator_base.ci)" >> $GITHUB_OUTPUT
           echo "push_name=$push_name_tmp" >> $GITHUB_OUTPUT
-
 
       # - name: Build with args and push
       #   if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true'}}
@@ -850,7 +850,6 @@ jobs:
         run: |
           #echo ::set-output name=branch::${GITHUB_REF#refs/heads/}
           echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
-
 
       - name: Raise App version
         uses: CasperWA/push-protected@v2
