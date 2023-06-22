@@ -295,6 +295,19 @@ jobs:
         run: |
           . venv/bin/activate
 
+          # install test dependencies on spawner
+          if [ -f apt-requirements.txt ]; then
+            ## get spawner container name
+            CONTAINER_ID=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
+            ## get apt dependencies
+            APT_DEPS=$(cat apt-requirements.txt | tr "\n" " ")
+            ## install
+            docker exec -t "${CONTAINER_ID}" bash -c "
+              sudo apt update
+              sudo apt install -y ${APT_DEPS}
+            "
+          fi
+
           if [ "${{ steps.ui_tests_setup.outputs.jira_report }}" == "True" ] ; then
             pytest \
               -ra \
