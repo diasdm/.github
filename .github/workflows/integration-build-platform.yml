@@ -349,6 +349,9 @@ jobs:
 
           # movai-service
           journalctl -u movai-service --since '1hour ago' &> "movai-service.log"
+          
+         # spawner (mobros firmware)
+          journalctl -u movai-service -t mobros --since '1hour ago' &> spawner-firmware.log || true
 
       - name: Stash QA artifacts
         if: always()
@@ -556,6 +559,9 @@ jobs:
 
           # movai-service
           journalctl -u movai-service --since '1hour ago' &> "movai-service.log"
+          
+          # Spawner (mobros firmware)
+          journalctl -u movai-service -t mobros --since '1hour ago' &> spawner-firmware.log || true
 
       - name: Stash QA artifacts
         if: always()
@@ -786,6 +792,10 @@ jobs:
 
           # movai-service
           journalctl -u movai-service --since '1hour ago' &> "movai-service.log"
+          
+          # spawner (mobros firmware)
+          journalctl -u movai-service -t mobros --since '1hour ago' &> spawner-firmware.log || true
+
 
       - name: Stash QA artifacts
         if: always()
@@ -983,6 +993,9 @@ jobs:
 
           # movai-service
           journalctl -u movai-service --since '1hour ago' &> "movai-service.log"
+          
+          # spawner (mobros firmware)
+          journalctl -u movai-service -t mobros --since '1hour ago' &> spawner-firmware.log || true
 
       - name: Stash QA artifacts
         if: always()
@@ -997,6 +1010,7 @@ jobs:
           mkdir -p qa_artifacts
           cp -r "${FLOW_DIR}"/*.log ./qa_artifacts || true
           cp -r "${FLOW_DIR}"/*.tar ./qa_artifacts || true
+
 
       - name: Stash QA artifacts
         if: always()
@@ -1568,6 +1582,9 @@ jobs:
 
           # movai-service
           journalctl -u movai-service --since '1hour ago' &> "movai-service.log"
+          
+          # spawner (mobros firmware)
+          journalctl -u movai-service -t mobros --since '1hour ago' &> spawner-firmware.log || true
 
       - name: Stash QA artifacts
         if: always()
