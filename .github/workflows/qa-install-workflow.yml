@@ -39,6 +39,35 @@ on:
         required: true
 
 jobs:
+  Validate-features:
+    runs-on: ubuntu-20.04
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Feature file validation
+        shell: bash
+        env:
+          XRAY_CLIENTID: ${{ secrets.xray_clientid }}
+          XRAY_SECRET: ${{ secrets.xray_secret }}
+          JIRA_USERNAME: ${{ secrets.jira_username }}
+          JIRA_PASSWORD: ${{ secrets.jira_password }}
+        run: |
+          # create virtual environment
+          rm -rf venv
+          python3 -m venv venv
+          . venv/bin/activate
+
+          # install tests requirements in venv
+          pip install -r requirements.txt
+
+          python3 testcasemanagement/testcase_importer.py --target ${{ inputs.test_set }}
+          python3 testcasemanagement/feature_file_processor.py --validate
+
+          # deactivate venv
+          deactivate
+
   Run-tests:
     runs-on: integration-pipeline
     steps:
@@ -61,13 +90,8 @@ jobs:
           while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
           sudo apt-get upgrade -y
 
-      - name: Feature file validation
+      - name: Setup venv
         shell: bash
-        env:
-          XRAY_CLIENTID: ${{ secrets.xray_clientid }}
-          XRAY_SECRET: ${{ secrets.xray_secret }}
-          JIRA_USERNAME: ${{ secrets.jira_username }}
-          JIRA_PASSWORD: ${{ secrets.jira_password }}
         run: |
           # create virtual environment
           rm -rf venv
@@ -77,31 +101,8 @@ jobs:
           # install tests requirements in venv
           pip install -r requirements.txt
 
-          python3 testcasemanagement/testcase_importer.py --target "${{ inputs.tests_to_validate }}"
-          python3 testcasemanagement/feature_file_processor.py --validate
-
           # deactivate venv
           deactivate
-
-      - name: Prepare QA Feature File Validation slack message
-        if: always()
-        id: pre_slack_file_val
-        run: |
-          MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build is unstable :rain_cloud: \
-          Feature File Validation Step FAILED and stopped install tests Pipeline :rain_cloud: \
-          Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} \
-          Validate logs for cause troubleshooting."
-          #echo ::set-output name=msg_error::$MESSAGE_ERR
-          echo "msg_error=$MESSAGE_ERR" >> $GITHUB_OUTPUT
-
-      - name: Slack message failure
-        if: failure()
-        uses: slackapi/slack-github-action@v1.23.0
-        with:
-          channel-id: "C02PB9A9F45"
-          slack-message: ${{ steps.pre_slack_file_val.outputs.msg_error }}
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
 
       - name: Install tests using config file with full clean
         timeout-minutes: 30
