@@ -213,35 +213,20 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      - name: Docker build
-        shell: bash
-        run: |
-          docker build --add-host ${{ env.REGISTRY }}:172.22.0.106 \
-            --build-arg DOCKER_REGISTRY=${{ env.REGISTRY }} \
-            --build-arg BASE_IMAGE=${{ steps.pre_build.outputs.base_name }} \
-            --build-arg TAG=${{ steps.pre_build.outputs.base_version }} \
-            --build-arg CI_SCRIPT_VERSION=${{ env.CI_INTEGRATION_SCRIPTS_VERSION }} \
-            --file docker/${{ matrix.distro }}/Dockerfile \
-            --platform linux/amd64 \
-            --tag ${{ env.PUSH_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ steps.pre_build.outputs.raised_version }} \
-            --pull \
-            --push .
-      # - name: Build with args and push
-      #   uses: docker/build-push-action@v3
-      #   with:
-      #     context: .
-      #     platforms: linux/amd64
-      #     file: docker/${{ matrix.distro }}/Dockerfile
-      #     push: true
-      #     tags: ""
-      #     pull: true
-      #     add-hosts: |
-      #       registry.hel.mov.ai:172.22.0.106
-      #     build-args: |
-      #       DOCKER_REGISTRY=${{ env.REGISTRY }}
-      #       BASE_IMAGE=${{ steps.pre_build.outputs.base_name }}
-      #       TAG=${{ steps.pre_build.outputs.base_version }}
-      #       CI_SCRIPT_VERSION=${{ env.CI_INTEGRATION_SCRIPTS_VERSION }}
+      # - name: Docker build
+      #   shell: bash
+      #   run: |
+      #     docker build --add-host ${{ env.REGISTRY }}:172.22.0.106 \
+      #       --build-arg DOCKER_REGISTRY=${{ env.REGISTRY }} \
+      #       --build-arg BASE_IMAGE=${{ steps.pre_build.outputs.base_name }} \
+      #       --build-arg TAG=${{ steps.pre_build.outputs.base_version }} \
+      #       --build-arg CI_SCRIPT_VERSION=${{ env.CI_INTEGRATION_SCRIPTS_VERSION }} \
+      #       --file docker/${{ matrix.distro }}/Dockerfile \
+      #       --platform linux/amd64 \
+      #       --tag ${{ env.PUSH_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ steps.pre_build.outputs.raised_version }} \
+      #       --pull \
+      #       --push .
+
 
       - name: Stash robot_jsons_${{ matrix.distro }}
         uses: actions/upload-artifact@v3
@@ -256,15 +241,13 @@ jobs:
           docker system prune -f
           docker image prune --all -f
 
-  Install-Robot:
-    needs: [Build-Spawner]
+  Install-Simulator-Robot:
     strategy:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
-    runs-on: integration-pipeline
+    runs-on: integration-pipeline-simulation
     steps:
       - uses: rtCamp/action-cleanup@master
-
       - name: Checkout
         uses: actions/checkout@v3
 
@@ -272,18 +255,23 @@ jobs:
         run: |
           echo "public ip: $(curl ipinfo.io/ip)"
           echo "private ip: $(hostname -I | awk '{print $1}')"
-
-      - name: unstash raised_meta
-        uses: actions/download-artifact@v3
-        with:
-          name: raised_meta
-          path: .
+          - name: unstash raised_meta
+          uses: actions/download-artifact@v3
+          with:
+            name: raised_meta
+            path: .
 
       - name: unstash manifest
         uses: actions/download-artifact@v3
         with:
           name: manifest
           path: .
+
+      - name: unstash sim_configs
+        uses: actions/download-artifact@v3
+        with:
+          name: sim_configs
+          path: simulator_artifacts
 
       - name: unstash robot_jsons_${{ matrix.distro }}
         uses: actions/download-artifact@v3
@@ -291,343 +279,106 @@ jobs:
           name: robot_jsons_${{ matrix.distro }}
           path: .
 
-      - name: Login to ${{ env.REGISTRY }} Registry
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.registry_user }}
-          password: ${{ secrets.registry_password }}
-          registry: ${{ env.REGISTRY }}
-
-      - name: Login to ${{ env.PUSH_REGISTRY }} Registry
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.registry_user }}
-          password: ${{ secrets.registry_password }}
-          registry: ${{ env.PUSH_REGISTRY }}
-
-      - name: Docker load spawner image
+      - name: Install terraform
         shell: bash
         run: |
-          docker pull "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
-          docker tag "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
-          docker tag "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.PUSH_REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
+          wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt update && sudo apt install terraform -y
 
-      - name: Installation
+      - name: Setup terraform proxmox provisioner
+        id: provision_infra_setup
         shell: bash
         run: |
-          for robot in $(movai-cli robots list); do
-            movai-cli robots stop $robot
-            sleep 5
-            movai-cli robots remove $robot
-          done || true
+          provision_infra_dir=provision_scripts
+          provision_infra_version=0.0.1-38
+          provision_infra_repo_name=devops-tf-proxmox-fleet
 
-          mkdir -p artifacts
-          cp *.json artifacts/
-          CONFIG_FILE_NAME=${{ inputs.product_name }}-${{ matrix.distro }}.json
+          rm -rf $provision_infra_dir
           export PATH="$HOME/.local/bin:$PATH"
-          mkdir -p userspace/
-          export USERSPACE_FOLDER_PATH="$(pwd)/userspace"
-          integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key services_version --output_file movai_service_version
-          integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key quickstart_version --output_file quickstart_version
-          wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat quickstart_version).bash
-          chmod +x ./QuickStart_$(cat quickstart_version).bash
-          ./QuickStart_$(cat quickstart_version).bash --apps $(cat movai_service_version) $CONFIG_FILE_NAME
+          integration-pipeline fetch_by_tag --repo $provision_infra_repo_name --version $provision_infra_version --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $provision_infra_dir
+          ls -la $provision_infra_dir
+          echo "target_dir=${provision_infra_dir}/hosts/generic/" >> $GITHUB_OUTPUT
 
-          execution_status=$?
-          exit $execution_status
-          rm movai_service_version
-
-      - name: Collect Install logs
-        continue-on-error: true
-        run: |
-          # cleanup
-          rm -rf install_logs
-
-          mkdir -p install_logs
-          journalctl -u movai-service -t mobros -n 100 > install_logs/spawner-firmware.log
-          journalctl -u movai-service > install_logs/movai-service.log
-
-      - name: Stash Install logs artifacts
-        continue-on-error: true
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: install_logs
-          path: install_logs/*
-
-      - name: Run mobtest
+      - name: Define Instance names
+        id: infra_names
         shell: bash
         run: |
-          container_id=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
-          docker exec -t "$container_id" bash -c '
-            set -e
-            export PATH="$HOME/.local/bin:$PATH"
-            python3 -m pip install -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple mobtest==${{ env.MOBTEST_VERSION }} --ignore-installed
-            mobtest proj /opt/ros/${{ matrix.distro }}/share/
-          '
+          branch=$(echo ${GITHUB_REF#refs/heads/} | sed "s;\.;-;g" )
 
-      - name: Collect Installed components
-        if: always()
+          local_manager_prefix="ip-$branch-standalone"
+  
+          echo "$local_manager_prefix"
+
+          echo "simul_prefix=${local_manager_prefix}" >> $GITHUB_OUTPUT
+
+      - name: Provision remote vms (Proxmox)
+        working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
         shell: bash
         run: |
-          container_id=$(docker ps -q -f "ancestor=$REGISTRY/qa/${{ inputs.product_name }}-${{ matrix.distro }}:$(cat product.version)")
-          docker exec -t "$container_id" bash -c '
-            set -e
-            sudo apt update
-            export PATH="$HOME/.local/bin:$PATH"
-            python3 -m pip install -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple movai-package-deployer==${{ env.PACKAGE_DEPLOYER_VERSION }} --ignore-installed
-            package-deployer scan
-            ls -la /tmp
+          terraform init -backend-config="key=mary-standalone-${{ steps.infra_names.outputs.simul_prefix }}.tfstate"
+          terraform plan
+          terraform apply -auto-approve
+        env:
+          TF_VAR_number_agents: 0
+          TF_VAR_proxmox_api_url: "https://10.10.0.50:8006/api2/json"
+          TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
+          TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
+          TF_VAR_provision_ssh_pem: ${{ secrets.ssh_pem_fleet_aws_vm }}
+          TF_VAR_ip_list: '["10.10.0.94"]'
+          TF_VAR_proxmox_host: "mary"
+          TF_VAR_vm_gateway: "10.10.1.254"
+          TF_VAR_ip_mask: 23
+          TF_VAR_bios: "ovmf"
+          TF_VAR_pool: "IP-Temp-VMs"
+          TF_VAR_tags: "ip-simul-ci"
 
-            {
-                echo 'Annotation:*'
-                echo 'Callback:*'
-                echo 'Configuration:*'
-                echo 'Flow:*'
-                echo 'GraphicScene:*'
-                echo 'Layout:*'
-                echo 'Node:*'
-                echo 'Package:*'
-            } >> /tmp/manifest.txt
-            mkdir /tmp/proj_metadata
-            python3 -m tools.backup -p /tmp/proj_metadata/ -m /tmp/manifest.txt -a export -i
-
-          ' || true
-            docker cp $container_id:/tmp/deployable.dploy artifacts/${{ inputs.product_name }}-${{ matrix.distro }}-deployable.dploy
-            docker cp $container_id:/tmp/undeployable.dploy artifacts/${{ inputs.product_name }}-${{ matrix.distro }}-3rdParty.dploy
-
-            mkdir -p metadata_artifact tmp_meta
-            docker cp $container_id:/tmp/proj_metadata/ ./
-            tar cvzf ./metadata_artifact/metadata.tar.gz ./proj_metadata
-            CONFIG_FILE_NAME=${{ inputs.product_name }}-${{ matrix.distro }}.json
-
-            echo "$PUSH_REGISTRY/qa/${{ inputs.product_name }}-${{ matrix.distro }}:$(cat product.version)">artifacts/product-${{ matrix.distro }}.image.artifact
-
-      - name: Push spawner image
-        shell: bash
-        run: docker push "${{ env.PUSH_REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
-
-      - name: Stash project metadata
-
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: project_metadata
-          path: metadata_artifact/*
-
-      - name: Stash deploy_artifacts_noetic
-        uses: actions/upload-artifact@v3
-        with:
-          name: deploy_artifacts_noetic
-          path: artifacts/*
-
-      - name: Remove robots
-        if: always()
-        shell: bash
-        run: |
-          for robot in $(movai-cli robots list); do
-            movai-cli robots stop $robot
-            sleep 5
-            movai-cli robots remove $robot
-          done || true
-
-      - name: Docker cleanups
-        if: always()
-        shell: bash
-        run: |
-          docker system prune -f
-          docker image prune --all -f
-
-  Build-Simulator:
-    needs: [Validate-boostrap-configs, Build-Spawner]
-    runs-on: integration-pipeline
-    env:
-      DISTRO: noetic
-    outputs:
-      image_name: "${{ steps.pre_simulator_build.outputs.image_name }}"
-      skip_simulator: "${{ steps.pre_simulator_build.outputs.skip_simulator_build }}"
-
-    steps:
-      - name: Pre clean ups
-        uses: rtCamp/action-cleanup@master
-        if: ${{ inputs.with_simulation == 'true' }}
-
-      - name: Checkout
-        uses: actions/checkout@v3
-        if: ${{ inputs.with_simulation == 'true' }}
-
-      - name: Agent info
-        if: ${{ inputs.with_simulation == 'true' }}
-        run: |
-          echo "public ip: $(curl ipinfo.io/ip)"
-          echo "private ip: $(hostname -I | awk '{print $1}')"
-
-      - name: Install CI Scripts
-        if: ${{ inputs.with_simulation == 'true' }}
-        shell: bash
-        run: python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
-
-      - name: unstash sim_configs
-        if: ${{ inputs.with_simulation == 'true' }}
-        uses: actions/download-artifact@v3
-        with:
-          name: sim_configs
-          path: simulator_artifacts
-
-      - name: unstash manifest
-        if: ${{ inputs.with_simulation == 'true' }}
-        uses: actions/download-artifact@v3
-        with:
-          name: manifest
-          path: .
-
-      - name: Prepare Skip variables
-        id: pre_simulator_build
-        if: ${{ inputs.with_simulation == 'true' }}
-        run: |
-          if [ ! -f "simulator_artifacts/version" ]; then
-            #echo ::set-output name=skip_simulator_build::"true"
-            echo "skip_simulator_build=true" >> $GITHUB_OUTPUT
-          else
-            #echo ::set-output name=skip_simulator_build::"false"
-            echo "skip_simulator_build=false" >> $GITHUB_OUTPUT
-          fi
-          #echo ::set-output name=image_name::"${{ env.REGISTRY }}/ci/$(cat simulator_artifacts/simulator_name.ci)"
-          echo "image_name=${{ env.REGISTRY }}/ci/$(cat simulator_artifacts/simulator_name.ci)" >> $GITHUB_OUTPUT
-
-      - name: Lint docker image
-        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
-        shell: bash
-        run: |
-          wget https://github.com/hadolint/hadolint/releases/download/v2.9.3/hadolint-Linux-x86_64
-          chmod +x hadolint-Linux-x86_64
-          ./hadolint-Linux-x86_64 docker/$DISTRO/Dockerfile-simulator -t error
-
-      - name: Fetch artifacts
-        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
-        shell: bash
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          integration-pipeline fetch_simulator_models \
-          --manifest_platform_base_key product_components \
-          --gh_api_user $GITHUB_API_USR \
-          --gh_api_pwd ${{ secrets.auto_commit_pwd }} \
-          --target_dir "./models"
-          if [ ! -d ./models ]; then mkdir -p ./models; fi
-
-      - name: Login to ${{ env.REGISTRY }} Registry
-        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.registry_user }}
-          password: ${{ secrets.registry_password }}
-          registry: ${{ env.REGISTRY }}
-
-      - name: Login to ${{ env.PUSH_REGISTRY }} Registry
-        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.registry_user }}
-          password: ${{ secrets.registry_password }}
-          registry: ${{ env.PUSH_REGISTRY }}
-
-      - name: Prepare docker build variables
-        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
-        id: pre_build
-        run: |
-          push_name_tmp=$(echo "${{ steps.pre_simulator_build.outputs.image_name }}" | sed "s-${{ env.REGISTRY }}-${{ env.PUSH_REGISTRY }}-g")
-          #echo ::set-output name=base_name::$(cat simulator_artifacts/simulator_base.ci)
-          #echo ::set-output name=push_name::$push_name
-          echo "base_name=$(cat simulator_artifacts/simulator_base.ci)" >> $GITHUB_OUTPUT
-          echo "push_name=$push_name_tmp" >> $GITHUB_OUTPUT
-
-      # - name: Build with args and push
-      #   if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true'}}
-      #   uses: docker/build-push-action@v3
-      #   with:
-      #     context: .
-      #     platforms: linux/amd64
-      #     file: docker/${{ env.DISTRO }}/Dockerfile-simulator
-      #     push: true
-      #     tags: ${{ steps.pre_simulator_build.outputs.image_name }}
-      #     pull: true
-      #     build-args: |
-      #       BASE_IMAGE=${{ steps.pre_build.outputs.base_name }}
-      #       CI_SCRIPT_VERSION=${{ env.CI_INTEGRATION_SCRIPTS_VERSION }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Docker build
-        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true'}}
-        shell: bash
-        run: |
-          docker build --add-host ${{ env.REGISTRY }}:172.22.0.106 \
-            --build-arg BASE_IMAGE=${{ steps.pre_build.outputs.base_name }} \
-            --build-arg CI_SCRIPT_VERSION=${{ env.CI_INTEGRATION_SCRIPTS_VERSION }} \
-            --file docker/${{ env.DISTRO }}/Dockerfile-simulator \
-            --platform linux/amd64 \
-            --tag ${{ steps.pre_build.outputs.push_name }} \
-            --pull \
-            --push .
-
-      - name: Docker cleanups
-        if: always()
-        shell: bash
-        run: |
-          docker system prune -f
-          docker image prune --all -f
+          TF_VAR_fleet_hosts_user: "devops"
+          TF_VAR_template_name: "ubuntu-2004-cloudinit-template2"
+          TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
+          TF_VAR_fleet_manager_memory: 8192
 
   Install-Simulator-Robot:
-    needs: [Build-Spawner, Build-Simulator]
     strategy:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
     runs-on: integration-pipeline
     steps:
       - uses: rtCamp/action-cleanup@master
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
 
       - name: Checkout
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/checkout@v3
 
       - name: Agent info
-        if: ${{ inputs.with_simulation == 'true' }}
         run: |
           echo "public ip: $(curl ipinfo.io/ip)"
           echo "private ip: $(hostname -I | awk '{print $1}')"
 
       - name: unstash raised_meta
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v3
         with:
           name: raised_meta
           path: .
 
       - name: unstash manifest
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v3
         with:
           name: manifest
           path: .
 
       - name: unstash sim_configs
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v3
         with:
           name: sim_configs
           path: simulator_artifacts
 
       - name: unstash robot_jsons_${{ matrix.distro }}
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v3
         with:
           name: robot_jsons_${{ matrix.distro }}
           path: .
 
       - name: Login to ${{ env.REGISTRY }} Registry
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.registry_user }}
@@ -635,7 +386,6 @@ jobs:
           registry: ${{ env.REGISTRY }}
 
       - name: Login to ${{ env.PUSH_REGISTRY }} Registry
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.registry_user }}
@@ -643,25 +393,17 @@ jobs:
           registry: ${{ env.PUSH_REGISTRY }}
 
       - name: Docker load spawner image
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
-          docker pull "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
-          docker tag "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
-          docker tag "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.PUSH_REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
-
+          docker pull registry.cloud.mov.ai/qa/spawner-tugbot-noetic:2.3.1-11
       - name: Docker load simulator image
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
-          promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g")
-
-          docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
-          docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
+          docker pull registry.cloud.mov.ai/qa/tugbot-ign-sim:v2.3.1-4
 
 
       - name: Installation
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
+        if: ${{ false }}
         shell: bash
         run: |
           for robot in $(movai-cli robots list); do
@@ -711,7 +453,6 @@ jobs:
           path: install_logs/*
           
       - name: Run mobtest
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
           container_id=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
@@ -723,7 +464,6 @@ jobs:
           '
 
       - name: Collect Installed components
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
           export PATH="$HOME/.local/bin:$PATH"
@@ -733,7 +473,6 @@ jobs:
                 --branch ${GITHUB_REF#refs/heads/}
 
       - name: Push simulator image
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         id: promote
         shell: bash
         run: |
@@ -773,224 +512,3 @@ jobs:
         run: |
           docker system prune -f
           docker image prune --all -f
-
-  publish:
-    needs: [Install-Robot, Install-Simulator-Robot]
-    runs-on: integration-pipeline
-    steps:
-      - uses: rtCamp/action-cleanup@master
-
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Agent info
-        run: |
-          echo "public ip: $(curl ipinfo.io/ip)"
-          echo "private ip: $(hostname -I | awk '{print $1}')"
-
-      - name: unstash raised_meta
-        uses: actions/download-artifact@v3
-        with:
-          name: raised_meta
-          path: platform_configs
-
-      - name: unstash deploy_artifacts_noetic
-        uses: actions/download-artifact@v3
-        with:
-          name: deploy_artifacts_noetic
-          path: artifacts
-
-      - name: unstash manifest
-        uses: actions/download-artifact@v3
-        with:
-          name: manifest
-          path: .
-
-      - name: unstash project metadata
-        uses: actions/download-artifact@v3
-        with:
-          name: project_metadata
-          path: .
-
-      - name: unstash deploy_simulator_artifacts
-        if: ${{ inputs.with_simulation == 'true' }}
-        uses: actions/download-artifact@v3
-        with:
-          name: deploy_simulator_artifacts
-          path: .
-
-      - name: Install CI Scripts
-        shell: bash
-        run: python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
-
-      - name: Install Package Deployer
-        shell: bash
-        run: python3 -m pip install movai-package-deployer==$PACKAGE_DEPLOYER_VERSION --ignore-installed
-
-      - name: Publish and create release
-        shell: bash
-        run: |
-          git config --global --add safe.directory $(pwd)
-          git config --global user.name '${{ secrets.auto_commit_user }}'
-          git config --global user.email '${{ secrets.auto_commit_mail }}'
-          git config --global user.password ${{ secrets.auto_commit_pwd }}
-
-          cp ./platform_configs/product.version product.version
-          cp ./platform_configs/product-manifest.yaml product-manifest.yaml
-          mkdir -p deployment_artifacts
-
-          export PATH="$HOME/.local/bin:$PATH"
-          ls -la
-          mkdir -p pkgs_deployable
-          cp artifacts/*deployable.dploy pkgs_deployable
-          package-deployer join --dploy_workspace "$(pwd)/pkgs_deployable"
-          mv "$(pwd)/pkgs_deployable/merged.dploy" deployment_artifacts/deployable.dploy
-
-          mkdir -p pkgs_undeployable
-          cp artifacts/*3rdParty.dploy pkgs_undeployable
-          package-deployer join --dploy_workspace "$(pwd)/pkgs_undeployable"
-          mv "$(pwd)/pkgs_undeployable/merged.dploy" deployment_artifacts/3rdParty.dploy
-
-          rm -rf pkgs_deployable pkgs_undeployable
-
-          cp artifacts/*.json deployment_artifacts
-          if [ "${{ inputs.with_simulation }}" = "true" ];
-          then
-            echo -e "$(cat ./artifacts/product-noetic.image.artifact)\n$(cat ./simulator.image.artifact)" > deployment_artifacts/product.image.artifact
-          else
-            cp ./artifacts/product-noetic.image.artifact deployment_artifacts/product.image.artifact
-          fi
-          #cp ./artifacts/product-noetic.image.artifact deployment_artifacts/product.image.artifact
-          cp deployment_artifacts/product.image.artifact ./
-
-          integration-pipeline patch_manifest_with_spawner
-          cat product-manifest.yaml
-          cp product-manifest.yaml deployment_artifacts
-
-          cp metadata.tar.gz deployment_artifacts
-
-          product_version=$(cat product.version)
-          # danger zone. Everything will be deleted.
-          git restore product.version
-          git restore product-manifest.yaml
-          git pull
-          echo "$product_version" > product.version
-
-          git add product.version
-          git commit -m "[skip actions] Automatic Raise"
-        env:
-          GITHUB_TOKEN: ${{ secrets.gh_token }}
-
-      - name: Prepare raise variables
-        id: pre_raise
-        run: |
-          #echo ::set-output name=branch::${GITHUB_REF#refs/heads/}
-          echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
-
-      - name: Raise App version
-        uses: CasperWA/push-protected@v2
-        with:
-          token: ${{ secrets.auto_commit_pwd }}
-          branch: ${{ steps.pre_raise.outputs.branch }}
-          unprotect_reviews: true
-
-      - name: Github Publish
-        shell: bash
-        run: |
-          commit_hash=$(git log --format="%H" -n 1)
-          product_version=$(cat product.version)
-          gh release create -p --generate-notes --target "$commit_hash" -t "${{ inputs.product_name }} $product_version" $product_version
-          # add all files in the deployment_artifacts folder
-          find deployment_artifacts -type f -exec gh release upload $product_version {} \;
-        env:
-          GITHUB_TOKEN: ${{ secrets.gh_token }}
-
-      - name: Update release notes
-        shell: bash
-        run: |
-          # release version
-          product_version=$(cat product.version)
-
-          # get existent release body
-          ORIGINAL_RN=$(gh release view "${product_version}" --json body | jq -r .body)
-          echo -e "ORIGINAL_RN:\n ${ORIGINAL_RN}"
-
-          # get release PRs
-          PRS=$(echo "${ORIGINAL_RN}" | sed -rn "s/.* by @.* in https:\/\/github\.com\/${{ github.repository_owner }}\/${{ github.event.repository.name }}\/pull\/([0-9]+).*/\1/p" | tr '\n' ' ')
-          # change to array
-          PRS=($PRS)
-          echo "Found the following PRs: ${PRS[@]}"
-
-          # new release notes file
-          rm -rf notes.txt
-
-          # What's Changed - with info from PRs
-          echo "## What's Changed" >> notes.txt
-
-          if [ ${#PRS[@]} -eq 0 ]; then
-              # no PRs exist
-              echo "No relevant changes." >> notes.txt
-          else
-              # PRs exist
-              for pr in "${PRS[@]}"; do
-                  gh pr view "${pr}" --json body | jq -r .body >> notes.txt
-              done
-          fi
-          echo "" >> notes.txt
-
-          # PRs
-          echo "## PRs" >> notes.txt
-          if [ ${#PRS[@]} -eq 0 ]; then
-              # no PRs exist
-              echo "No PRs." >> notes.txt
-          else
-              # PRs exist
-              echo "${ORIGINAL_RN}" | grep "\* .* by @.* in https://github.com/${{ github.repository_owner }}/" >> notes.txt
-          fi
-          echo "" >> notes.txt
-
-          ## Diff
-          echo "## Diff" >> notes.txt
-          echo "${ORIGINAL_RN}" | grep "\*\*Full Changelog\*\*" >> notes.txt
-
-          # set new release notes
-          gh release edit "${product_version}" --notes-file notes.txt
-        env:
-          GITHUB_TOKEN: ${{ secrets.gh_token }}
-
-      - name: Propagate release
-        continue-on-error: true
-        if: ${{ inputs.propagate_project }}
-        shell: bash
-        run: |
-          gh workflow run "Propagate EE" --repo MOV-AI/qa-automations
-        env:
-          GITHUB_TOKEN: ${{ secrets.gh_token }}
-
-      - name: Prepare slack variables
-        if: always()
-        id: pre_slack
-        run: |
-          MESSAGE=":white_check_mark: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is stable :sunny: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is unstable :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          #echo ::set-output name=msg::$MESSAGE
-          #echo ::set-output name=msg_error::$MESSAGE_ERR
-          echo "msg=$MESSAGE" >> $GITHUB_OUTPUT
-          echo "msg_error=$MESSAGE_ERR" >> $GITHUB_OUTPUT
-
-      - name: Slack message success
-        uses: slackapi/slack-github-action@v1.23.0
-        with:
-          channel-id: 'C050L85R6VC'
-          slack-message: ${{ steps.pre_slack.outputs.msg }}
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
-
-      - name: Slack message failure
-        if: failure()
-        uses: slackapi/slack-github-action@v1.23.0
-        with:
-          channel-id: 'C050L85R6VC'
-          slack-message: ${{ steps.pre_slack.outputs.msg_error }}
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
