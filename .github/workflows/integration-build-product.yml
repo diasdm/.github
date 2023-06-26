@@ -265,6 +265,11 @@ jobs:
         run: |
           echo "public ip: $(curl ipinfo.io/ip)"
           echo "private ip: $(hostname -I | awk '{print $1}')"
+
+      - name: Install CI Scripts
+        shell: bash
+        run: python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
+
       - name: unstash raised_meta
         uses: actions/download-artifact@v3
         with:
