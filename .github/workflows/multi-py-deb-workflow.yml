@@ -357,7 +357,6 @@ jobs:
         rm -f debian
 
   Rpm-Pack:
-    if: ${{ inputs.release == 'false' && inputs.rpm_build == 'true' }}
     strategy:
       matrix:
         pack_path: ${{ fromJSON(inputs.package_paths) }}
@@ -367,23 +366,27 @@ jobs:
       image: centos:8
     steps:
     - name: Prereq
+      if: ${{ inputs.release == 'false' && inputs.rpm_build == 'true' }}
       run: |
         sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
         sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
         yum install -y rpm-build rpmdevtools gcc make python38 git
 
     - name: Checkout
+      if: ${{ inputs.release == 'false' && inputs.rpm_build == 'true' }}
       uses: actions/checkout@v3
       with:
         submodules: recursive
 
     - name: Download a single artifact
+      if: ${{ inputs.release == 'false' && inputs.rpm_build == 'true' }}
       uses: actions/download-artifact@v3
       with:
         name: packages
         path: dist
 
     - name: Sync setup.py
+      if: ${{ inputs.release == 'false' && inputs.rpm_build == 'true' }}
       run: |
         cd ${{ matrix.pack_path }}/
         if [ -f setup.py ] ; then
@@ -391,6 +394,7 @@ jobs:
         fi
 
     - name: Raise & RPM Pack
+      if: ${{ inputs.release == 'false' && inputs.rpm_build == 'true' }}
       run: |
         cd ${{ matrix.pack_path }}/
         if [ ! -d rpm ] ; then
@@ -424,6 +428,7 @@ jobs:
         mv ./${{ matrix.pack_path }}/*.rpm artifacts
 
     - name: Archive binary
+      if: ${{ inputs.release == 'false' && inputs.rpm_build == 'true' }}
       uses: actions/upload-artifact@v3
       with:
         name: artifacts
@@ -530,13 +535,12 @@ jobs:
 
   Rpm-Test:
     needs: [Raise, Rpm-Pack]
-    if: ${{ inputs.release == 'false' && inputs.install_test == 'true' &&  inputs.rpm_build == 'true' }}
     runs-on: ubuntu-20.04
     container:
       image: centos:8
     steps:
       - name: Prereq Docker
-        if: ${{ inputs.install_test_docker == 'true' }}
+        if: ${{ inputs.install_test_docker == 'true' && inputs.release == 'false' && inputs.install_test == 'true' &&  inputs.rpm_build == 'true'  }}
         run: |
           sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
           sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
@@ -546,19 +550,21 @@ jobs:
           sh get-docker.sh
 
       - name: Prereq Zmq
-        if: ${{ inputs.install_test_zmq == 'true' }}
+        if: ${{ inputs.install_test_zmq == 'true'  && inputs.release == 'false' && inputs.install_test == 'true' &&  inputs.rpm_build == 'true' }}
         run: |
           # add zeromq repo
           yum-config-manager --add-repo "https://download.opensuse.org/repositories/network:/messaging:/zeromq:/release-stable/RHEL_7/"
           yum install --nogpgcheck -y zeromq-devel
 
       - name: Download artifacts
+        if: ${{ inputs.release == 'false' && inputs.install_test == 'true' &&  inputs.rpm_build == 'true' }}
         uses: actions/download-artifact@v3
         with:
           name: artifacts
           path: artifacts
 
       - name: Install rpm artifacts
+        if: ${{ inputs.release == 'false' && inputs.install_test == 'true' &&  inputs.rpm_build == 'true' }}
         run: |
           find artifacts/ -name "*.rpm" -not -name "*src*" -print0 | xargs -0 -n1 -r yum install -y
 
