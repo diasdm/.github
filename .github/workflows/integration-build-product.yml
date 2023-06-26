@@ -251,6 +251,7 @@ jobs:
           docker image prune --all -f
 
   Install-Simulator-Robot:
+    needs: [Build-Spawner]
     strategy:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
