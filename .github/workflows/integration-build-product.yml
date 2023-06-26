@@ -44,6 +44,15 @@ on:
         required: true
       slack_token_id:
         required: true
+      proxmox_api_url:
+        required: true
+      proxmox_api_token_id:
+        required: true
+      proxmox_api_token_secret:
+        required: true
+      ssh_pem_fleet_aws_vm:
+        required: true
+
 
 env:
   CI_INTEGRATION_SCRIPTS_VERSION: "2.2.0.7"
@@ -321,7 +330,7 @@ jobs:
           terraform apply -auto-approve
         env:
           TF_VAR_number_agents: 0
-          TF_VAR_proxmox_api_url: "https://10.10.0.50:8006/api2/json"
+          TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
           TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
           TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
           TF_VAR_provision_ssh_pem: ${{ secrets.ssh_pem_fleet_aws_vm }}
@@ -332,7 +341,6 @@ jobs:
           TF_VAR_bios: "ovmf"
           TF_VAR_pool: "IP-Temp-VMs"
           TF_VAR_tags: "ip-simul-ci"
-
           TF_VAR_fleet_hosts_user: "devops"
           TF_VAR_template_name: "ubuntu-2004-cloudinit-template2"
           TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
