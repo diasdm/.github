@@ -306,7 +306,7 @@ jobs:
         shell: bash
         run: |
           provision_infra_dir=provision_scripts
-          provision_infra_version=0.0.1-39
+          provision_infra_version=0.1.0-1
           provision_infra_repo_name=devops-tf-proxmox-fleet
 
           rm -rf $provision_infra_dir
@@ -353,3 +353,15 @@ jobs:
           TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
           TF_VAR_fleet_manager_memory: 8192
 
+      - name: Provision remote vms (Proxmox)
+        working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
+        id: infra_outputs
+        shell: bash
+        run: |
+          echo "host_ip=$(terraform output manager_ip_address)" >> $GITHUB_OUTPUT
+          echo "host_user=$(terraform output user)" >> $GITHUB_OUTPUT
+        
+      - name: Test
+        run: |
+          "ssh ${{ steps.infra_outputs.outputs.host_user }}@${{ steps.infra_outputs.outputs.host_ip }}"
+          ls -la
