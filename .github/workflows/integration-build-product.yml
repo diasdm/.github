@@ -358,8 +358,10 @@ jobs:
         id: infra_outputs
         shell: bash
         run: |
-          echo "host_ip=$(terraform output manager_ip_address)" >> $GITHUB_OUTPUT
-          echo "host_user=$(terraform output user)" >> $GITHUB_OUTPUT
+          ip=$(terraform output manager_ip_address)
+          user=$(terraform output user)
+          echo "host_ip=$(echo $ip | sed "s;\";;g)" >> $GITHUB_OUTPUT
+          echo "host_user=$(echo $user | sed "s;\";;g)" >> $GITHUB_OUTPUT
         
       - name: Test
         run: |
