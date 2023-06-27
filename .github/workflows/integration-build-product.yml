@@ -365,7 +365,7 @@ jobs:
         
       - name: Test
         run: |
-          ssh-keygen -f ~/.ssh/known_hosts -R {{ steps.infra_outputs.outputs.host_ip }}
-          ssh-keyscan -H {{ steps.infra_outputs.outputs.host_ip }} >> ~/.ssh/known_hosts
+          ssh-keygen -f ~/.ssh/known_hosts -R ${{ steps.infra_outputs.outputs.host_ip }}
+          ssh-keyscan -H ${{ steps.infra_outputs.outputs.host_ip }} >> ~/.ssh/known_hosts
           ssh ${{ steps.infra_outputs.outputs.host_user }}@${{ steps.infra_outputs.outputs.host_ip }} -i ${{ secrets.ssh_pem_fleet_aws_vm }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
           ls -la
