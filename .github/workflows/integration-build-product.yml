@@ -378,7 +378,7 @@ jobs:
         with:
           host: ${{ steps.infra_outputs.outputs.host_ip }}
           username: ${{ steps.infra_outputs.outputs.host_user }}
-          key_path: "~/.ssh/aws_slave.pem"
+          key: ${{ secrets.ssh_pem_fleet_aws_vm }}
           script: |
             whoami
             ls -al
