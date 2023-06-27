@@ -334,6 +334,10 @@ jobs:
           terraform init -backend-config="key=mary-standalone-${{ steps.infra_names.outputs.simul_prefix }}.tfstate"
           terraform plan
           terraform apply -auto-approve
+
+          echo "${{ secrets.ssh_pem_fleet_aws_vm }}" > ~/.ssh/aws_slave.pem
+          sudo chmod 600 ~/.ssh/aws_slave.pem
+
         env:
           TF_VAR_number_agents: 0
           TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
@@ -363,9 +367,18 @@ jobs:
           echo "host_ip=$(echo $ip | sed "s;\";;g")" >> $GITHUB_OUTPUT
           echo "host_user=$(echo $user | sed "s;\";;g")" >> $GITHUB_OUTPUT
         
-      - name: Test
-        run: |
-          ssh-keygen -f ~/.ssh/known_hosts -R ${{ steps.infra_outputs.outputs.host_ip }}
-          ssh-keyscan -H ${{ steps.infra_outputs.outputs.host_ip }} >> ~/.ssh/known_hosts
-          ssh ${{ steps.infra_outputs.outputs.host_user }}@${{ steps.infra_outputs.outputs.host_ip }} -i ${{ secrets.ssh_pem_fleet_aws_vm }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-          ls -la
+      # - name: Test
+      #   run: |
+      #     ssh-keygen -f ~/.ssh/known_hosts -R ${{ steps.infra_outputs.outputs.host_ip }}
+      #     ssh-keyscan -H ${{ steps.infra_outputs.outputs.host_ip }} >> ~/.ssh/known_hosts
+      #     ssh ${{ steps.infra_outputs.outputs.host_user }}@${{ steps.infra_outputs.outputs.host_ip }} -i ~/.ssh/aws_slave.pem -o StrictHostKeyChecking=no
+      #     ls -la
+      - name: Remote execute
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ steps.infra_outputs.outputs.host_ip }}
+          username: ${{ steps.infra_outputs.outputs.host_user }}
+          key: "~/.ssh/aws_slave.pem"
+          script: |
+            whoami
+            ls -al
