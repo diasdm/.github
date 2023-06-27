@@ -341,6 +341,7 @@ jobs:
           TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
           TF_VAR_provision_ssh_pem: ${{ secrets.ssh_pem_fleet_aws_vm }}
           TF_VAR_ip_list: '["10.10.0.94"]'
+          TF_VAR_storage: "local-lvm"
           TF_VAR_proxmox_host: "mary"
           TF_VAR_vm_gateway: "10.10.1.254"
           TF_VAR_ip_mask: 23
