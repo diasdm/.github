@@ -360,8 +360,8 @@ jobs:
         run: |
           ip=$(terraform output manager_ip_address)
           user=$(terraform output user)
-          echo "host_ip=$(echo $ip | sed "s;\";;g)" >> $GITHUB_OUTPUT
-          echo "host_user=$(echo $user | sed "s;\";;g)" >> $GITHUB_OUTPUT
+          echo "host_ip=$(echo $ip | sed "s;\";;g")" >> $GITHUB_OUTPUT
+          echo "host_user=$(echo $user | sed "s;\";;g")" >> $GITHUB_OUTPUT
         
       - name: Test
         run: |
