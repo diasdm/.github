@@ -350,6 +350,10 @@ jobs:
           # spawner
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^spawner-.*")
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
+          
+          # message-server    
+          CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*")
+          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"          
 
           # movai-service
           journalctl -u movai-service --since '1hour ago' &> "movai-service.log"
@@ -759,6 +763,10 @@ jobs:
           # spawner
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^spawner-.*")
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
+          
+          # message-server    
+          CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*")
+          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
 
           # movai-service
           journalctl -u movai-service --since '1hour ago' &> "movai-service.log"
@@ -957,6 +965,10 @@ jobs:
 
           # spawner
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^spawner-.*")
+          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
+          
+          # message-server    
+          CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*")
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
 
           # movai-service
