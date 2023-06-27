@@ -349,7 +349,7 @@ jobs:
           TF_VAR_pool: "IP-Temp-VMs"
           TF_VAR_tags: "ip-simul-ci"
           TF_VAR_fleet_hosts_user: "devops"
-          TF_VAR_template_name: "us20ci-gpu"
+          TF_VAR_template_name: "us20ci-gpu2"
           TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
           TF_VAR_fleet_manager_memory: 8192
 
