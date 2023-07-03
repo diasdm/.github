@@ -413,7 +413,7 @@ jobs:
 
       - name: Remote - Install CI Scripts
         shell: bash
-        run: ssh robot; python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
+        run: ssh robot "python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed"
 
       - name: Remote - unstash manifest
         shell: bash
