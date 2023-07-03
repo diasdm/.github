@@ -64,6 +64,7 @@ env:
   REGISTRY: registry.hel.mov.ai
   PUSH_REGISTRY: registry.cloud.mov.ai
   USERSPACE_FOLDER_PATH: userspace
+  REMOTE_WORKSPACE: workspace
 
 jobs:
   Validate-boostrap-configs:
@@ -389,7 +390,7 @@ jobs:
           echo "  StrictHostKeyChecking no" >> ~/.ssh/config
           cat ~/.ssh/config
 
-          ssh robot 'rm -rf ./workspace; mkdir -p ./workspace'
+          ssh robot 'rm -rf ./${{ env.REMOTE_WORKSPACE }}; mkdir -p ./${{ env.REMOTE_WORKSPACE }}'
 
           echo "config_pre_exists=$CONFIG_FILE_EXISTS" >> $GITHUB_OUTPUT
 
@@ -416,20 +417,20 @@ jobs:
 
       - name: Remote - unstash manifest
         shell: bash
-        run: scp product-manifest.yaml robot:./worskace/product-manifest.yaml
+        run: scp product-manifest.yaml robot:${{ env.REMOTE_WORKSPACE }}/product-manifest.yaml
 
       - name: Remote - unstash sim_configs
         shell: bash
-        run: scp -r simulator_artifacts robot:./worskace/simulator_artifacts
+        run: scp -r simulator_artifacts robot:${{ env.REMOTE_WORKSPACE }}/simulator_artifacts
 
       - name: Remote - unstash robot_jsons_${{ matrix.distro }}
         shell: bash
-        run: scp -r *.json robot:./worskace/
+        run: scp -r *.json robot:${{ env.REMOTE_WORKSPACE }}/
 
       - name: list workspace
         shell: bash
         run: |
-          ssh robot 'cd workspace; ls -la'
+          ssh robot 'cd ${{ env.REMOTE_WORKSPACE }}; ls -la'
 
       - name: Remote - Install
         id: install
@@ -437,7 +438,7 @@ jobs:
         run: |
           ssh robot
 
-          cd workspace
+          cd ${{ env.REMOTE_WORKSPACE }}
 
           for robot in $(movai-cli robots list); do
             movai-cli robots stop $robot
