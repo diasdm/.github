@@ -387,7 +387,7 @@ jobs:
           fi
           
           touch ~/.ssh/config
-          sudo tee -a greetings.txt > /dev/null <<EOT
+          sudo tee -a ~/.ssh/config > /dev/null <<EOT
           Host remote
             HostName ${{ steps.infra_outputs.outputs.host_ip }}
             User ${{ steps.infra_outputs.outputs.host_user }}
