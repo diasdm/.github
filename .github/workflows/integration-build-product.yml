@@ -378,14 +378,25 @@ jobs:
         run: |
           ssh-keygen -f ~/.ssh/known_hosts -R ${{ steps.infra_outputs.outputs.host_ip }}
           ssh-keyscan -H ${{ steps.infra_outputs.outputs.host_ip }} >> ~/.ssh/known_hosts
-
-          cat >>~/.ssh/config <<END
+          
+          test -f ~/.ssh/config
+          CONFIG_FILE_EXISTS=1
+          if [ $? -eq 0 ]; then
+            mv ~/.ssh/config ~/.ssh/config.bak
+            CONFIG_FILE_EXISTS=0
+          fi
+          
+          touch ~/.ssh/config
+          sudo tee -a greetings.txt > /dev/null <<EOT
           Host remote
             HostName ${{ steps.infra_outputs.outputs.host_ip }}
             User ${{ steps.infra_outputs.outputs.host_user }}
             IdentityFile ~/.ssh/aws_slave.pem
             StrictHostKeyChecking no
-          END
+          EOT
+
+          cat ~/.ssh/config
+
 
       - name: Install CI Scripts
         shell: bash
