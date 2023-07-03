@@ -357,7 +357,7 @@ jobs:
           TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
           TF_VAR_fleet_manager_memory: 8192
 
-      - name: Provision remote vms (Proxmox)
+      - name: Gather Terraform outputs
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
         id: infra_outputs
         shell: bash
@@ -366,7 +366,6 @@ jobs:
           user=$(terraform output user)
           echo "host_ip=$(echo $ip | sed "s;\";;g")" >> $GITHUB_OUTPUT
           echo "host_user=$(echo $user | sed "s;\";;g")" >> $GITHUB_OUTPUT
-        
 
       - name: Configure SSH
         id: remote_ssh_setup
@@ -383,20 +382,90 @@ jobs:
           fi
           
           touch ~/.ssh/config
-          echo "Host remote" >> ~/.ssh/config
+          echo "Host robot" >> ~/.ssh/config
           echo "  HostName ${{ steps.infra_outputs.outputs.host_ip }}" >> ~/.ssh/config
           echo "  User ${{ steps.infra_outputs.outputs.host_user }}" >> ~/.ssh/config
           echo "  IdentityFile ~/.ssh/aws_slave.pem" >> ~/.ssh/config
           echo "  StrictHostKeyChecking no" >> ~/.ssh/config
           cat ~/.ssh/config
 
+          ssh robot 'rm -rf ./workspace; mkdir -p ./workspace'
+
           echo "config_pre_exists=$CONFIG_FILE_EXISTS" >> $GITHUB_OUTPUT
 
-      - name: Install CI Scripts
+      - name: Remote - Login to Private Registry
+        shell: bash
+        run: docker login ${{ env.REGISTRY }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
+
+      # - name: Remote - Docker load spawner image
+      #   shell: bash
+      #   run: |
+      #     docker pull "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
+      #     docker tag "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
+
+      # - name: Remote - Docker load simulator image
+      #   shell: bash
+      #   run: |
+      #     promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g")
+      #     docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
+      #     docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
+
+      - name: Remote - Install CI Scripts
+        shell: bash
+        run: ssh robot; python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
+
+      - name: Remote - unstash manifest
+        shell: bash
+        run: scp product-manifest.yaml robot:worskace/product-manifest.yaml
+
+      - name: Remote - unstash sim_configs
+        shell: bash
+        run: scp -r simulator_artifacts robot:worskace/simulator_artifacts
+
+      - name: Remote - unstash robot_jsons_${{ matrix.distro }}
+        shell: bash
+        run: scp -r *.json robot:worskace/
+
+      - name: list workspace
         shell: bash
         run: |
-          ssh remote 'ls -la'
+          ssh robot 'cd workspace; ls -la'
 
+      - name: Remote - Install
+        id: install
+        shell: bash
+        run: |
+          ssh robot
+
+          cd workspace
+
+          for robot in $(movai-cli robots list); do
+            movai-cli robots stop $robot
+            sleep 5
+            movai-cli robots remove $robot
+          done || true
+
+          mkdir -p artifacts
+          cp *.json artifacts/
+          CONFIG_FILE_NAME="basic-standalone-noetic.json"
+          export PATH="$HOME/.local/bin:$PATH"
+          integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key services_version --output_file movai_service_version
+          integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key quickstart_version --output_file quickstart_version
+
+          wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat quickstart_version).bash
+          chmod +x ./QuickStart_$(cat quickstart_version).bash
+          ./QuickStart_$(cat quickstart_version).bash --apps $(cat movai_service_version) $CONFIG_FILE_NAME
+          MOVAI_USER="ci"
+          MOVAI_PWD="4Iva6UHAQq9DGITj"
+          for robot in $(movai-cli robots list); do
+            movai-cli robots user "$robot" "$MOVAI_USER" "$MOVAI_PWD"
+          done
+
+          echo "movai_user=${MOVAI_USER}" >> $GITHUB_OUTPUT
+          echo "movai_pwd=${MOVAI_PWD}" >> $GITHUB_OUTPUT
+          execution_status=$?
+          exit $execution_status
+          rm movai_service_version
 
       - name: Teardown ssh setup
         shell: bash
