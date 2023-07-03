@@ -396,8 +396,11 @@ jobs:
 
       - name: Remote - Login to Private Registry
         shell: bash
-        run: docker login ${{ env.REGISTRY }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
+        run: ssh robot "docker login ${{ env.REGISTRY }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}"
 
+      - name: Remote - Install requirements
+        shell: bash
+        run: ssh robot "sudo apt install python3-pip -y"
       # - name: Remote - Docker load spawner image
       #   shell: bash
       #   run: |
