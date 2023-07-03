@@ -367,13 +367,9 @@ jobs:
           echo "host_ip=$(echo $ip | sed "s;\";;g")" >> $GITHUB_OUTPUT
           echo "host_user=$(echo $user | sed "s;\";;g")" >> $GITHUB_OUTPUT
         
-      # - name: Test
-      #   run: |
-      #     ssh-keygen -f ~/.ssh/known_hosts -R ${{ steps.infra_outputs.outputs.host_ip }}
-      #     ssh-keyscan -H ${{ steps.infra_outputs.outputs.host_ip }} >> ~/.ssh/known_hosts
-      #     ssh ${{ steps.infra_outputs.outputs.host_user }}@${{ steps.infra_outputs.outputs.host_ip }} -i ~/.ssh/aws_slave.pem -o StrictHostKeyChecking=no
-      #     ls -la
+
       - name: Configure SSH
+        id: remote_ssh_setup
         shell: bash
         run: |
           ssh-keygen -f ~/.ssh/known_hosts -R ${{ steps.infra_outputs.outputs.host_ip }}
@@ -387,18 +383,26 @@ jobs:
           fi
           
           touch ~/.ssh/config
-          sudo tee -a ~/.ssh/config > /dev/null <<EOT
-          Host remote
-            HostName ${{ steps.infra_outputs.outputs.host_ip }}
-            User ${{ steps.infra_outputs.outputs.host_user }}
-            IdentityFile ~/.ssh/aws_slave.pem
-            StrictHostKeyChecking no
-          EOT
-
+          echo "Host remote" >> ~/.ssh/config
+          echo "  HostName ${{ steps.infra_outputs.outputs.host_ip }}" >> ~/.ssh/config
+          echo "  User ${{ steps.infra_outputs.outputs.host_user }}" >> ~/.ssh/config
+          echo "  IdentityFile ~/.ssh/aws_slave.pem" >> ~/.ssh/config
+          echo "  StrictHostKeyChecking no" >> ~/.ssh/config
           cat ~/.ssh/config
 
+          echo "config_pre_exists=$CONFIG_FILE_EXISTS" >> $GITHUB_OUTPUT
 
       - name: Install CI Scripts
         shell: bash
         run: |
           ssh remote 'ls -la'
+
+
+      - name: Teardown ssh setup
+        shell: bash
+        run: |
+          if [ "${{ steps.remote_ssh_setup.outputs.config_pre_exists }}" = "0" ];
+          then
+            rm ~/.ssh/config
+            mv ~/.ssh/config.bak ~/.ssh/config
+          fi
