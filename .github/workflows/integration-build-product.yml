@@ -436,7 +436,7 @@ jobs:
         id: install
         shell: bash
         run: |
-          ssh robot
+          ssh robot '
 
           cd ${{ env.REMOTE_WORKSPACE }}
 
@@ -467,6 +467,7 @@ jobs:
           execution_status=$?
           exit $execution_status
           rm movai_service_version
+          '
 
       - name: Teardown ssh setup
         shell: bash
