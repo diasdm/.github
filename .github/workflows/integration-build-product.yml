@@ -428,7 +428,7 @@ jobs:
 
       - name: Remote - unstash robot_jsons_${{ matrix.distro }}
         shell: bash
-        run: scp -r *.json robot:${{ env.REMOTE_WORKSPACE }}/
+        run: scp -r *.json* robot:${{ env.REMOTE_WORKSPACE }}/
 
       - name: list workspace
         shell: bash
