@@ -458,7 +458,7 @@ jobs:
 
           export USERSPACE_FOLDER_PATH="userspace"
           export SIMULATION_ID="CI"
-          mkdir -p userspace
+          rm -rf userspace
 
           wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat quickstart_version).bash
           chmod +x ./QuickStart_$(cat quickstart_version).bash
