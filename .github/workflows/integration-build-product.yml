@@ -416,15 +416,15 @@ jobs:
 
       - name: Remote - unstash manifest
         shell: bash
-        run: scp product-manifest.yaml robot:worskace/product-manifest.yaml
+        run: scp product-manifest.yaml robot:./worskace/product-manifest.yaml
 
       - name: Remote - unstash sim_configs
         shell: bash
-        run: scp -r simulator_artifacts robot:worskace/simulator_artifacts
+        run: scp -r simulator_artifacts robot:./worskace/simulator_artifacts
 
       - name: Remote - unstash robot_jsons_${{ matrix.distro }}
         shell: bash
-        run: scp -r *.json robot:worskace/
+        run: scp -r *.json robot:./worskace/
 
       - name: list workspace
         shell: bash
