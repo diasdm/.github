@@ -420,8 +420,8 @@ jobs:
         shell: bash
         run: |
           ssh robot '
-            docker pull ${{ env.REGISTRY }}/qa/tugbot-ign-sim:2.4.0-36
-            docker tag ${{ env.REGISTRY }}/qa/tugbot-ign-sim:2.4.0-36 ${{ env.REGISTRY }}/qa/tugbot-ign-sim:v0.1.0-0
+            docker pull ${{ env.REGISTRY }}/qa/tugbot-ign-sim:v2.4.0-36
+            docker tag ${{ env.REGISTRY }}/qa/tugbot-ign-sim:v2.4.0-36 ${{ env.REGISTRY }}/qa/tugbot-ign-sim:v0.1.0-0
           '
 
       # - name: Remote - Docker load simulator image
