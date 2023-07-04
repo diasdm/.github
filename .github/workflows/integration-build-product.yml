@@ -473,7 +473,8 @@ jobs:
           integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key services_version --output_file movai_service_version
           integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key quickstart_version --output_file quickstart_version
 
-          export USERSPACE_FOLDER_PATH="userspace"
+          export USERSPACE_FOLDER_PATH="$(pwd)/userspace"
+          export PUBLIC_IP=$(hostname -I | awk '{print $1}')
           export SIMULATION_ID="CI"
           rm -rf userspace
 
