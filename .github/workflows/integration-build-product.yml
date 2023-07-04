@@ -405,8 +405,10 @@ jobs:
       - name: Remote - FAKE Docker load spawner image
         shell: bash
         run: |
-          docker pull "${{ env.REGISTRY }}/ci/spawner-tugbot-noetic:2.4.0-74"
-          docker tag "${{ env.REGISTRY }}/ci/spawner-tugbot-noetic:2.4.0-74" "${{ env.REGISTRY }}/qa/spawner-tugbot-noetic:0.1.0-1"
+          ssh robot '
+            docker pull "${{ env.REGISTRY }}/ci/spawner-tugbot-noetic:2.4.0-74"
+            docker tag "${{ env.REGISTRY }}/ci/spawner-tugbot-noetic:2.4.0-74" "${{ env.REGISTRY }}/qa/spawner-tugbot-noetic:0.1.0-1"
+          '
 
       # - name: Remote - Docker load spawner image
       #   shell: bash
@@ -417,9 +419,10 @@ jobs:
       - name: Remote - Fake Docker load simulator image
         shell: bash
         run: |
-          docker pull ${{ env.REGISTRY }}/qa/tugbot-ign-sim:2.4.0-36
-          docker tag ${{ env.REGISTRY }}/qa/tugbot-ign-sim:2.4.0-36 ${{ env.REGISTRY }}/qa/tugbot-ign-sim:v0.1.0-0
-
+          ssh robot '
+            docker pull ${{ env.REGISTRY }}/qa/tugbot-ign-sim:2.4.0-36
+            docker tag ${{ env.REGISTRY }}/qa/tugbot-ign-sim:2.4.0-36 ${{ env.REGISTRY }}/qa/tugbot-ign-sim:v0.1.0-0
+          '
 
       # - name: Remote - Docker load simulator image
       #   shell: bash
