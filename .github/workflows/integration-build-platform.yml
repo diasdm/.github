@@ -293,6 +293,10 @@ jobs:
         working-directory: ${{ steps.ui_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
+          # install test dependencies on host
+          sudo apt install -y --allow-downgrades python3-rosnode python3-rosparam python3-rostopic
+          export PYTHONPATH="${PYTHONPATH}:/usr/lib/python3/dist-packages"
+
           . venv/bin/activate
 
           # install test dependencies on spawner
@@ -315,8 +319,8 @@ jobs:
               --browser_name chrome \
               --browser_version 91.0 \
               --base_url https://${{ steps.agent_info.outputs.ip }}/ \
-              --username ${{ steps.install.outputs.movai_user }} \
-              --password ${{ steps.install.outputs.movai_pwd }} \
+              --movai-user ${{ steps.install.outputs.movai_user }} \
+              --movai-pw ${{ steps.install.outputs.movai_pwd }} \
               --jira_report
           else
               pytest \
@@ -325,8 +329,8 @@ jobs:
                 --browser_name chrome \
                 --browser_version 91.0 \
                 --base_url https://${{ steps.agent_info.outputs.ip }}/ \
-                --username ${{ steps.install.outputs.movai_user }} \
-                --password ${{ steps.install.outputs.movai_pwd }}
+                --movai-user ${{ steps.install.outputs.movai_user }} \
+                --movai-pw ${{ steps.install.outputs.movai_pwd }}
           fi
 
           deactivate
@@ -761,11 +765,11 @@ jobs:
         working-directory: ${{ steps.api_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
-          . venv/bin/activate
-
-          # install ros
+          # install test dependencies on host
           sudo apt install -y --allow-downgrades python3-rosnode python3-rosparam python3-rostopic
           export PYTHONPATH="${PYTHONPATH}:/usr/lib/python3/dist-packages"
+
+          . venv/bin/activate
 
           pytest src/tests \
               --base_url https://${{ steps.agent_info.outputs.ip }} \
