@@ -414,8 +414,8 @@ jobs:
         shell: bash
         run: |
           ssh robot '
-            docker pull "${{ env.REGISTRY }}/ci/spawner-tugbot-noetic:2.4.0-74"
-            docker tag "${{ env.REGISTRY }}/ci/spawner-tugbot-noetic:2.4.0-74" "${{ env.REGISTRY }}/qa/spawner-tugbot-noetic:0.1.0-1"
+            docker pull "${{ env.REGISTRY }}/ci/spawner-tugbot-noetic:2.4.0-77"
+            docker tag "${{ env.REGISTRY }}/ci/spawner-tugbot-noetic:2.4.0-77" "${{ env.REGISTRY }}/qa/spawner-tugbot-noetic:0.1.0-1"
           '
 
       # - name: Remote - Docker load spawner image
@@ -578,7 +578,6 @@ jobs:
               -ra \
               --movai-user ${{ steps.install.outputs.movai_user }} \
               --movai-pw ${{ steps.install.outputs.movai_pwd }} \
-              -m '${{ steps.simulator_tests_setup.outputs.test_set }}' \
               --tb=short
 
             deactivate
