@@ -553,7 +553,7 @@ jobs:
         run: |
           ssh robot '
 
-            cd ${{ env.REMOTE_WORKSPACE }}
+            cd ${{ env.REMOTE_WORKSPACE }}/${{ steps.simulator_tests_setup.outputs.target_dir }}
 
             # install test dependencies on host
             sudo apt install -y --allow-downgrades python3-rosnode python3-rosparam python3-rostopic
