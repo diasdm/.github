@@ -307,7 +307,7 @@ jobs:
         shell: bash
         run: |
           provision_infra_dir=provision_scripts
-          provision_infra_version=0.1.0-1
+          provision_infra_version=0.1.0-2
           provision_infra_repo_name=devops-tf-proxmox-fleet
 
           rm -rf $provision_infra_dir
@@ -354,9 +354,10 @@ jobs:
           TF_VAR_pool: "IP-Temp-VMs"
           TF_VAR_tags: "ip-simul-ci"
           TF_VAR_fleet_hosts_user: "devops"
-          TF_VAR_template_name: "us20ci-gpu2"
+          TF_VAR_template_name: "u22dci-gpu"
           TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
-          TF_VAR_fleet_manager_memory: 8192
+          TF_VAR_fleet_manager_memory: 16000
+          TF_VAR_fleet_manager_cores: 10
 
       - name: Gather Terraform outputs
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
@@ -582,7 +583,7 @@ jobs:
 
             deactivate
           '
-
+          #pytest -s --movai-user "ci" --movai-pwd "4Iva6UHAQq9DGITj"
       - name: Remote - Save docker container logs
         if: always()
         shell: bash
