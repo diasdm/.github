@@ -466,6 +466,7 @@ jobs:
         id: simulator_tests_setup
         run: |
           ssh robot '
+            set -e
             cd ${{ env.REMOTE_WORKSPACE }}
 
             qa_key=simulator_tests
@@ -512,7 +513,7 @@ jobs:
         shell: bash
         run: |
           ssh robot '
-
+          set -e
           cd ${{ env.REMOTE_WORKSPACE }}
 
           for robot in $(movai-cli robots list); do
@@ -559,7 +560,7 @@ jobs:
         shell: bash
         run: |
           ssh robot '
-
+            set -e
             cd ${{ env.REMOTE_WORKSPACE }}/${{ steps.simulator_tests_setup.outputs.target_dir }}
 
             # install test dependencies on host
@@ -589,7 +590,7 @@ jobs:
 
             deactivate
           '
-          #pytest -s --movai-user "ci" --movai-pw "4Iva6UHAQq9DGITj"
+
       - name: Remote - Save docker container logs
         if: always()
         shell: bash
