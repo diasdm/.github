@@ -536,6 +536,7 @@ jobs:
           export USERSPACE_FOLDER_PATH="$(pwd)/userspace"
           export PUBLIC_IP=$(hostname -I | awk '{print $1}')
           export SIMULATION_ID="CI"
+          export DISPLAY=":1"
           rm -rf userspace
 
           wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat quickstart_version).bash
@@ -588,7 +589,7 @@ jobs:
 
             deactivate
           '
-          #pytest -s --movai-user "ci" --movai-pwd "4Iva6UHAQq9DGITj"
+          #pytest -s --movai-user "ci" --movai-pw "4Iva6UHAQq9DGITj"
       - name: Remote - Save docker container logs
         if: always()
         shell: bash
@@ -619,7 +620,7 @@ jobs:
         if: always()
         shell: bash
         run: |
-          ssh reobot '
+          ssh robot '
             cd ${{ env.REMOTE_WORKSPACE }}
 
             # cleanup
