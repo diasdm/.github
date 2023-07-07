@@ -1207,7 +1207,7 @@ jobs:
 
       - name: Teardown remote vms (Proxmox)
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
-        if: ${{ inputs.with_simulation_tests && (success() || cancelled()) }}
+        if: ${{ inputs.with_simulation_tests && always() }}
         shell: bash
         run: terraform destroy -auto-approve
         env:
