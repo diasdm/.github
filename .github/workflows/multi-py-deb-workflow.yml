@@ -437,7 +437,7 @@ jobs:
   Debian-Test:
     strategy:
       matrix:
-        distro: [ "20.04" ]
+        distro: [ "20.04", "22.04" ]
     needs: [Raise, Debian-Pack]
     if: ${{ inputs.release == 'false' && inputs.install_test == 'true' }}
     runs-on: ubuntu-${{ matrix.distro }}
