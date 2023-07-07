@@ -977,6 +977,7 @@ jobs:
         run: |
           ssh robot '
             set -e
+            docker pull "registry.hel.mov.ai/ci/spawner-tugbot-noetic:0.1.0-1"
             docker pull "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}"
             docker tag "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}"
           '
