@@ -229,7 +229,6 @@ jobs:
         if: false
         id: feature_file_ui
         working-directory: ${{ steps.ui_tests_setup.outputs.target_dir }}
-        if: steps.ui_tests_setup.outputs.jira_report == 'True'
         shell: bash
         run: |
           . venv/bin/activate
@@ -476,7 +475,6 @@ jobs:
         if: false
         id: feature_file_install
         working-directory: ${{ steps.install_tests_setup.outputs.target_dir }}
-        if: steps.install_tests_setup.outputs.jira_report == 'True'
         shell: bash
         run: |
           . venv/bin/activate
