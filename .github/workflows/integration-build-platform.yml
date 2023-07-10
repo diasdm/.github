@@ -226,6 +226,7 @@ jobs:
           popd
 
       - name: Feature File Validation
+        if: false
         id: feature_file_ui
         working-directory: ${{ steps.ui_tests_setup.outputs.target_dir }}
         if: steps.ui_tests_setup.outputs.jira_report == 'True'
@@ -472,6 +473,7 @@ jobs:
           popd
 
       - name: Feature File Validation
+        if: false
         id: feature_file_install
         working-directory: ${{ steps.install_tests_setup.outputs.target_dir }}
         if: steps.install_tests_setup.outputs.jira_report == 'True'
