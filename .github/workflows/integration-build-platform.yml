@@ -230,7 +230,6 @@ jobs:
           popd
 
       - name: Feature File Validation
-        if: false
         id: feature_file_ui
         working-directory: ${{ steps.ui_tests_setup.outputs.target_dir }}
         shell: bash
@@ -477,7 +476,6 @@ jobs:
           popd
 
       - name: Feature File Validation
-        if: false
         id: feature_file_install
         working-directory: ${{ steps.install_tests_setup.outputs.target_dir }}
         shell: bash
