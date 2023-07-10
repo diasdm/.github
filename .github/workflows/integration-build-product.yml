@@ -1039,8 +1039,6 @@ jobs:
             integration-pipeline fetch_by_tag --repo $tests_repo_name --version $tests_version --gh_api_user ${{ env.GITHUB_API_USR }} --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $tests_dir
             ls -la $tests_dir
 
-            sudo apt install python3.8-venv -y
-
             # setup venv in a step that is always executed
             pushd "${tests_dir}"
             rm -rf venv
@@ -1080,11 +1078,6 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key services_version --output_file movai_service_version
           integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key quickstart_version --output_file quickstart_version
-
-          #workaround ubuntu 22.04
-          sudo apt install python3.8-distutils -y
-          sudo ln -s /usr/lib/python3/dist-packages/_dbus_bindings.cpython-310-x86_64-linux-gnu.so /usr/lib/python3/dist-packages/_dbus_bindings.so
-          sudo ln -s /usr/lib/python3/dist-packages/_dbus_glib_bindings.cpython-310-x86_64-linux-gnu.so /usr/lib/python3/dist-packages/_dbus_glib_bindings.so
 
           export USERSPACE_FOLDER_PATH="$(pwd)/userspace"
           export PUBLIC_IP=$(hostname -I | awk '{print $1}')
@@ -1156,18 +1149,18 @@ jobs:
             docker ps -a
 
             # backend
-            CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^backend-.*")
+            CONTAINER_ID=$(docker ps -a --format "{{.Names}}" --filter "name=^backend-.*")
             docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
 
             # spawner
-            CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^spawner-.*")
+            CONTAINER_ID=$(docker ps -a --format "{{.Names}}" --filter "name=^spawner-.*")
             docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
 
             # movai-service
-            journalctl -u movai-service --since '1hour ago' &> "movai-service.log"
+            journalctl -u movai-service --since "1hour ago" &> "movai-service.log"
             
             # spawner (mobros firmware)
-            journalctl -u movai-service -t mobros --since '1hour ago' &> spawner-firmware.log || true
+            journalctl -u movai-service -t mobros --since "1hour ago" &> spawner-firmware.log || true
           '
 
       - name: Remote - Stash QA artifacts
