@@ -1198,18 +1198,18 @@ jobs:
             mv ~/.ssh/config.bak ~/.ssh/config
           fi
 
-      # - name: Teardown remote vms (Proxmox)
-      #   working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
-      #   if: ${{ inputs.with_simulation_tests && always() }}
-      #   shell: bash
-      #   run: terraform destroy -auto-approve
-      #   env:
-      #     TF_VAR_number_agents: 0
-      #     TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
-      #     TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
-      #     TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
-      #     TF_VAR_provision_ssh_pem: ${{ secrets.ssh_pem_fleet_aws_vm }}
-      #     TF_VAR_ip_list: '["dhcp"]'
+      - name: Teardown remote vms (Proxmox)
+        working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
+        if: ${{ inputs.with_simulation_tests && always() }}
+        shell: bash
+        run: terraform destroy -auto-approve
+        env:
+          TF_VAR_number_agents: 0
+          TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
+          TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
+          TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
+          TF_VAR_provision_ssh_pem: ${{ secrets.ssh_pem_fleet_aws_vm }}
+          TF_VAR_ip_list: '["dhcp"]'
   
 
 
