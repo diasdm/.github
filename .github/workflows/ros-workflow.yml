@@ -26,7 +26,6 @@ on:
         type: boolean
         default: true
 
-
     secrets:
       auto_commit_user:
         required: true
@@ -50,7 +49,7 @@ on:
         required: true
 
 env:
-  MOBTEST_VERSION: "0.0.4.2"
+  MOBTEST_VERSION: "0.0.4.3"
 
 jobs:
   Build:
