@@ -1080,7 +1080,7 @@ jobs:
           integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key quickstart_version --output_file quickstart_version
 
           export USERSPACE_FOLDER_PATH="$(pwd)/userspace"
-          export PUBLIC_IP=$(hostname -I | awk '{print $1}')
+          export PUBLIC_IP=$(hostname -I | awk "{print $1}")
           export SIMULATION_ID="CI"
           export DISPLAY=":1"
           rm -rf userspace
@@ -1198,18 +1198,18 @@ jobs:
             mv ~/.ssh/config.bak ~/.ssh/config
           fi
 
-      - name: Teardown remote vms (Proxmox)
-        working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
-        if: ${{ inputs.with_simulation_tests && always() }}
-        shell: bash
-        run: terraform destroy -auto-approve
-        env:
-          TF_VAR_number_agents: 0
-          TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
-          TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
-          TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
-          TF_VAR_provision_ssh_pem: ${{ secrets.ssh_pem_fleet_aws_vm }}
-          TF_VAR_ip_list: '["dhcp"]'
+      # - name: Teardown remote vms (Proxmox)
+      #   working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
+      #   if: ${{ inputs.with_simulation_tests && always() }}
+      #   shell: bash
+      #   run: terraform destroy -auto-approve
+      #   env:
+      #     TF_VAR_number_agents: 0
+      #     TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
+      #     TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
+      #     TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
+      #     TF_VAR_provision_ssh_pem: ${{ secrets.ssh_pem_fleet_aws_vm }}
+      #     TF_VAR_ip_list: '["dhcp"]'
   
 
 
