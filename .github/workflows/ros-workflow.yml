@@ -45,6 +45,10 @@ on:
         required: false
         type: string
         default: "2.1.0.3"
+      INSTALL_CONFLICT_HANDLING:
+        required: false
+        type: string
+        default: ""
 
     secrets:
       auto_commit_user:
@@ -286,6 +290,10 @@ jobs:
           cd artifacts/
           PACKAGES_INSTALL="$(find -L ./ -name "*.deb")"
           echo $PACKAGES_INSTALL
+          INSTALL_CONFLICT_HANDLING=${{ inputs.INSTALL_CONFLICT_HANDLING }}
+          if [ "$INSTALL_CONFLICT_HANDLING" != "" ]; then
+            PACKAGES_INSTALL="$PACKAGES_INSTALL $INSTALL_CONFLICT_HANDLING"
+          fi
           sudo mobros install $PACKAGES_INSTALL -y --upgrade-installed --fail-on-apt-update
 
       - name: Mobtest project validations
