@@ -54,7 +54,7 @@ on:
         required: true
       proxmox_api_token_secret:
         required: true
-      ssh_pem_fleet_aws_vm:
+      ssh_priv_key:
         required: true
 
 env:
@@ -67,7 +67,9 @@ env:
   REGISTRY: registry.hel.mov.ai
   PUSH_REGISTRY: registry.cloud.mov.ai
   USERSPACE_FOLDER_PATH: userspace
-  REMOTE_WORKSPACE: workspace
+  REMOTE_WORKSPACE_PATH: workspace
+  PROVISION_INFRA_REPO: "devops-tf-proxmox-fleet"
+  PROVISION_INFRA_VERSION: "0.1.0-2" 
 
 jobs:
   Validate-boostrap-configs:
@@ -459,7 +461,7 @@ jobs:
     outputs:
       image_name: "${{ steps.pre_simulator_build.outputs.image_name }}"
       skip_simulator: "${{ steps.pre_simulator_build.outputs.skip_simulator_build }}"
-      simulator_tests_infra: "${{ steps.pre_simulator_build.outputs.simul_tests_infra }}"
+      simulator_tests_agent_name: "${{ steps.pre_simulator_build.outputs.simul_tests_infra }}"
 
     steps:
       - name: Pre clean ups
@@ -800,7 +802,7 @@ jobs:
 
   Validation-Simulator-Tests:
     needs: [Build-Spawner, Build-Simulator]
-    runs-on: integration-pipeline-simulation
+    runs-on: ${{ needs.Build-Simulator.outputs.simulator_tests_agent_name }}
     steps:
       - uses: rtCamp/action-cleanup@master
         if: ${{ inputs.with_simulation_tests }}
@@ -852,7 +854,7 @@ jobs:
         run: |
           wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
           echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-          sudo apt update && sudo apt install terraform -y
+          sudo apt update && sudo apt install terraform=1.5.2-1 -y
 
       - name: Setup terraform proxmox provisioner
         if: ${{ inputs.with_simulation_tests }}
@@ -860,8 +862,8 @@ jobs:
         shell: bash
         run: |
           provision_infra_dir=provision_scripts
-          provision_infra_version=0.1.0-2
-          provision_infra_repo_name=devops-tf-proxmox-fleet
+          provision_infra_version=${{ env.PROVISION_INFRA_VERSION }}
+          provision_infra_repo_name=${{ env.PROVISION_INFRA_REPO }}
 
           rm -rf $provision_infra_dir
           export PATH="$HOME/.local/bin:$PATH"
@@ -891,15 +893,15 @@ jobs:
           terraform plan
           terraform apply -auto-approve
 
-          echo "${{ secrets.ssh_pem_fleet_aws_vm }}" > ~/.ssh/aws_slave.pem
-          sudo chmod 600 ~/.ssh/aws_slave.pem
+          echo "${{ secrets.ssh_priv_key }}" > ~/.ssh/ci_priv_key.pem
+          sudo chmod 600 ~/.ssh/ci_priv_key.pem
 
         env:
           TF_VAR_number_agents: 0
           TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
           TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
           TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
-          TF_VAR_provision_ssh_pem: ${{ secrets.ssh_pem_fleet_aws_vm }}
+          TF_VAR_provision_ssh_pem: ${{ secrets.ssh_priv_key }}
           TF_VAR_ip_list: '["dhcp"]'
           TF_VAR_storage: "local-lvm"
           TF_VAR_proxmox_host: "mary"
@@ -944,11 +946,11 @@ jobs:
           echo "Host robot" >> ~/.ssh/config
           echo "  HostName ${{ steps.infra_outputs.outputs.host_ip }}" >> ~/.ssh/config
           echo "  User ${{ steps.infra_outputs.outputs.host_user }}" >> ~/.ssh/config
-          echo "  IdentityFile ~/.ssh/aws_slave.pem" >> ~/.ssh/config
+          echo "  IdentityFile ~/.ssh/ci_priv_key.pem" >> ~/.ssh/config
           echo "  StrictHostKeyChecking no" >> ~/.ssh/config
           cat ~/.ssh/config
 
-          ssh robot 'rm -rf ./${{ env.REMOTE_WORKSPACE }}; mkdir -p ./${{ env.REMOTE_WORKSPACE }}'
+          ssh robot 'rm -rf ./${{ env.REMOTE_WORKSPACE_PATH }}; mkdir -p ./${{ env.REMOTE_WORKSPACE_PATH }}'
 
           echo "config_pre_exists=$CONFIG_FILE_EXISTS" >> $GITHUB_OUTPUT
 
@@ -965,11 +967,6 @@ jobs:
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
         run: ssh robot "docker login ${{ env.REGISTRY }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}"
-
-      - name: Remote - Install requirements
-        if: ${{ inputs.with_simulation_tests }}
-        shell: bash
-        run: ssh robot "sudo apt install python3-pip -y"
 
       - name: Remote - Docker load spawner image
         if: ${{ inputs.with_simulation_tests }}
@@ -999,17 +996,17 @@ jobs:
       - name: Remote - unstash manifest
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
-        run: scp product-manifest.yaml robot:${{ env.REMOTE_WORKSPACE }}/product-manifest.yaml
+        run: scp product-manifest.yaml robot:${{ env.REMOTE_WORKSPACE_PATH }}/product-manifest.yaml
 
       - name: Remote - unstash sim_configs
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
-        run: scp -r simulator_artifacts robot:${{ env.REMOTE_WORKSPACE }}/simulator_artifacts
+        run: scp -r simulator_artifacts robot:${{ env.REMOTE_WORKSPACE_PATH }}/simulator_artifacts
 
       - name: Remote - unstash robot_jsons_noetic
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
-        run: scp -r *.json* robot:${{ env.REMOTE_WORKSPACE }}/
+        run: scp -r *.json* robot:${{ env.REMOTE_WORKSPACE_PATH }}/
 
       - name: Remote - Setup QA Simulation tests
         if: ${{ inputs.with_simulation_tests }}
@@ -1018,7 +1015,7 @@ jobs:
         run: |
           ssh robot '
             set -e
-            cd ${{ env.REMOTE_WORKSPACE }}
+            cd ${{ env.REMOTE_WORKSPACE_PATH }}
 
             qa_key=simulator_tests
 
@@ -1064,7 +1061,7 @@ jobs:
         run: |
           ssh robot '
           set -e
-          cd ${{ env.REMOTE_WORKSPACE }}
+          cd ${{ env.REMOTE_WORKSPACE_PATH }}
 
           for robot in $(movai-cli robots list); do
             movai-cli robots stop $robot
@@ -1108,22 +1105,11 @@ jobs:
         run: |
           ssh robot '
             set -e
-            cd ${{ env.REMOTE_WORKSPACE }}/${{ steps.simulator_tests_setup.outputs.target_dir }}
+            cd ${{ env.REMOTE_WORKSPACE_PATH }}/${{ steps.simulator_tests_setup.outputs.target_dir }}
 
             # install test dependencies on host
             sudo apt install -y --allow-downgrades python3-rosnode python3-rosparam python3-rostopic
             export PYTHONPATH="${PYTHONPATH}:/usr/lib/python3/dist-packages"
-
-            # install test dependencies on spawner
-            ## get spawner container name
-            CONTAINER_ID=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
-            ## get apt dependencies
-            #APT_DEPS=$(cat apt-requirements.txt | tr "\n" " ")
-            ## install
-            # docker exec -t "${CONTAINER_ID}" bash -c "
-            #   sudo apt update
-            #   sudo apt install -y ${APT_DEPS}
-            # "
 
             # run tests
             . venv/bin/activate
@@ -1144,7 +1130,7 @@ jobs:
         run: |
           ssh robot '
 
-            cd ${{ env.REMOTE_WORKSPACE }}/${{ steps.simulator_tests_setup.outputs.target_dir }}
+            cd ${{ env.REMOTE_WORKSPACE_PATH }}/${{ steps.simulator_tests_setup.outputs.target_dir }}
 
             # for sanity
             docker ps -a
@@ -1169,7 +1155,7 @@ jobs:
         shell: bash
         run: |
           ssh robot '
-            cd ${{ env.REMOTE_WORKSPACE }}
+            cd ${{ env.REMOTE_WORKSPACE_PATH }}
 
             # cleanup
             rm -rf qa_artifacts
@@ -1179,7 +1165,7 @@ jobs:
             mkdir -p qa_artifacts
             cp -r "${{ steps.simulator_tests_setup.outputs.target_dir }}"/*.log ./qa_artifacts || true
           '
-          scp -r robot:${{ env.REMOTE_WORKSPACE }}/qa_artifacts .
+          scp -r robot:${{ env.REMOTE_WORKSPACE_PATH }}/qa_artifacts .
 
 
       - name: Stash QA artifacts
@@ -1191,7 +1177,7 @@ jobs:
   
       - name: Teardown ssh setup
         shell: bash
-        if: ${{ inputs.with_simulation_tests }}
+        if: ${{ always() && inputs.with_simulation_tests }}
         run: |
           if [ "${{ steps.remote_ssh_setup.outputs.config_pre_exists }}" = "0" ];
           then
@@ -1209,7 +1195,7 @@ jobs:
           TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
           TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
           TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
-          TF_VAR_provision_ssh_pem: ${{ secrets.ssh_pem_fleet_aws_vm }}
+          TF_VAR_provision_ssh_pem: ${{ secrets.ssh_priv_key }}
           TF_VAR_ip_list: '["dhcp"]'
   
 
