@@ -12,6 +12,10 @@ on:
         required: false
         type: string
         default: true
+      with_simulation_tests:
+        required: false
+        type: boolean
+        default: false
       is_external_project:
         required: false
         type: boolean
@@ -44,6 +48,14 @@ on:
         required: true
       slack_token_id:
         required: true
+      proxmox_api_url:
+        required: true
+      proxmox_api_token_id:
+        required: true
+      proxmox_api_token_secret:
+        required: true
+      ssh_priv_key:
+        required: true
 
 env:
   CI_INTEGRATION_SCRIPTS_VERSION: "2.2.0.7"
@@ -55,6 +67,9 @@ env:
   REGISTRY: registry.hel.mov.ai
   PUSH_REGISTRY: registry.cloud.mov.ai
   USERSPACE_FOLDER_PATH: userspace
+  REMOTE_WORKSPACE_PATH: workspace
+  PROVISION_INFRA_REPO: "devops-tf-proxmox-fleet"
+  PROVISION_INFRA_VERSION: "0.1.0-2" 
 
 jobs:
   Validate-boostrap-configs:
@@ -446,6 +461,7 @@ jobs:
     outputs:
       image_name: "${{ steps.pre_simulator_build.outputs.image_name }}"
       skip_simulator: "${{ steps.pre_simulator_build.outputs.skip_simulator_build }}"
+      simulator_tests_agent_name: "${{ steps.pre_simulator_build.outputs.simul_tests_infra }}"
 
     steps:
       - name: Pre clean ups
@@ -577,6 +593,16 @@ jobs:
         run: |
           docker system prune -f
           docker image prune --all -f
+
+      - name: Setup simulation Tests
+        shell: bash
+        run: |
+          if [ "${{ inputs.with_simulation_tests }}" = "true" ];
+          then
+            echo "simul_tests_infra=integration-pipeline-simulation" >> $GITHUB_OUTPUT
+          else
+            echo "simul_tests_infra=integration-pipeline" >> $GITHUB_OUTPUT
+          fi
 
   Install-Simulator-Robot:
     needs: [Build-Spawner, Build-Simulator]
@@ -774,8 +800,408 @@ jobs:
           docker system prune -f
           docker image prune --all -f
 
+  Validation-Simulator-Tests:
+    needs: [Build-Spawner, Build-Simulator]
+    runs-on: ${{ needs.Build-Simulator.outputs.simulator_tests_agent_name }}
+    steps:
+      - uses: rtCamp/action-cleanup@master
+        if: ${{ inputs.with_simulation_tests }}
+      - name: Checkout
+        if: ${{ inputs.with_simulation_tests }}
+        uses: actions/checkout@v3
+
+      - name: Agent info
+        run: |
+          echo "public ip: $(curl ipinfo.io/ip)"
+          echo "private ip: $(hostname -I | awk '{print $1}')"
+
+      - name: Install CI Scripts
+        if: ${{ inputs.with_simulation_tests }}
+        shell: bash
+        run: python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
+
+      - name: unstash raised_meta
+        if: ${{ inputs.with_simulation_tests }}
+        uses: actions/download-artifact@v3
+        with:
+          name: raised_meta
+          path: .
+
+      - name: unstash manifest
+        if: ${{ inputs.with_simulation_tests }}
+        uses: actions/download-artifact@v3
+        with:
+          name: manifest
+          path: .
+
+      - name: unstash sim_configs
+        if: ${{ inputs.with_simulation_tests }}
+        uses: actions/download-artifact@v3
+        with:
+          name: sim_configs
+          path: simulator_artifacts
+
+      - name: unstash robot_jsons_noetic
+        if: ${{ inputs.with_simulation_tests }}
+        uses: actions/download-artifact@v3
+        with:
+          name: robot_jsons_noetic
+          path: .
+
+      - name: Install terraform
+        if: ${{ inputs.with_simulation_tests }}
+        shell: bash
+        run: |
+          wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt update && sudo apt install terraform=1.5.2-1 -y
+
+      - name: Setup terraform proxmox provisioner
+        if: ${{ inputs.with_simulation_tests }}
+        id: provision_infra_setup
+        shell: bash
+        run: |
+          provision_infra_dir=provision_scripts
+          provision_infra_version=${{ env.PROVISION_INFRA_VERSION }}
+          provision_infra_repo_name=${{ env.PROVISION_INFRA_REPO }}
+
+          rm -rf $provision_infra_dir
+          export PATH="$HOME/.local/bin:$PATH"
+          integration-pipeline fetch_by_tag --repo $provision_infra_repo_name --version $provision_infra_version --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $provision_infra_dir
+          ls -la $provision_infra_dir
+          echo "target_dir=${provision_infra_dir}/hosts/generic/" >> $GITHUB_OUTPUT
+
+      - name: Define Instance names
+        if: ${{ inputs.with_simulation_tests }}
+        id: infra_names
+        shell: bash
+        run: |
+          branch=$(echo ${GITHUB_REF#refs/heads/} | sed "s;\.;-;g" )
+
+          local_manager_prefix="ip-$branch-standalone"
+  
+          echo "$local_manager_prefix"
+
+          echo "simul_prefix=${local_manager_prefix}" >> $GITHUB_OUTPUT
+
+      - name: Provision remote vms (Proxmox)
+        if: ${{ inputs.with_simulation_tests }}
+        working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
+        shell: bash
+        run: |
+          terraform init -backend-config="key=mary-standalone-${{ steps.infra_names.outputs.simul_prefix }}.tfstate"
+          terraform plan
+          terraform apply -auto-approve
+
+          echo "${{ secrets.ssh_priv_key }}" > ~/.ssh/ci_priv_key.pem
+          sudo chmod 600 ~/.ssh/ci_priv_key.pem
+
+        env:
+          TF_VAR_number_agents: 0
+          TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
+          TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
+          TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
+          TF_VAR_provision_ssh_pem: ${{ secrets.ssh_priv_key }}
+          TF_VAR_ip_list: '["dhcp"]'
+          TF_VAR_storage: "local-lvm"
+          TF_VAR_proxmox_host: "mary"
+          TF_VAR_vm_gateway: "10.10.1.254"
+          TF_VAR_ip_mask: 23
+          TF_VAR_bios: "ovmf"
+          TF_VAR_pool: "IP-Temp-VMs"
+          TF_VAR_tags: "ip-simul-ci"
+          TF_VAR_fleet_hosts_user: "devops"
+          TF_VAR_template_name: "u22dci-gpu"
+          TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
+          TF_VAR_fleet_manager_memory: 30000
+          TF_VAR_fleet_manager_cores: 10
+
+      - name: Gather Terraform outputs
+        if: ${{ inputs.with_simulation_tests }}
+        working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
+        id: infra_outputs
+        shell: bash
+        run: |
+          ip=$(terraform output manager_ip_address)
+          user=$(terraform output user)
+          echo "host_ip=$(echo $ip | sed "s;\";;g")" >> $GITHUB_OUTPUT
+          echo "host_user=$(echo $user | sed "s;\";;g")" >> $GITHUB_OUTPUT
+
+      - name: Configure SSH
+        if: ${{ inputs.with_simulation_tests }}
+        id: remote_ssh_setup
+        shell: bash
+        run: |
+          ssh-keygen -f ~/.ssh/known_hosts -R ${{ steps.infra_outputs.outputs.host_ip }} || true
+          ssh-keyscan -H ${{ steps.infra_outputs.outputs.host_ip }} >> ~/.ssh/known_hosts || true
+          
+          test -f ~/.ssh/config
+          CONFIG_FILE_EXISTS=1
+          if [ $? -eq 0 ]; then
+            mv ~/.ssh/config ~/.ssh/config.bak
+            CONFIG_FILE_EXISTS=0
+          fi
+          
+          touch ~/.ssh/config
+          echo "Host robot" >> ~/.ssh/config
+          echo "  HostName ${{ steps.infra_outputs.outputs.host_ip }}" >> ~/.ssh/config
+          echo "  User ${{ steps.infra_outputs.outputs.host_user }}" >> ~/.ssh/config
+          echo "  IdentityFile ~/.ssh/ci_priv_key.pem" >> ~/.ssh/config
+          echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+          cat ~/.ssh/config
+
+          ssh robot 'rm -rf ./${{ env.REMOTE_WORKSPACE_PATH }}; mkdir -p ./${{ env.REMOTE_WORKSPACE_PATH }}'
+
+          echo "config_pre_exists=$CONFIG_FILE_EXISTS" >> $GITHUB_OUTPUT
+
+      - name: Remote - Agent info
+        if: ${{ inputs.with_simulation_tests }}
+        id: agent_info
+        run: |
+          ssh robot '
+            ip=$(hostname -I | awk "{print $1}")
+            echo $ip
+          '
+
+      - name: Remote - Login to Private Registry
+        if: ${{ inputs.with_simulation_tests }}
+        shell: bash
+        run: ssh robot "docker login ${{ env.REGISTRY }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}"
+
+      - name: Remote - Docker load spawner image
+        if: ${{ inputs.with_simulation_tests }}
+        shell: bash
+        run: |
+          ssh robot '
+            set -e
+            docker pull "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}"
+            docker tag "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}"
+          '
+
+      - name: Remote - Docker load simulator image
+        if: ${{ inputs.with_simulation_tests }}
+        shell: bash
+        run: |
+          ssh robot '
+            promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g")
+            docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
+            docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
+          '
+
+      - name: Remote - Install CI Scripts
+        if: ${{ inputs.with_simulation_tests }}
+        shell: bash
+        run: ssh robot "python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed"
+
+      - name: Remote - unstash manifest
+        if: ${{ inputs.with_simulation_tests }}
+        shell: bash
+        run: scp product-manifest.yaml robot:${{ env.REMOTE_WORKSPACE_PATH }}/product-manifest.yaml
+
+      - name: Remote - unstash sim_configs
+        if: ${{ inputs.with_simulation_tests }}
+        shell: bash
+        run: scp -r simulator_artifacts robot:${{ env.REMOTE_WORKSPACE_PATH }}/simulator_artifacts
+
+      - name: Remote - unstash robot_jsons_noetic
+        if: ${{ inputs.with_simulation_tests }}
+        shell: bash
+        run: scp -r *.json* robot:${{ env.REMOTE_WORKSPACE_PATH }}/
+
+      - name: Remote - Setup QA Simulation tests
+        if: ${{ inputs.with_simulation_tests }}
+        shell: bash
+        id: simulator_tests_setup
+        run: |
+          ssh robot '
+            set -e
+            cd ${{ env.REMOTE_WORKSPACE_PATH }}
+
+            qa_key=simulator_tests
+
+            rm -f /tmp/target_dir.txt /tmp/version.txt /tmp/repo_name.txt /tmp/test_set.txt
+            export PATH="$HOME/.local/bin:$PATH"
+  
+            integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.target_dir --output_file /tmp/target_dir.txt
+            integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.version --output_file /tmp/version.txt
+            integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.name --output_file /tmp/repo_name.txt
+            integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.test_set --output_file /tmp/test_set.txt
+  
+            tests_dir=$(cat /tmp/target_dir.txt)
+            tests_version=$(cat /tmp/version.txt)
+            tests_repo_name=$(cat /tmp/repo_name.txt)
+            test_set=$(cat /tmp/test_set.txt)
+
+            rm -rf $tests_repo_name
+            integration-pipeline fetch_by_tag --repo $tests_repo_name --version $tests_version --gh_api_user ${{ env.GITHUB_API_USR }} --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $tests_dir
+            ls -la $tests_dir
+
+            # setup venv in a step that is always executed
+            pushd "${tests_dir}"
+            rm -rf venv
+            python3 -m venv venv
+            . venv/bin/activate
+            python3 -m pip install --upgrade pip
+            pip install -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple -r requirements.txt
+            deactivate
+            popd
+
+          '
+          rm -f /tmp/target_dir.txt /tmp/version.txt /tmp/repo_name.txt /tmp/test_set.txt
+          scp -r robot:/tmp/*.txt /tmp/
+
+          echo "target_dir=$(cat /tmp/target_dir.txt)" >> $GITHUB_OUTPUT
+          echo "version=$(cat /tmp/version.txt)" >> $GITHUB_OUTPUT
+          echo "test_set=$(cat /tmp/test_set.txt)" >> $GITHUB_OUTPUT
+
+      - name: Remote - Install
+        if: ${{ inputs.with_simulation_tests }}
+        id: install
+        shell: bash
+        run: |
+          ssh robot '
+          set -e
+          cd ${{ env.REMOTE_WORKSPACE_PATH }}
+
+          for robot in $(movai-cli robots list); do
+            movai-cli robots stop $robot
+            sleep 5
+            movai-cli robots remove $robot
+          done || true
+
+          mkdir -p artifacts
+          cp *.json artifacts/
+          CONFIG_FILE_NAME="standalone-${{ inputs.product_name }}-simulator-noetic.json"
+          export PATH="$HOME/.local/bin:$PATH"
+          integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key services_version --output_file movai_service_version
+          integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key quickstart_version --output_file quickstart_version
+
+          export USERSPACE_FOLDER_PATH="$(pwd)/userspace"
+          export PUBLIC_IP=$(hostname -I | awk "{print $1}")
+          export SIMULATION_ID="CI"
+          export DISPLAY=":1"
+          rm -rf userspace
+
+          wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat quickstart_version).bash
+          chmod +x ./QuickStart_$(cat quickstart_version).bash
+          ./QuickStart_$(cat quickstart_version).bash --apps $(cat movai_service_version) $CONFIG_FILE_NAME
+          MOVAI_USER="ci"
+          MOVAI_PWD="4Iva6UHAQq9DGITj"
+          for robot in $(movai-cli robots list); do
+            movai-cli robots user "$robot" "$MOVAI_USER" "$MOVAI_PWD"
+          done
+
+          execution_status=$?
+          exit $execution_status
+          rm movai_service_version
+          '
+          echo "movai_user=ci" >> $GITHUB_OUTPUT
+          echo "movai_pwd=4Iva6UHAQq9DGITj" >> $GITHUB_OUTPUT
+
+      - name: Remote - Simulation Tests
+        timeout-minutes: 30
+        if: ${{ inputs.with_simulation_tests }}
+        shell: bash
+        run: |
+          ssh robot '
+            set -e
+            cd ${{ env.REMOTE_WORKSPACE_PATH }}/${{ steps.simulator_tests_setup.outputs.target_dir }}
+
+            # install test dependencies on host
+            sudo apt install -y --allow-downgrades python3-rosnode python3-rosparam python3-rostopic
+            export PYTHONPATH="${PYTHONPATH}:/usr/lib/python3/dist-packages"
+
+            # run tests
+            . venv/bin/activate
+
+            pytest \
+              -s \
+              -ra \
+              --movai-user ${{ steps.install.outputs.movai_user }} \
+              --movai-pw ${{ steps.install.outputs.movai_pwd }} \
+              --tb=short
+
+            deactivate
+          '
+
+      - name: Remote - Save docker container logs
+        if: ${{ always() &&  inputs.with_simulation_tests }}
+        shell: bash
+        run: |
+          ssh robot '
+
+            cd ${{ env.REMOTE_WORKSPACE_PATH }}/${{ steps.simulator_tests_setup.outputs.target_dir }}
+
+            # for sanity
+            docker ps -a
+
+            # backend
+            CONTAINER_ID=$(docker ps -a --format "{{.Names}}" --filter "name=^backend-.*")
+            docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
+
+            # spawner
+            CONTAINER_ID=$(docker ps -a --format "{{.Names}}" --filter "name=^spawner-.*")
+            docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
+
+            # movai-service
+            journalctl -u movai-service --since "1hour ago" &> "movai-service.log"
+            
+            # spawner (mobros firmware)
+            journalctl -u movai-service -t mobros --since "1hour ago" &> spawner-firmware.log || true
+          '
+
+      - name: Remote - Stash QA artifacts
+        if: ${{ always() &&  inputs.with_simulation_tests }}
+        shell: bash
+        run: |
+          ssh robot '
+            cd ${{ env.REMOTE_WORKSPACE_PATH }}
+
+            # cleanup
+            rm -rf qa_artifacts
+
+            # tests artifacts
+            # *.log might not exist if the test fails early
+            mkdir -p qa_artifacts
+            cp -r "${{ steps.simulator_tests_setup.outputs.target_dir }}"/*.log ./qa_artifacts || true
+          '
+          scp -r robot:${{ env.REMOTE_WORKSPACE_PATH }}/qa_artifacts .
+
+
+      - name: Stash QA artifacts
+        if: ${{ always() &&  inputs.with_simulation_tests }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: qa_artifacts_simulator_tests
+          path: qa_artifacts/*
+  
+      - name: Teardown ssh setup
+        shell: bash
+        if: ${{ always() && inputs.with_simulation_tests }}
+        run: |
+          if [ "${{ steps.remote_ssh_setup.outputs.config_pre_exists }}" = "0" ];
+          then
+            rm ~/.ssh/config
+            mv ~/.ssh/config.bak ~/.ssh/config
+          fi
+
+      - name: Teardown remote vms (Proxmox)
+        working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
+        if: ${{ inputs.with_simulation_tests && always() }}
+        shell: bash
+        run: terraform destroy -auto-approve
+        env:
+          TF_VAR_number_agents: 0
+          TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
+          TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
+          TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
+          TF_VAR_provision_ssh_pem: ${{ secrets.ssh_priv_key }}
+          TF_VAR_ip_list: '["dhcp"]'
+  
+
+
   publish:
-    needs: [Install-Robot, Install-Simulator-Robot]
+    needs: [Install-Robot, Install-Simulator-Robot, Validation-Simulator-Tests]
     runs-on: integration-pipeline
     steps:
       - uses: rtCamp/action-cleanup@master
