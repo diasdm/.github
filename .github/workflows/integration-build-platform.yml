@@ -353,10 +353,10 @@ jobs:
           # spawner
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^spawner-.*")
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
-          
-          # message-server    
+
+          # message-server
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*")
-          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"          
+          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
 
           # movai-service
           journalctl -u movai-service --since '1hour ago' &> "movai-service.log"
@@ -374,6 +374,7 @@ jobs:
           # *.log and *.zip might not exist if the test fails early
           mkdir -p qa_artifacts
           cp -r "${UI_DIR}"/*.log ./qa_artifacts || true
+          cp -r "${UI_DIR}"/*.tar ./qa_artifacts || true
 
       - name: Stash QA artifacts
         if: always()
@@ -581,6 +582,7 @@ jobs:
           # *.log might not exist if the test fails early
           mkdir -p qa_artifacts
           cp -r "${INSTALL_DIR}"/*.log ./qa_artifacts || true
+          cp -r "${INSTALL_DIR}"/*.tar ./qa_artifacts || true
           cp -r "${INSTALL_DIR}"/results/*.log ./qa_artifacts || true
           cp -r "${INSTALL_DIR}"/results/*.zip ./qa_artifacts || true
           cp -r "${INSTALL_DIR}"/results/test_report_*.html ./qa_artifacts || true
@@ -794,8 +796,8 @@ jobs:
           # spawner
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^spawner-.*")
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
-          
-          # message-server    
+
+          # message-server
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*")
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
 
@@ -815,6 +817,7 @@ jobs:
           # *.log and *.zip might not exist if the test fails early
           mkdir -p qa_artifacts
           cp -r "${API_DIR}"/*.log ./qa_artifacts || true
+          cp -r "${API_DIR}"/*.tar ./qa_artifacts || true
           cp -r "${API_DIR}"/results/*.zip ./qa_artifacts || true
 
       - name: Stash QA artifacts
@@ -997,8 +1000,8 @@ jobs:
           # spawner
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^spawner-.*")
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
-          
-          # message-server    
+
+          # message-server
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*")
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
 
@@ -1607,6 +1610,7 @@ jobs:
           # *.log might not exist if the test fails early
           mkdir -p qa_artifacts
           cp -r "${SIM_DIR}"/*.log ./qa_artifacts || true
+          cp -r "${SIM_DIR}"/*.tar ./qa_artifacts || true
 
       - name: Stash QA artifacts
         if: always()
