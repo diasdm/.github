@@ -1676,7 +1676,7 @@ jobs:
           docker image prune --all -f
 
   publish:
-    needs: [Validations-Finish, Fleet-Validations, Simulator-Validations]
+    needs: [Validations-Finish,  Simulator-Validations]
     runs-on: integration-pipeline
     steps:
       - name: Cleanup Workspace
