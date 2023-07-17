@@ -1579,7 +1579,7 @@ jobs:
         id: jobs
         with:
           github_token: ${{ secrets.gh_token }}
-          job_name: "${{ github.job }}"
+          job_name: "Build-Simulator"
 
       - name: Prepare slack variables
         if: always()
