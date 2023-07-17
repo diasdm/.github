@@ -461,7 +461,7 @@ jobs:
     outputs:
       image_name: "${{ steps.pre_simulator_build.outputs.image_name }}"
       skip_simulator: "${{ steps.pre_simulator_build.outputs.skip_simulator_build }}"
-      simulator_tests_agent_name: "${{ steps.pre_simulator_build.outputs.simul_tests_infra }}"
+      simulator_tests_agent_name: "${{ steps.post_simulator_build.outputs.simul_tests_infra }}"
 
     steps:
       - name: Pre clean ups
@@ -595,6 +595,7 @@ jobs:
           docker image prune --all -f
 
       - name: Setup simulation Tests
+        id: post_simulator_build
         shell: bash
         run: |
           if [ "${{ inputs.with_simulation_tests }}" = "true" ];
