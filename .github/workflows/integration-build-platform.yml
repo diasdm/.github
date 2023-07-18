@@ -1574,12 +1574,23 @@ jobs:
                 --branch ${GITHUB_REF#refs/heads/}
 
 
-      - name: Get Current Job Log URL
-        uses: Tiryoh/gha-jobid-action@v0
+      # - name: Get Current Job Log URL
+      #   uses: Tiryoh/gha-jobid-action@v0
+      #   id: jobs
+      #   with:
+      #     github_token: ${{ secrets.gh_token }}
+      #     job_name: "Build-Simulator"
+      - name: Get current job id 
+        shell: bash
         id: jobs
-        with:
-          github_token: ${{ secrets.gh_token }}
-          job_name: "Build-Simulator"
+        run:
+          job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
+          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')    
+          echo "$job_id"
+          echo "$job_html_url"
+          echo "job_url=$(job_html_url)" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
         if: always()
@@ -1587,8 +1598,8 @@ jobs:
         run: |
           MESSAGE=":white_check_mark: Build Simulator job passed"
           MESSAGE_ERR=":x: Build Simulator job failed"
-          echo "msg=${MESSAGE}\n  Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs/${{ steps.jobs.outputs.job_id }}" >> $GITHUB_OUTPUT
-          echo "msg_error=${MESSAGE_ERR}\n  Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs/${{ steps.jobs.outputs.job_id }}" >> $GITHUB_OUTPUT
+          echo "msg=${MESSAGE}\n  Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs/${{ steps.jobs.outputs.job_url }}" >> $GITHUB_OUTPUT
+          echo "msg_error=${MESSAGE_ERR}\n  Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/jobs/${{ steps.jobs.outputs.job_url }}" >> $GITHUB_OUTPUT
 
       - name: Slack message success
         uses: archive/github-actions-slack@master
