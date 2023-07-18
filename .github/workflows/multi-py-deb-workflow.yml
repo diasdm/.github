@@ -523,7 +523,7 @@ jobs:
         if: always()
         run: |
           mkdir -p logs
-          journalctl -u movai-service > ./logs/movai-service-journal.log || true
+          journalctl -u movai-service > ./logs/movai-service-journal-${{ matrix.distro }}.log || true
 
       - name: Stash logs of journalctl
         if: always()
@@ -573,7 +573,7 @@ jobs:
         if: always()
         run: |
           mkdir -p logs
-          journalctl -u movai-service > ./logs/movai-service-journal.log || true
+          journalctl -u movai-service > ./logs/movai-service-journal-centos.log || true
 
       - name: Stash logs of journalctl
         if: always()
