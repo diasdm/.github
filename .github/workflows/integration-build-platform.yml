@@ -355,7 +355,8 @@ jobs:
 
           deactivate
 
-      - name: Get current job id 
+      - name: Get current job id
+        if: always()
         shell: bash
         id: job_info
         run: |
@@ -606,7 +607,8 @@ jobs:
             mobtest proj /opt/ros/noetic/share/
             '
 
-      - name: Get current job id 
+      - name: Get current job id
+        if: always()
         shell: bash
         id: job_info
         run: |
@@ -881,7 +883,8 @@ jobs:
 
           deactivate
 
-      - name: Get current job id 
+      - name: Get current job id
+        if: always()
         shell: bash
         id: job_info
         run: |
@@ -1127,7 +1130,8 @@ jobs:
 
           deactivate
 
-      - name: Get current job id 
+      - name: Get current job id
+        if: always()
         shell: bash
         id: job_info
         run: |
@@ -1451,7 +1455,8 @@ jobs:
           deactivate
           exit $execution_status
       
-      - name: Get current job id 
+      - name: Get current job id
+        if: always()
         shell: bash
         id: job_info
         run: |
@@ -1638,7 +1643,8 @@ jobs:
                 --branch ${GITHUB_REF#refs/heads/}
 
 
-      - name: Get current job id 
+      - name: Get current job id
+        if: always()
         shell: bash
         id: job_info
         run: |
@@ -1845,6 +1851,7 @@ jobs:
           deactivate
 
       - name: Get current job id 
+        if: always()
         shell: bash
         id: job_info
         run: |
