@@ -187,6 +187,24 @@ jobs:
             echo -e "Docker build arguments:\n$BUILD_ARGS_STR_LIST"
           fi
 
+      - name: Compute docker label and outputs arguments
+        id: get_label_and_outputs_args
+        run: |
+          LABEL_SRC="org.opencontainers.image.source=https://github.com/${{ github.repository }}"
+          LABEL_DESCRIPTION=""
+          OUTPUTS_ARGS_STR_LIST=""
+
+          IFS=', ' read -r -a platforms_array <<< "${{ inputs.platforms }}"
+          if [ ${#platforms_array[@]} -gt 1 ]; then
+            OUTPUTS_ARGS_STR_LIST="type=image,name=target,annotation-index.org.opencontainers.image.description=Version ${{ github.ref_name }} of repo ${{ github.repository }}"
+          else
+            LABEL_DESCRIPTION="org.opencontainers.image.description=Version ${{ github.ref_name }} of repo ${{ github.repository }}"
+          fi
+
+          echo "label_description=$LABEL_DESCRIPTION" >> $GITHUB_OUTPUT
+          echo "label_source=$LABEL_SRC" >> $GITHUB_OUTPUT
+          echo "outputs_args_str_list=$OUTPUTS_ARGS_STR_LIST" >> $GITHUB_OUTPUT
+
       - name: Download packages to include in build
         if: inputs.download_artifact
         uses: actions/download-artifact@v3
@@ -211,8 +229,10 @@ jobs:
           file: ${{ inputs.docker_file }}
           push: ${{ inputs.deploy }}
           tags: ${{ steps.get_image_names.outputs.DOCKER_IMAGES }}
-          labels: org.opencontainers.image.source="https://github.com/${{ github.repository }}"
-          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Version ${{ github.ref_name }} of repo ${{ github.repository }}
+          labels: |
+            ${{ steps.get_label_and_outputs_args.outputs.label_source }}
+            ${{ steps.get_label_and_outputs_args.outputs.label_description }}
+          outputs: ${{ steps.get_label_and_outputs_args.outputs.outputs_args_str_list }}
           target: ${{ inputs.target }}
           pull: true
           build-args: ${{ steps.get_build_args.outputs.build_args_str_list }}
@@ -226,8 +246,10 @@ jobs:
           file: ${{ inputs.docker_file }}
           push: ${{ inputs.deploy }}
           tags: ${{ steps.get_image_names.outputs.DOCKER_IMAGES }}
-          labels: org.opencontainers.image.source="https://github.com/${{ github.repository }}"
-          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Version ${{ github.ref_name }} of repo ${{ github.repository }}
+          labels: |
+            ${{ steps.get_label_and_outputs_args.outputs.label_source }}
+            ${{ steps.get_label_and_outputs_args.outputs.label_description }}
+          outputs: ${{ steps.get_label_and_outputs_args.outputs.outputs_args_str_list }}
           target: ${{ inputs.target }}
           pull: true
 
