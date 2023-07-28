@@ -71,6 +71,10 @@ env:
   XRAY_SECRET: ${{ secrets.xray_secret}}
   JIRA_USERNAME: ${{ secrets.jira_username}}
   JIRA_PASSWORD: ${{ secrets.jira_password}}
+  # slack channel rd-platform
+  SLACK_CHANNEL: "C02U028NMB7"
+  # development slack channel
+  #SLACK_CHANNEL: "C05K2KF1UP8"
 
 jobs:
   Validate-boostrap-configs:
@@ -141,7 +145,7 @@ jobs:
         if: always()
         id: pre_slack
         run: |
-          MESSAGE="CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version)(Attempt: #${{ github.run_attempt }}) is starting to be validated :construction: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          MESSAGE="CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version) (Attempt: #${{ github.run_attempt }}) is starting to be validated :construction: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
           
       - name: Send Slack Message
@@ -151,7 +155,7 @@ jobs:
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
-          slack-channel: C02U028NMB7
+          slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ${{ steps.pre_slack.outputs.msg }}
 
       - name: Stash raised_meta
@@ -172,6 +176,8 @@ jobs:
   Validation-UI-Tests:
     needs: [Standalone-Validations]
     runs-on: integration-pipeline
+    outputs:
+      slack_thread_id: ${{ needs.Standalone-Validations.outputs.slack_thread_id }}
     steps:
       - name: Cleanup Workspace
         uses: rtCamp/action-cleanup@master
@@ -383,7 +389,7 @@ jobs:
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
-          slack-channel: "C02U028NMB7"
+          slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ${{ steps.pre_slack_result.outputs.msg }}
           slack-optional-thread_ts: ${{ needs.Standalone-Validations.outputs.slack_thread_id }}
 
@@ -393,7 +399,7 @@ jobs:
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
-          slack-channel: "C02U028NMB7"
+          slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ${{ steps.pre_slack_result.outputs.msg_error }}
           slack-optional-thread_ts: ${{ needs.Standalone-Validations.outputs.slack_thread_id }}
 
@@ -635,7 +641,7 @@ jobs:
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
-          slack-channel: "C02U028NMB7"
+          slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ${{ steps.pre_slack_result.outputs.msg }}
           slack-optional-thread_ts: ${{ needs.Standalone-Validations.outputs.slack_thread_id }}
 
@@ -645,7 +651,7 @@ jobs:
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
-          slack-channel: "C02U028NMB7"
+          slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ${{ steps.pre_slack_result.outputs.msg_error }}
           slack-optional-thread_ts: ${{ needs.Standalone-Validations.outputs.slack_thread_id }}
           
@@ -705,7 +711,7 @@ jobs:
           for image in "${used_images[@]}"
           do
             image_short_name=$(grep -oP "(?<=/$ENV/).*?(?=:)" <<< "$image" || grep -oP "(?<=/devops/).*?(?=:)" <<< "$image" || true)
-            if [[ "$image_short_name" =~ .*"backend".* || "$image_short_name" =~ .*"spawner".* || "$image_short_name" =~ .*"redis"*.* || "$image_short_name" =~ .*"health-node".* ]];
+            if [[ "$image_short_name" =~ .*"backend".* || "$image_short_name" =~ .*"spawner".* || "$image_short_name" =~ .*"redis"*.* || "$image_short_name" =~ .*"health-node".* || "" =~ .*"message-server*.*" ]];
             then
               echo "scanning $image"
               container_ids=($(docker ps -q -f "ancestor=$image" | tr ' ' "\n"))
@@ -911,7 +917,7 @@ jobs:
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
-          slack-channel: "C02U028NMB7"
+          slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ${{ steps.pre_slack_result.outputs.msg }}
           slack-optional-thread_ts: ${{ needs.Standalone-Validations.outputs.slack_thread_id }}
 
@@ -921,7 +927,7 @@ jobs:
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
-          slack-channel: "C02U028NMB7"
+          slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ${{ steps.pre_slack_result.outputs.msg_error }}
           slack-optional-thread_ts: ${{ needs.Standalone-Validations.outputs.slack_thread_id }}
 
@@ -1158,7 +1164,7 @@ jobs:
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
-          slack-channel: "C02U028NMB7"
+          slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ${{ steps.pre_slack_result.outputs.msg }}
           slack-optional-thread_ts: ${{ needs.Standalone-Validations.outputs.slack_thread_id }}
 
@@ -1168,7 +1174,7 @@ jobs:
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
-          slack-channel: "C02U028NMB7"
+          slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ${{ steps.pre_slack_result.outputs.msg_error }}
           slack-optional-thread_ts: ${{ needs.Standalone-Validations.outputs.slack_thread_id }}
 
@@ -1236,6 +1242,8 @@ jobs:
   Validations-Finish:
     needs: [Validation-UI-Tests, Validation-Install-Tests, Validation-API-Tests, Validation-Flow-Tests]
     runs-on: ubuntu-20.04
+    outputs:
+      slack_thread_id: ${{ needs.Validation-UI-Tests.outputs.slack_thread_id }}
     steps:
       - name: Pass through
         run: echo "Pass"
@@ -1444,13 +1452,13 @@ jobs:
           done
 
           ansible-playbook install.yml \
-           -i ../staging/hosts \
-           --key-file ~/.ssh/aws_slave.pem \
-           --extra-vars=@"$(pwd)/.."/product-manifest.yaml \
-           -e fleet_domain_dns="" \
-           -e "{\"proxycerts__remote_redis_servers_fqn\": [$(cat ../staging/manager_private_ip.txt)]}" \
-           -e '{"fleet_extra_hosts": ["172.22.0.106    registry.hel.mov.ai traefik"]}' \
-           --skip-tags "ufw,hardening"
+            -i ../staging/hosts \
+            --key-file ~/.ssh/aws_slave.pem \
+            --extra-vars=@"$(pwd)/.."/product-manifest.yaml \
+            -e fleet_domain_dns="" \
+            -e "{\"proxycerts__remote_redis_servers_fqn\": [$(cat ../staging/manager_private_ip.txt)]}" \
+            -e '{"fleet_extra_hosts": ["172.22.0.106    registry.hel.mov.ai traefik"]}' \
+            --skip-tags "ufw,hardening"
           execution_status=$?
           deactivate
           exit $execution_status
@@ -1483,7 +1491,7 @@ jobs:
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
-          slack-channel: "C02U028NMB7"
+          slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ${{ steps.pre_slack_result.outputs.msg }}
           slack-optional-thread_ts: ${{ needs.Validate-boostrap-configs.outputs.slack_thread_id }}
 
@@ -1493,7 +1501,7 @@ jobs:
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
-          slack-channel: "C02U028NMB7"
+          slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ${{ steps.pre_slack_result.outputs.msg_error }}
           slack-optional-thread_ts: ${{ needs.Validate-boostrap-configs.outputs.slack_thread_id }}
 
@@ -1505,9 +1513,16 @@ jobs:
           mkdir -p fleet_qa_artifacts/install
           source ansible-venv/bin/activate
           # install fleet_tests artifacts
-          for fleet_host in "manager" "member1" "member2"; do
+          for fleet_host in "manager" "member0" "member1"; do
             ansible $fleet_host -i ../staging/hosts --key-file ~/.ssh/aws_slave.pem -m shell -a 'journalctl -u movai-service' > fleet_qa_artifacts/install/$fleet_host.log || true
+
+            echo "From $fleet_host:"
+            ansible $fleet_host -i ../staging/hosts --key-file ~/.ssh/aws_slave.pem -m shell -a 'docker ps -a' > fleet_qa_artifacts/install/$fleet_host-docker_ps.log || true
+            echo "$(tail -n +2 fleet_qa_artifacts/install/$fleet_host-docker_ps.log )"
+
+            ansible $fleet_host -i ../staging/hosts --key-file ~/.ssh/aws_slave.pem -m shell -a 'journalctl -u docker --boot --lines=all' > fleet_qa_artifacts/install/$fleet_host-all-docker.log || true
           done
+
           deactivate
 
       - name: Stash Fleet QA artifacts
@@ -1542,6 +1557,7 @@ jobs:
           TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
           TF_VAR_provision_ssh_pem: ${{ secrets.ssh_pem_fleet_aws_vm }}
           TF_VAR_ip_list: ${{ inputs.fleet_ips }}
+      
 
   Build-Simulator:
     needs: [Validate-boostrap-configs]
@@ -1671,7 +1687,7 @@ jobs:
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
-          slack-channel: "C02U028NMB7"
+          slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ${{ steps.pre_slack_result.outputs.msg }}
           slack-optional-thread_ts: ${{ needs.Validate-boostrap-configs.outputs.slack_thread_id }}
 
@@ -1681,7 +1697,7 @@ jobs:
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
-          slack-channel: "C02U028NMB7"
+          slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ${{ steps.pre_slack_result.outputs.msg_error }}
           slack-optional-thread_ts: ${{ needs.Validate-boostrap-configs.outputs.slack_thread_id }}
 
@@ -1878,7 +1894,7 @@ jobs:
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
-          slack-channel: "C02U028NMB7"
+          slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ${{ steps.pre_slack_result.outputs.msg }}
           slack-optional-thread_ts: ${{ needs.Build-Simulator.outputs.slack_thread_id }}
 
@@ -1888,7 +1904,7 @@ jobs:
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
-          slack-channel: "C02U028NMB7"
+          slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ${{ steps.pre_slack_result.outputs.msg_error }}
           slack-optional-thread_ts: ${{ needs.Build-Simulator.outputs.slack_thread_id }}
 
@@ -2001,6 +2017,8 @@ jobs:
   publish:
     needs: [Validations-Finish, Fleet-Validations, Simulator-Validations]
     runs-on: integration-pipeline
+    outputs:
+      slack_thread_id: ${{ needs.Validations-Finish.outputs.slack_thread_id }}
     steps:
       - name: Cleanup Workspace
         uses: rtCamp/action-cleanup@master
@@ -2177,24 +2195,49 @@ jobs:
         if: always()
         id: pre_slack
         run: |
-          MESSAGE=":white_check_mark: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is stable :sunny: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is unstable :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          MESSAGE=":white_check_mark: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version) (Attempt: #${{ github.run_attempt }}) is stable :sunny: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
+
+      - name: Slack message
+        uses: archive/github-actions-slack@master
+        with:
+          slack-function: update-message
+          slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-update-message-text: ${{ steps.pre_slack.outputs.msg }}
+          slack-update-message-ts: ${{ needs.Validations-Finish.outputs.slack_thread_id }}
+
+
+
+  Run-Status:
+    runs-on: ubuntu-20.04
+    needs: [publish, Validate-boostrap-configs]
+    if: ${{ always() && ( needs.publish.result == 'failure' || needs.publish.result == 'cancelled' ) }}
+    steps:
+      - name: unstash raised_meta
+        uses: actions/download-artifact@v3
+        with:
+          name: raised_meta
+          path: platform_configs
+
+      - name: Copy product configs
+        shell: bash
+        run: |
+          cp ./platform_configs/product.version product.version
+          cp ./platform_configs/product-manifest.yaml product-manifest.yaml
+  
+      - name: Prepare slack variables
+        id: pre_slack
+        run: |
+          MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version) (Attempt: #${{ github.run_attempt }}) is unstable (or cancelled) :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           echo "msg_error=${MESSAGE_ERR}" >> $GITHUB_OUTPUT
 
-      - name: Slack message success
-        uses: slackapi/slack-github-action@v1.23.0
+      - name: Slack message
+        uses: archive/github-actions-slack@master
         with:
-          channel-id: "C02U028NMB7"
-          slack-message: ${{ steps.pre_slack.outputs.msg }}
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
+          slack-function: update-message
+          slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-update-message-text: ${{ steps.pre_slack.outputs.msg_error }}
+          slack-update-message-ts: ${{ needs.Validate-boostrap-configs.outputs.slack_thread_id }}
 
-      - name: Slack message failure
-        if: failure()
-        uses: slackapi/slack-github-action@v1.23.0
-        with:
-          channel-id: "C02U028NMB7"
-          slack-message: ${{ steps.pre_slack.outputs.msg_error }}
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
