@@ -1171,7 +1171,7 @@ jobs:
         run: |
           ssh robot '
             promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g")
-            promoted_name_lis=$(echo "promoted_name" | sed "s-/hel/-/lis/-g")
+            promoted_name_lis=$(echo "$promoted_name" | sed "s-/hel/-/lis/-g")
             docker pull "$promoted_name_lis"
             docker tag "$promoted_name_lis" $promoted_name
           '
