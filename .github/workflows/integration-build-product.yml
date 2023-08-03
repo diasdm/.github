@@ -1158,6 +1158,7 @@ jobs:
             docker login ${{ env.REGISTRY }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
             docker login ${{ env.REGISTRY_PT }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
           '
+          sleep 60
 
       - name: Remote - Docker load spawner image
         if: ${{ inputs.with_simulation_tests }}
