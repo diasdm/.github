@@ -24,6 +24,10 @@ on:
         required: false
         type: boolean
         default: false
+      debug_simulation_tests_keep_alive:
+        required: false
+        type: boolean
+        default: false
 
     secrets:
       auto_commit_user:
@@ -1417,7 +1421,7 @@ jobs:
 
       - name: Teardown remote vms (Proxmox)
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
-        if: ${{ inputs.with_simulation_tests && always() }}
+        if: ${{ inputs.with_simulation_tests && inputs.debug_simulation_tests_keep_alive == false && always() }}
         shell: bash
         run: terraform destroy -auto-approve
         env:
