@@ -1184,7 +1184,7 @@ jobs:
       - name: Remote - Install CI Scripts
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
-        run: ssh robot "python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed"
+        run: ssh robot "python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION"
 
       - name: Remote - unstash manifest
         if: ${{ inputs.with_simulation_tests }}
