@@ -343,7 +343,6 @@ jobs:
               -ra \
               --hub_url http://selenoid-ui.hel.mov.ai \
               --browser_name chrome \
-              --browser_version 91.0 \
               --base_url https://${{ steps.agent_info.outputs.ip }}/ \
               --movai-user ${{ steps.install.outputs.movai_user }} \
               --movai-pw ${{ steps.install.outputs.movai_pwd }} \
@@ -353,7 +352,6 @@ jobs:
                 -ra \
                 --hub_url http://selenoid-ui.hel.mov.ai \
                 --browser_name chrome \
-                --browser_version 91.0 \
                 --base_url https://${{ steps.agent_info.outputs.ip }}/ \
                 --movai-user ${{ steps.install.outputs.movai_user }} \
                 --movai-pw ${{ steps.install.outputs.movai_pwd }}
