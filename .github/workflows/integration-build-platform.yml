@@ -147,7 +147,7 @@ jobs:
         run: |
           MESSAGE="CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version) (Attempt: #${{ github.run_attempt }}) is starting to be validated :construction: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
-          
+
       - name: Send Slack Message
         uses: archive/github-actions-slack@master
         id: send-message
@@ -364,7 +364,7 @@ jobs:
         run: |
           sudo apt install jq -y
           job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
-          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')    
+          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
           echo "$job_id"
           echo "$job_html_url"
           echo "job_url=$job_html_url" >> $GITHUB_OUTPUT
@@ -616,7 +616,7 @@ jobs:
         run: |
           sudo apt install jq -y
           job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
-          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')    
+          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
           echo "$job_id"
           echo "$job_html_url"
           echo "job_url=$job_html_url" >> $GITHUB_OUTPUT
@@ -650,7 +650,7 @@ jobs:
           slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ${{ steps.pre_slack_result.outputs.msg_error }}
           slack-optional-thread_ts: ${{ needs.Standalone-Validations.outputs.slack_thread_id }}
-          
+
       - name: Save docker container logs
         if: always()
         working-directory: ${{ steps.install_tests_setup.outputs.target_dir }}
@@ -892,7 +892,7 @@ jobs:
         run: |
           sudo apt install jq -y
           job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
-          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')    
+          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
           echo "$job_id"
           echo "$job_html_url"
           echo "job_url=$job_html_url" >> $GITHUB_OUTPUT
@@ -1139,7 +1139,7 @@ jobs:
         run: |
           sudo apt install jq -y
           job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
-          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')    
+          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
           echo "$job_id"
           echo "$job_html_url"
           echo "job_url=$job_html_url" >> $GITHUB_OUTPUT
@@ -1458,7 +1458,7 @@ jobs:
           execution_status=$?
           deactivate
           exit $execution_status
-      
+
       - name: Get current job id
         if: always()
         shell: bash
@@ -1466,7 +1466,7 @@ jobs:
         run: |
           sudo apt install jq -y
           job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
-          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')    
+          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
           echo "$job_id"
           echo "$job_html_url"
           echo "job_url=$job_html_url" >> $GITHUB_OUTPUT
@@ -1553,7 +1553,7 @@ jobs:
           TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
           TF_VAR_provision_ssh_pem: ${{ secrets.ssh_pem_fleet_aws_vm }}
           TF_VAR_ip_list: ${{ inputs.fleet_ips }}
-      
+
 
   Build-Simulator:
     needs: [Validate-boostrap-configs]
@@ -1662,7 +1662,7 @@ jobs:
         run: |
           sudo apt install jq -y
           job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
-          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')    
+          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
           echo "$job_id"
           echo "$job_html_url"
           echo "job_url=$job_html_url" >> $GITHUB_OUTPUT
@@ -1862,14 +1862,14 @@ jobs:
 
           deactivate
 
-      - name: Get current job id 
+      - name: Get current job id
         if: always()
         shell: bash
         id: job_info
         run: |
           sudo apt install jq -y
           job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
-          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')    
+          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
           echo "$job_id"
           echo "$job_html_url"
           echo "job_url=$job_html_url" >> $GITHUB_OUTPUT
@@ -2179,14 +2179,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
-      - name: Propagate release
-        continue-on-error: true
-        shell: bash
-        run: |
-          gh workflow run "Propagate EE" --repo MOV-AI/qa-automations
-        env:
-          GITHUB_TOKEN: ${{ secrets.gh_token }}
-
       - name: Prepare slack variables
         if: always()
         id: pre_slack
@@ -2221,7 +2213,7 @@ jobs:
         run: |
           cp ./platform_configs/product.version product.version
           cp ./platform_configs/product-manifest.yaml product-manifest.yaml
-  
+
       - name: Prepare slack variables
         id: pre_slack
         run: |
