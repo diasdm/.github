@@ -163,7 +163,7 @@ jobs:
         run: |
           MESSAGE="CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version)(Attempt: #${{ github.run_attempt }}) is starting to be validated :construction: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
-          
+
       - name: Send Slack Message
         uses: archive/github-actions-slack@master
         id: send-message
@@ -278,7 +278,7 @@ jobs:
         run: |
           sudo apt install jq -y
           job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
-          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')    
+          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
           echo "$job_id"
           echo "$job_html_url"
           echo "job_url=$job_html_url" >> $GITHUB_OUTPUT
@@ -487,7 +487,7 @@ jobs:
         run: |
           sudo apt install jq -y
           job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
-          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')    
+          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
           echo "$job_id"
           echo "$job_html_url"
           echo "job_url=$job_html_url" >> $GITHUB_OUTPUT
@@ -511,7 +511,7 @@ jobs:
           slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ${{ steps.pre_slack_result.outputs.msg }}
           slack-optional-thread_ts: ${{ needs.Build-Spawner.outputs.slack_thread_id }}
-          
+
       - name: Slack message failure
         uses: archive/github-actions-slack@master
         if: failure()
@@ -694,7 +694,7 @@ jobs:
         run: |
           sudo apt install jq -y
           job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
-          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')    
+          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
           echo "$job_id"
           echo "$job_html_url"
           echo "job_url=$job_html_url" >> $GITHUB_OUTPUT
@@ -922,13 +922,13 @@ jobs:
         run: |
           sudo apt install jq -y
           job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
-          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')    
+          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
           echo "$job_id"
           echo "$job_html_url"
           echo "job_url=$job_html_url" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
-  
+
       - name: Prepare slack variables
         if: always()
         id: pre_slack_result
@@ -1066,7 +1066,7 @@ jobs:
           branch=$(echo ${GITHUB_REF#refs/heads/} | sed "s;\.;-;g" )
 
           local_manager_prefix="ip-$branch-standalone"
-  
+
           echo "$local_manager_prefix"
 
           echo "simul_prefix=${local_manager_prefix}" >> $GITHUB_OUTPUT
@@ -1121,14 +1121,14 @@ jobs:
         run: |
           ssh-keygen -f ~/.ssh/known_hosts -R ${{ steps.infra_outputs.outputs.host_ip }} || true
           ssh-keyscan -H ${{ steps.infra_outputs.outputs.host_ip }} >> ~/.ssh/known_hosts || true
-          
+
           test -f ~/.ssh/config
           CONFIG_FILE_EXISTS=1
           if [ $? -eq 0 ]; then
             mv ~/.ssh/config ~/.ssh/config.bak
             CONFIG_FILE_EXISTS=0
           fi
-          
+
           touch ~/.ssh/config
           echo "Host robot" >> ~/.ssh/config
           echo "  HostName ${{ steps.infra_outputs.outputs.host_ip }}" >> ~/.ssh/config
@@ -1214,12 +1214,12 @@ jobs:
 
             rm -f /tmp/target_dir.txt /tmp/version.txt /tmp/repo_name.txt /tmp/test_set.txt
             export PATH="$HOME/.local/bin:$PATH"
-  
+
             integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.target_dir --output_file /tmp/target_dir.txt
             integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.version --output_file /tmp/version.txt
             integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.name --output_file /tmp/repo_name.txt
             integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.test_set --output_file /tmp/test_set.txt
-  
+
             tests_dir=$(cat /tmp/target_dir.txt)
             tests_version=$(cat /tmp/version.txt)
             tests_repo_name=$(cat /tmp/repo_name.txt)
@@ -1338,7 +1338,7 @@ jobs:
 
             # movai-service
             journalctl -u movai-service --since "1hour ago" &> "movai-service.log"
-            
+
             # spawner (mobros firmware)
             journalctl -u movai-service -t mobros --since "1hour ago" &> spawner-firmware.log || true
           '
@@ -1367,13 +1367,13 @@ jobs:
         run: |
           sudo apt install jq -y
           job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
-          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')    
+          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
           echo "$job_id"
           echo "$job_html_url"
           echo "job_url=$job_html_url" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
-  
+
       - name: Prepare slack variables
         if: always()
         id: pre_slack_result
@@ -1409,7 +1409,7 @@ jobs:
         with:
           name: qa_artifacts_simulator_tests
           path: qa_artifacts/*
-  
+
       - name: Teardown ssh setup
         shell: bash
         if: ${{ always() && inputs.with_simulation_tests }}
@@ -1432,7 +1432,7 @@ jobs:
           TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
           TF_VAR_provision_ssh_pem: ${{ secrets.ssh_priv_key }}
           TF_VAR_ip_list: '["dhcp"]'
-  
+
   publish:
     needs: [Install-Robot, Install-Simulator-Robot, Validation-Simulator-Tests]
     runs-on: integration-pipeline
@@ -1487,6 +1487,7 @@ jobs:
         run: python3 -m pip install movai-package-deployer==$PACKAGE_DEPLOYER_VERSION --ignore-installed
 
       - name: Publish and create release
+        id: bump
         shell: bash
         run: |
           git config --global --add safe.directory $(pwd)
@@ -1537,6 +1538,8 @@ jobs:
 
           git add product.version
           git commit -m "[skip actions] Automatic Raise"
+
+          echo "version=${product_version}" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
@@ -1622,7 +1625,10 @@ jobs:
         if: ${{ inputs.propagate_project }}
         shell: bash
         run: |
-          gh workflow run "Propagate EE" --repo MOV-AI/qa-automations
+          gh workflow run "Propagate base project dependency to projects - On Dispatch" \
+            --repo MOV-AI/qa-automations \
+            -f repo_name=${GITHUB_REPOSITORY#*/} \
+            -f repo_version=${{ steps.bump.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
