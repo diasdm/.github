@@ -416,8 +416,8 @@ jobs:
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
 
           # message-server    
-          CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*")
-          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"  
+          CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*") || true
+          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log" || true
 
           # movai-service
           journalctl -u movai-service --since '1hour ago' &> "movai-service.log"
@@ -672,8 +672,8 @@ jobs:
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
 
           # message-server    
-          CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*")
-          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"  
+          CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*") || true
+          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log" || true 
 
           # movai-service
           journalctl -u movai-service --since '1hour ago' &> "movai-service.log"
@@ -953,8 +953,8 @@ jobs:
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
 
           # message-server    
-          CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*")
-          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"  
+          CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*") || true
+          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log" || true
 
           # movai-service
           journalctl -u movai-service --since '1hour ago' &> "movai-service.log"
@@ -1204,8 +1204,8 @@ jobs:
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
 
           # message-server    
-          CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*")
-          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"  
+          CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*") || true
+          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log" || true
 
           # movai-service
           journalctl -u movai-service --since '1hour ago' &> "movai-service.log"
@@ -1938,8 +1938,8 @@ jobs:
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
 
           # message-server    
-          CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*")
-          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"  
+          CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*") || true
+          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log" || true 
 
           # movai-service
           journalctl -u movai-service --since '1hour ago' &> "movai-service.log"
