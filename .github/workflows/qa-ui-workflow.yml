@@ -167,6 +167,15 @@ jobs:
             "
           fi
 
+          # install test dependencies on haproxy
+          ## get haproxy container name
+          CONTAINER_ID=$(docker ps --format '{{.Names}}' --filter "name=^haproxy-.*")
+          ## install
+          docker exec -ituroot "${CONTAINER_ID}" bash -c "
+            apt update
+            apt install -y --allow-downgrades tcpdump
+          "
+
           # tests execution
           pytest \
             --ignore qa_install_tests \
