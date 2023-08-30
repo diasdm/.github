@@ -887,8 +887,8 @@ jobs:
           . venv/bin/activate
 
           pytest src/tests \              
-              --username ${{ steps.install.outputs.movai_user }} \
-              --password ${{ steps.install.outputs.movai_pwd }}
+              --movai-user ${{ steps.install.outputs.movai_user}}\
+              --movai-pw ${{ steps.install.outputs.movai_pwd}}
 
           deactivate
 
