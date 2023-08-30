@@ -886,10 +886,10 @@ jobs:
 
           . venv/bin/activate
 
-          pytest src/tests \              
-              --movai-ip ${{ steps.agent_info.outputs.ip }}\
-              --movai-user ${{ steps.install.outputs.movai_user}}\
-              --movai-pw ${{ steps.install.outputs.movai_pwd}}
+          pytest src/tests \
+            --movai-ip ${{ steps.agent_info.outputs.ip }} \
+            --movai-user ${{ steps.install.outputs.movai_user }} \
+            --movai-pw ${{ steps.install.outputs.movai_pwd }}
 
           deactivate
 
