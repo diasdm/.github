@@ -162,7 +162,6 @@ jobs:
       run: npm publish
 
     - name: Archive binary
-      if: ${{ inputs.deploy == 'true' }}
       uses: actions/upload-artifact@v3
       with:
         name: packages
