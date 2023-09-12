@@ -74,7 +74,7 @@ env:
   USERSPACE_FOLDER_PATH: userspace
   REMOTE_WORKSPACE_PATH: workspace
   PROVISION_INFRA_REPO: "devops-tf-proxmox-fleet"
-  PROVISION_INFRA_VERSION: "0.1.0-2"
+  PROVISION_INFRA_VERSION: "0.1.0-7"
   # slack channel movai-projects
   SLACK_CHANNEL: "C050L85R6VC"
   # development slack channel
@@ -1102,6 +1102,7 @@ jobs:
           TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
           TF_VAR_fleet_manager_memory: 30000
           TF_VAR_fleet_manager_cores: 10
+          TF_VAR_fleet_manager_disk_size: "110G"
 
       - name: Gather Terraform outputs
         if: ${{ inputs.with_simulation_tests }}
