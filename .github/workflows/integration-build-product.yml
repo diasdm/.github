@@ -277,6 +277,7 @@ jobs:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
     runs-on: integration-pipeline
+    if: ${{ false }}
     steps:
       - uses: rtCamp/action-cleanup@master
 
