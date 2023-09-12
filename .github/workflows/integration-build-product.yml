@@ -69,7 +69,7 @@ env:
   USERSPACE_FOLDER_PATH: userspace
   REMOTE_WORKSPACE_PATH: workspace
   PROVISION_INFRA_REPO: "devops-tf-proxmox-fleet"
-  PROVISION_INFRA_VERSION: "0.1.0-2" 
+  PROVISION_INFRA_VERSION: "0.1.0-7"
 
 jobs:
   Validate-boostrap-configs:
@@ -904,7 +904,7 @@ jobs:
           TF_VAR_provision_ssh_pem: ${{ secrets.ssh_priv_key }}
           TF_VAR_ip_list: '["dhcp"]'
           TF_VAR_storage: "local-lvm"
-          TF_VAR_proxmox_host: "mary"
+          TF_VAR_proxmox_host_list: '["mary"]'
           TF_VAR_vm_gateway: "10.10.1.254"
           TF_VAR_ip_mask: 23
           TF_VAR_bios: "ovmf"
@@ -915,6 +915,7 @@ jobs:
           TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
           TF_VAR_fleet_manager_memory: 30000
           TF_VAR_fleet_manager_cores: 10
+          TF_VAR_fleet_manager_disk_size: "110G"
 
       - name: Gather Terraform outputs
         if: ${{ inputs.with_simulation_tests }}
@@ -954,11 +955,20 @@ jobs:
 
           echo "config_pre_exists=$CONFIG_FILE_EXISTS" >> $GITHUB_OUTPUT
 
+          cp ${{ steps.provision_infra_setup.outputs.target_dir }}/hosts hosts
+
+          while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
+          sudo apt install -y python3.9 python3.9-venv
+          python3.9 -m venv ansible-venv
+          source ansible-venv/bin/activate
+          python3 -m pip install ansible==7.1.0
+
       - name: Remote - Agent info
         if: ${{ inputs.with_simulation_tests }}
         id: agent_info
         run: |
-          ssh robot '
+          source ansible-venv/bin/activate
+          ansible "manager" -i hosts --key-file ~/.ssh/ci_priv_key.pem -m shell -a '
             ip=$(hostname -I | awk "{print $1}")
             echo $ip
           '
@@ -966,13 +976,19 @@ jobs:
       - name: Remote - Login to Private Registry
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
-        run: ssh robot "docker login ${{ env.REGISTRY }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}"
+        run: |
+          source ansible-venv/bin/activate
+          ansible "manager" -i hosts --key-file ~/.ssh/ci_priv_key.pem -m shell -a '
+            set -e
+            docker login ${{ env.REGISTRY }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
+          '
 
       - name: Remote - Docker load spawner image
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
         run: |
-          ssh robot '
+          source ansible-venv/bin/activate
+          ansible "manager" -i hosts --key-file ~/.ssh/ci_priv_key.pem -m shell -a '
             set -e
             docker pull "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}"
             docker tag "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}"
@@ -982,7 +998,9 @@ jobs:
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
         run: |
-          ssh robot '
+          source ansible-venv/bin/activate
+          ansible "manager" -i hosts --key-file ~/.ssh/ci_priv_key.pem -m shell -a '
+            set -e
             promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g")
             docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
             docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
