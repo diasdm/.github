@@ -969,7 +969,7 @@ jobs:
         id: agent_info
         run: |
           source ansible-venv/bin/activate
-          ansible "manager" -i hosts --key-file ~/.ssh/ci_priv_key.pem -m shell -a '\
+          ansible "manager" -i hosts --key-file ~/.ssh/ci_priv_key.pem -m shell -a 'set -e
             ip=$(hostname -I | awk "{print $1}")
             echo $ip
           '
@@ -979,8 +979,7 @@ jobs:
         shell: bash
         run: |
           source ansible-venv/bin/activate
-          ansible "manager" -i hosts --key-file ~/.ssh/ci_priv_key.pem -m shell -a '
-            set -e
+          ansible "manager" -i hosts --key-file ~/.ssh/ci_priv_key.pem -m shell -a 'set -e
             docker login ${{ env.REGISTRY }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
           '
 
@@ -989,8 +988,7 @@ jobs:
         shell: bash
         run: |
           source ansible-venv/bin/activate
-          ansible "manager" -i hosts --key-file ~/.ssh/ci_priv_key.pem -m shell -a '
-            set -e
+          ansible "manager" -i hosts --key-file ~/.ssh/ci_priv_key.pem -m shell -a 'set -e
             docker pull "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}"
             docker tag "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}"
           '
@@ -1000,8 +998,7 @@ jobs:
         shell: bash
         run: |
           source ansible-venv/bin/activate
-          ansible "manager" -i hosts --key-file ~/.ssh/ci_priv_key.pem -m shell -a '
-            set -e
+          ansible "manager" -i hosts --key-file ~/.ssh/ci_priv_key.pem -m shell -a 'set -e
             promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g")
             docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
             docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
