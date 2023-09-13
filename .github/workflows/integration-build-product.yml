@@ -1174,7 +1174,7 @@ jobs:
         shell: bash
         run: |
           ssh robot '
-            set -e
+            set +e
             promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g")
             docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
             docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
@@ -1183,7 +1183,7 @@ jobs:
       - name: Remote - Install CI Scripts
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
-        run: ssh robot "python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION"
+        run: ssh robot "set -e ; python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION"
 
       - name: Remote - unstash manifest
         if: ${{ inputs.with_simulation_tests }}
