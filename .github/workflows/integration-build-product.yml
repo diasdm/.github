@@ -970,6 +970,7 @@ jobs:
         run: |
           source ansible-venv/bin/activate
           ansible "manager" -i hosts --key-file ~/.ssh/ci_priv_key.pem -m shell -a 'set -e
+            cloud-init status --wait
             ip=$(hostname -I | awk "{print $1}")
             echo $ip
           '
