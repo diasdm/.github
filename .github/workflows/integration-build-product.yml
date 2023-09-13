@@ -1174,10 +1174,10 @@ jobs:
         shell: bash
         run: |
           ssh robot '
-            set +e
+            set -e
             promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g")
-            docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
-            docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
+            docker pull "${{ needs.Build-Simulator.outputs.image_name }}" || true
+            docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name || true
           '
 
       - name: Remote - Install CI Scripts
