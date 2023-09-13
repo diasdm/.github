@@ -1138,7 +1138,7 @@ jobs:
           echo "  StrictHostKeyChecking no" >> ~/.ssh/config
           cat ~/.ssh/config
 
-          ssh robot 'rm -rf ./${{ env.REMOTE_WORKSPACE_PATH }}; mkdir -p ./${{ env.REMOTE_WORKSPACE_PATH }}'
+          ssh robot 'cloud-init status --wait; rm -rf ./${{ env.REMOTE_WORKSPACE_PATH }}; mkdir -p ./${{ env.REMOTE_WORKSPACE_PATH }}'
 
           echo "config_pre_exists=$CONFIG_FILE_EXISTS" >> $GITHUB_OUTPUT
 
@@ -1157,7 +1157,6 @@ jobs:
         run: |
           ssh robot '
             docker login ${{ env.REGISTRY }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
-            docker login ${{ env.REGISTRY_PT }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
           '
           sleep 60
 
@@ -1167,8 +1166,8 @@ jobs:
         run: |
           ssh robot '
             set -e
-            docker pull "${{ env.REGISTRY_PT }}/ci/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}"
-            docker tag "${{ env.REGISTRY_PT }}/ci/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}"
+            docker pull "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}"
+            docker tag "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}"
           '
 
       - name: Remote - Docker load simulator image
@@ -1177,7 +1176,6 @@ jobs:
         run: |
           ssh robot '
             promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g")
-            promoted_name_lis=$(echo "$promoted_name" | sed "s-hel-lis-g")
             docker pull "$promoted_name_lis"
             docker tag "$promoted_name_lis" $promoted_name
           '
