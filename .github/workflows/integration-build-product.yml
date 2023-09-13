@@ -1431,6 +1431,18 @@ jobs:
           TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
           TF_VAR_provision_ssh_pem: ${{ secrets.ssh_priv_key }}
           TF_VAR_ip_list: '["dhcp"]'
+          TF_VAR_proxmox_host_list: '["mary"]'
+          TF_VAR_vm_gateway: "10.10.1.254"
+          TF_VAR_ip_mask: 23
+          TF_VAR_bios: "ovmf"
+          TF_VAR_pool: "IP-Temp-VMs"
+          TF_VAR_tags: "ip-simul-ci"
+          TF_VAR_fleet_hosts_user: "devops"
+          TF_VAR_template_name: "u22dci-gpu"
+          TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
+          TF_VAR_fleet_manager_memory: 30000
+          TF_VAR_fleet_manager_cores: 10
+          TF_VAR_fleet_manager_disk_size: "110G"
 
   publish:
     needs: [Install-Robot, Install-Simulator-Robot, Validation-Simulator-Tests]
