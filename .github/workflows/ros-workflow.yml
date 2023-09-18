@@ -252,6 +252,7 @@ jobs:
           echo "Please check report here: https://sonarcloud.io/project/overview?id=${{ github.repository_owner }}_${{ github.event.repository.name }}"
 
   Package-Install-Test:
+    if: ${{ inputs.release == 'false' }}
     strategy:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
@@ -267,25 +268,25 @@ jobs:
     needs: [Build]
     steps:
       - name: Checkout
-        if: ${{ inputs.release == 'false' && inputs.install_test }}
+        if: ${{ inputs.install_test }}
         uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: Download artifacts
-        if: ${{ inputs.release == 'false' && inputs.install_test }}
+        if: ${{ inputs.install_test }}
         uses: actions/download-artifact@v3
         with:
           name: packages
           path: artifacts
 
       - name: Install mobros
-        if: ${{ inputs.release == 'false' && inputs.install_test }}
+        if: ${{ inputs.install_test }}
         run: |
           sudo apt update
           sudo apt install mobros=${{ inputs.MOBROS_VERSION }} -y
       - name: Install debian artifacts
-        if: ${{ inputs.release == 'false' && inputs.install_test }}
+        if: ${{ inputs.install_test }}
         run: |
           cd artifacts/
           PACKAGES_INSTALL="$(find -L ./ -name "*.deb")"
@@ -297,7 +298,7 @@ jobs:
           sudo mobros install $PACKAGES_INSTALL -y --upgrade-installed --fail-on-apt-update
 
       - name: Mobtest project validations
-        if: ${{ inputs.release == 'false' && inputs.install_test }}
+        if: ${{ inputs.install_test }}
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           python3 -m pip install -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple mobtest==${{ inputs.MOBTEST_VERSION }} --ignore-installed
