@@ -1507,14 +1507,6 @@ jobs:
           password: ${{ secrets.registry_password }}
           registry: ${{ env.PUSH_REGISTRY }}
 
-      - name: Docker load simulator image
-        shell: bash
-        run: |
-          promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g")
-
-          docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
-          docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
-
       - name: Publish and create release
         id: bump
         shell: bash
