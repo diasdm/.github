@@ -268,8 +268,7 @@ jobs:
             --file docker/${{ matrix.distro }}/Dockerfile \
             --platform linux/amd64 \
             --tag ${{ env.PUSH_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ steps.pre_build.outputs.raised_version }} \
-            --pull \
-            --push .
+            --pull
 
       - name: Get current job id
         if: always()
@@ -383,6 +382,10 @@ jobs:
           docker tag "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
           docker tag "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.PUSH_REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
 
+      - name: Set job Output
+        shell: bash
+        run: |
+          
       - name: Installation
         shell: bash
         run: |
@@ -684,8 +687,8 @@ jobs:
             --file docker/${{ env.DISTRO }}/Dockerfile-simulator \
             --platform linux/amd64 \
             --tag ${{ steps.pre_build.outputs.push_name }} \
-            --pull \
-            --push .
+            --pull 
+
 
       - name: Get current job id
         if: always()
@@ -1365,6 +1368,7 @@ jobs:
         id: job_info
         run: |
           sudo apt install jq -y
+
           job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
           job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
           echo "$job_id"
@@ -1497,6 +1501,28 @@ jobs:
         shell: bash
         run: python3 -m pip install movai-package-deployer==$PACKAGE_DEPLOYER_VERSION --ignore-installed
 
+      - name: Login to ${{ env.REGISTRY }} Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.REGISTRY }}
+
+      - name: Login to ${{ env.PUSH_REGISTRY }} Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.PUSH_REGISTRY }}
+
+      - name: Docker load simulator image
+        shell: bash
+        run: |
+          promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g")
+
+          docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
+          docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
+
       - name: Publish and create release
         id: bump
         shell: bash
@@ -1533,6 +1559,21 @@ jobs:
           fi
           #cp ./artifacts/product-noetic.image.artifact deployment_artifacts/product.image.artifact
           cp deployment_artifacts/product.image.artifact ./
+
+          SAVEIFS=$IFS
+          IFS=$'\n'
+          images=($(cat product.image.artifact))
+          IFS=$SAVEIFS   # Restore original IFS
+
+          for image in "${images[@]}"
+          do
+            source=$(echo $image | sed "s-/qa/-/ci/-g" )
+            target=$image
+            docker pull $source
+            echo "tagging $source as $target"
+            docker tag $source $target
+            docker push $target
+          done
 
           integration-pipeline patch_manifest_with_spawner
           cat product-manifest.yaml
