@@ -268,7 +268,7 @@ jobs:
             --file docker/${{ matrix.distro }}/Dockerfile \
             --platform linux/amd64 \
             --tag ${{ env.PUSH_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ steps.pre_build.outputs.raised_version }} \
-            --pull
+            --pull .
 
       - name: Get current job id
         if: always()
@@ -381,10 +381,6 @@ jobs:
           docker pull "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
           docker tag "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
           docker tag "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.PUSH_REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
-
-      - name: Set job Output
-        shell: bash
-        run: |
           
       - name: Installation
         shell: bash
@@ -687,7 +683,7 @@ jobs:
             --file docker/${{ env.DISTRO }}/Dockerfile-simulator \
             --platform linux/amd64 \
             --tag ${{ steps.pre_build.outputs.push_name }} \
-            --pull 
+            --pull .
 
 
       - name: Get current job id
