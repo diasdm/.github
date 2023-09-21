@@ -268,7 +268,7 @@ jobs:
             --file docker/${{ matrix.distro }}/Dockerfile \
             --platform linux/amd64 \
             --tag ${{ env.PUSH_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ steps.pre_build.outputs.raised_version }} \
-            --pull 
+            --pull \
             --push .
 
       - name: Get current job id
@@ -680,7 +680,7 @@ jobs:
             --file docker/${{ env.DISTRO }}/Dockerfile-simulator \
             --platform linux/amd64 \
             --tag ${{ steps.pre_build.outputs.push_name }} \
-            --pull
+            --pull \
             --push .
 
 
