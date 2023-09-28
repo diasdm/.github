@@ -350,7 +350,7 @@ jobs:
             --base_url https://${{ steps.agent_info.outputs.ip }}/ \
             --movai-user ${{ steps.install.outputs.movai_user }} \
             --movai-pw ${{ steps.install.outputs.movai_pwd }} \
-            -cucumberjson=./results.json
+            --cucumberjson=./results.json
 
           deactivate
 
