@@ -209,6 +209,7 @@ jobs:
           mkdir -p qa_artifacts
           cp -r *.log ./qa_artifacts || true
           cp -r *.tar ./qa_artifacts || true
+          cp -r *.json ./qa_artifacts || true
           cp -r *.pcap ./qa_artifacts || true
           cp -r *.har ./qa_artifacts || true
 
