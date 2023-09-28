@@ -346,23 +346,24 @@ jobs:
             --base_url https://${{ steps.agent_info.outputs.ip }}/ \
             --movai-user ${{ steps.install.outputs.movai_user }} \
             --movai-pw ${{ steps.install.outputs.movai_pwd }} \
-            -cucumberjson=./result.json
+            -cucumberjson=./results.json
 
           deactivate
 
       - name: Create test execution
         if: ${{ always() && "${{ steps.ui_tests_setup.outputs.jira_report }}" == "True" }}
+        working-directory: ${{ steps.ui_tests_setup.outputs.target_dir }}
         run: |
           rm -f /tmp/version.txt
 
           export PATH="$HOME/.local/bin:$PATH"
-          integration-pipeline get_yml_value --file product-manifest.yaml --key version --output_file /tmp/version.txt
+          integration-pipeline get_yml_value --file ../product-manifest.yaml --key version --output_file /tmp/version.txt
 
           plat_version=$(cat /tmp/version.txt)
 
           . venv/bin/activate
 
-          xray create results.json --version "${plat_version}" --label UI_Automation
+          xray create ./results.json --version "${plat_version}" --label UI_Automation
 
           deactivate
 
