@@ -1575,7 +1575,7 @@ jobs:
           for image in "${images[@]}"
           do
             source=$(echo $image | sed "s-/qa/-/ci/-g" |  sed "s-${{ env.PUSH_REGISTRY }}-${{ env.MID_REGISTRY }}-g" )
-            target=$image
+            target=$(echo $image | sed "s-${{ env.MID_REGISTRY }}-${{ env.PUSH_REGISTRY }}-g" )
             docker pull $source
             echo "tagging $source as $target"
             docker tag $source $target
