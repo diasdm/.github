@@ -355,21 +355,22 @@ jobs:
           deactivate
 
       - name: Create test execution
-        if: ${{ always() && "${{ steps.ui_tests_setup.outputs.jira_report }}" == "True" }}
+        if: always()
         working-directory: ${{ steps.ui_tests_setup.outputs.target_dir }}
         run: |
-          rm -f /tmp/version.txt
-
           export PATH="$HOME/.local/bin:$PATH"
-          integration-pipeline get_yml_value --file ../product-manifest.yaml --key version --output_file /tmp/version.txt
 
+          # get platform version
+          rm -f /tmp/version.txt
+          integration-pipeline get_yml_value --file ../product-manifest.yaml --key version --output_file /tmp/version.txt
           plat_version=$(cat /tmp/version.txt)
 
-          . venv/bin/activate
-
-          xray create ./results.json --version "${plat_version}" --label UI_Automation
-
-          deactivate
+          # create test execution
+          if [ "${{ steps.ui_tests_setup.outputs.jira_report }}" == "True" ] ; then
+            . venv/bin/activate
+            xray create ./results.json --version "${plat_version}" --label UI_Automation
+            deactivate
+          fi
 
       - name: Get current job id
         if: always()
