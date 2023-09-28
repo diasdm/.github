@@ -250,6 +250,10 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install -r requirements.txt
           deactivate
+
+          # install test dependencies on host
+          sudo apt install -y --allow-downgrades python3-rosnode python3-rosparam python3-rostopic
+
           popd
 
       - name: Feature File Validation
@@ -259,8 +263,8 @@ jobs:
         run: |
           . venv/bin/activate
 
-          python3 testcasemanagement/testcase_importer.py --target "${{ steps.ui_tests_setup.outputs.test_set }}"
-          python3 testcasemanagement/feature_file_processor.py --validate
+          xray download ${{ steps.ui_tests_setup.outputs.test_set }}
+          xray compare ./tests/feature/
 
           deactivate
 
@@ -314,17 +318,10 @@ jobs:
           echo "movai_user=${MOVAI_USER}" >> $GITHUB_OUTPUT
           echo "movai_pwd=${MOVAI_PWD}" >> $GITHUB_OUTPUT
 
-      - name: UI tests
-        timeout-minutes: 120
+      - name: Install dependencies in spawner
         working-directory: ${{ steps.ui_tests_setup.outputs.target_dir }}
         shell: bash
         run: |
-          # install test dependencies on host
-          sudo apt install -y --allow-downgrades python3-rosnode python3-rosparam python3-rostopic
-          export PYTHONPATH="${PYTHONPATH}:/usr/lib/python3/dist-packages"
-
-          . venv/bin/activate
-
           # install test dependencies on spawner
           if [ -f apt-requirements.txt ]; then
             ## get spawner container name
@@ -338,24 +335,42 @@ jobs:
             "
           fi
 
-          if [ "${{ steps.ui_tests_setup.outputs.jira_report }}" == "True" ] ; then
-            pytest \
-              -ra \
-              --hub_url http://selenoid-ui.hel.mov.ai \
-              --base_url https://${{ steps.agent_info.outputs.ip }}/ \
-              --movai-user ${{ steps.install.outputs.movai_user }} \
-              --movai-pw ${{ steps.install.outputs.movai_pwd }} \
-              --jira_report
-          else
-              pytest \
-                -ra \
-                --hub_url http://selenoid-ui.hel.mov.ai \
-                --base_url https://${{ steps.agent_info.outputs.ip }}/ \
-                --movai-user ${{ steps.install.outputs.movai_user }} \
-                --movai-pw ${{ steps.install.outputs.movai_pwd }}
-          fi
+      - name: UI tests
+        timeout-minutes: 120
+        working-directory: ${{ steps.ui_tests_setup.outputs.target_dir }}
+        shell: bash
+        run: |
+          export PYTHONPATH="${PYTHONPATH}:/usr/lib/python3/dist-packages"
+
+          . venv/bin/activate
+
+          pytest \
+            -ra \
+            --hub_url http://selenoid-ui.hel.mov.ai \
+            --base_url https://${{ steps.agent_info.outputs.ip }}/ \
+            --movai-user ${{ steps.install.outputs.movai_user }} \
+            --movai-pw ${{ steps.install.outputs.movai_pwd }} \
+            --cucumberjson=./results.json
 
           deactivate
+
+      - name: Create Xray test execution
+        if: always()
+        working-directory: ${{ steps.ui_tests_setup.outputs.target_dir }}
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+
+          # get platform version
+          rm -f /tmp/version.txt
+          integration-pipeline get_yml_value --file ../product-manifest.yaml --key version --output_file /tmp/version.txt
+          plat_version=$(cat /tmp/version.txt)
+
+          # create test execution
+          if [ "${{ steps.ui_tests_setup.outputs.jira_report }}" == "True" ] ; then
+            . venv/bin/activate
+            xray create ./results.json --version "${plat_version}" --label UI_Automation
+            deactivate
+          fi
 
       - name: Get current job id
         if: always()
@@ -415,7 +430,7 @@ jobs:
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^spawner-.*")
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
 
-          # message-server    
+          # message-server
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*") || true
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log" || true
 
@@ -671,9 +686,9 @@ jobs:
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^spawner-.*")
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
 
-          # message-server    
+          # message-server
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*") || true
-          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log" || true 
+          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log" || true
 
           # movai-service
           journalctl -u movai-service --since '1hour ago' &> "movai-service.log"
@@ -952,7 +967,7 @@ jobs:
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^spawner-.*")
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
 
-          # message-server    
+          # message-server
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*") || true
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log" || true
 
@@ -1203,7 +1218,7 @@ jobs:
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^spawner-.*")
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
 
-          # message-server    
+          # message-server
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*") || true
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log" || true
 
@@ -1937,9 +1952,9 @@ jobs:
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^spawner-.*")
           docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
 
-          # message-server    
+          # message-server
           CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*") || true
-          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log" || true 
+          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log" || true
 
           # movai-service
           journalctl -u movai-service --since '1hour ago' &> "movai-service.log"
