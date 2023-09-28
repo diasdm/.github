@@ -354,7 +354,7 @@ jobs:
 
           deactivate
 
-      - name: Create test execution
+      - name: Create Xray test execution
         if: always()
         working-directory: ${{ steps.ui_tests_setup.outputs.target_dir }}
         run: |
