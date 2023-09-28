@@ -664,7 +664,7 @@ jobs:
           registry: ${{ env.MID_REGISTRY }}
 
       - name: Prepare docker build variables
-        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
+        if: ${{ inputs.with_simulation == 'true' }}
         id: pre_build
         run: |
           push_name_tmp=$(echo "${{ steps.pre_simulator_build.outputs.image_name }}" | sed "s-${{ env.REGISTRY }}-${{ env.MID_REGISTRY }}-g")
