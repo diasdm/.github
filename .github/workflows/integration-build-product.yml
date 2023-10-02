@@ -20,6 +20,10 @@ on:
         required: false
         type: boolean
         default: false
+      is_nightly_run:
+        required: false
+        type: boolean
+        default: false
       propagate_project:
         required: false
         type: boolean
@@ -28,6 +32,10 @@ on:
         required: false
         type: boolean
         default: false
+      overwrite_slack_channel:
+        required: false
+        type: string
+        default: "C050L85R6VC"
 
     secrets:
       auto_commit_user:
@@ -76,7 +84,7 @@ env:
   PROVISION_INFRA_REPO: "devops-tf-proxmox-fleet"
   PROVISION_INFRA_VERSION: "0.1.0-7"
   # slack channel movai-projects
-  SLACK_CHANNEL: "C050L85R6VC"
+  SLACK_CHANNEL: ${{ inputs.overwrite_slack_channel }}
   # development slack channel
   #SLACK_CHANNEL: "C05K2KF1UP8"
 
@@ -1324,10 +1332,15 @@ jobs:
             # run tests
             . venv/bin/activate
 
+            marker = "ci"
+            if [ "${{ inputs.is_nightly_run }}" == "True" ] ; then
+              marker = "nightly"
+            fi
+
             pytest \
               -s \
               -ra \
-              -m ci \
+              -m $marker \
               --movai-user ${{ steps.install.outputs.movai_user }} \
               --movai-pw ${{ steps.install.outputs.movai_pwd }} \
               --tb=short
@@ -1518,6 +1531,7 @@ jobs:
         run: python3 -m pip install movai-package-deployer==$PACKAGE_DEPLOYER_VERSION --ignore-installed
 
       - name: Login to ${{ env.MID_REGISTRY }} Registry
+        if: ${{ inputs.is_nightly_run == 'false' }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.registry_user }}
@@ -1525,6 +1539,7 @@ jobs:
           registry: ${{ env.MID_REGISTRY }}
 
       - name: Login to ${{ env.PUSH_REGISTRY }} Registry
+        if: ${{ inputs.is_nightly_run == 'false' }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.registry_user }}
@@ -1532,6 +1547,7 @@ jobs:
           registry: ${{ env.PUSH_REGISTRY }}
 
       - name: Publish and create release
+        if: ${{ inputs.is_nightly_run == 'false' }}
         id: bump
         shell: bash
         run: |
@@ -1617,6 +1633,7 @@ jobs:
           unprotect_reviews: true
 
       - name: Github Publish
+        if: ${{ inputs.is_nightly_run == 'false' }}
         shell: bash
         run: |
           commit_hash=$(git log --format="%H" -n 1)
@@ -1629,6 +1646,7 @@ jobs:
 
       - name: Update release notes
         shell: bash
+        if: ${{ inputs.is_nightly_run == 'false' }}
         run: |
           # release version
           product_version=$(cat product.version)
@@ -1682,7 +1700,7 @@ jobs:
 
       - name: Propagate release
         continue-on-error: true
-        if: ${{ inputs.propagate_project }}
+        if: ${{ inputs.propagate_project && inputs.is_nightly_run == 'false' }}
         shell: bash
         run: |
           gh workflow run "Propagate base project dependency to projects - On Dispatch" \
