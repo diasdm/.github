@@ -1332,9 +1332,9 @@ jobs:
             # run tests
             . venv/bin/activate
 
-            marker = "ci"
+            marker="ci"
             if [ "${{ inputs.is_nightly_run }}" == "True" ] ; then
-              marker = "nightly"
+              marker="nightly"
             fi
 
             pytest \
