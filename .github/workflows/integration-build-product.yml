@@ -104,11 +104,11 @@ jobs:
       slack_thread_id: ${{ fromJson(steps.send-message.outputs.slack-result).response.message.ts }}
     steps:
       - name: Checkout
-        if: ${{ inputs.is_nightly_run == 'false' }}
+        if: ${{ inputs.is_nightly_run == false }}
         uses: actions/checkout@v4
 
       - name: Nightly Checkout
-        if: ${{ inputs.is_nightly_run == 'true' }}
+        if: ${{ inputs.is_nightly_run }}
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.nightly_run_branch }}
@@ -1546,7 +1546,7 @@ jobs:
         run: python3 -m pip install movai-package-deployer==$PACKAGE_DEPLOYER_VERSION --ignore-installed
 
       - name: Login to ${{ env.MID_REGISTRY }} Registry
-        if: ${{ inputs.is_nightly_run == 'false' }}
+        if: ${{ inputs.is_nightly_run == false }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.registry_user }}
@@ -1554,7 +1554,7 @@ jobs:
           registry: ${{ env.MID_REGISTRY }}
 
       - name: Login to ${{ env.PUSH_REGISTRY }} Registry
-        if: ${{ inputs.is_nightly_run == 'false' }}
+        if: ${{ inputs.is_nightly_run == false }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.registry_user }}
@@ -1562,7 +1562,7 @@ jobs:
           registry: ${{ env.PUSH_REGISTRY }}
 
       - name: Publish and create release
-        if: ${{ inputs.is_nightly_run == 'false' }}
+        if: ${{ inputs.is_nightly_run == false }}
         id: bump
         shell: bash
         run: |
@@ -1648,7 +1648,7 @@ jobs:
           unprotect_reviews: true
 
       - name: Github Publish
-        if: ${{ inputs.is_nightly_run == 'false' }}
+        if: ${{ inputs.is_nightly_run == false }}
         shell: bash
         run: |
           commit_hash=$(git log --format="%H" -n 1)
@@ -1661,7 +1661,7 @@ jobs:
 
       - name: Update release notes
         shell: bash
-        if: ${{ inputs.is_nightly_run == 'false' }}
+        if: ${{ inputs.is_nightly_run == false }}
         run: |
           # release version
           product_version=$(cat product.version)
@@ -1715,7 +1715,7 @@ jobs:
 
       - name: Propagate release
         continue-on-error: true
-        if: ${{ inputs.propagate_project && inputs.is_nightly_run == 'false' }}
+        if: ${{ inputs.propagate_project && inputs.is_nightly_run == false }}
         shell: bash
         run: |
           gh workflow run "Propagate base project dependency to projects - On Dispatch" \
