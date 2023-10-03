@@ -1333,7 +1333,7 @@ jobs:
             . venv/bin/activate
 
             marker="ci"
-            if [ "${{ inputs.is_nightly_run }}" == "True" ] ; then
+            if [ "${{ inputs.is_nightly_run }}" == "true" ] ; then
               marker="nightly"
             fi
 
