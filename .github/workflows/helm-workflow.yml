@@ -65,8 +65,11 @@ jobs:
           kubectl get svc,po
 
       - name: Deploy Helm Chart
+        id: deploy
         shell: bash
-        run: ./deploy.bash
+        run: |
+            ./deploy.bash
+            echo "deployment_revision=${cat deployment_revision.txt}" >> $GITHUB_OUTPUT  
         env:
           IS_PROMOTION: ${{ inputs.promotion }}
 
@@ -165,10 +168,10 @@ jobs:
         id: pre_slack_result
         run: |
           if [ "${{ inputs.promotion }}" == "false" ] ; then
-            MESSAGE=":white_check_mark: Deployment of ${{ inputs.deployment_app_name }} version:$(cat version) successfull (Attempt: #${{ github.run_attempt }}) \n Check deployment notes: ${{ steps.create_gh_release.outputs.url }}"
+            MESSAGE=":white_check_mark: Deployment of ${{ inputs.deployment_app_name }} version:$(cat version) successfull (Attempt: #${{ github.run_attempt }}). Cluster: ${{ inputs.aws_cluster_name }} revision: ${{ steps.deploy.outputs.deployment_revision}} \n Check deployment notes: ${{ steps.create_gh_release.outputs.url }}"
             MESSAGE_ERR=":x: Deployment of ${{ inputs.deployment_app_name }} failed (Attempt: #${{ github.run_attempt }})"
           else
-            MESSAGE=":white_check_mark: (Promoting to production) Deployment of ${{ inputs.deployment_app_name }} version:$(cat version) successfull (Attempt: #${{ github.run_attempt }})"
+            MESSAGE=":white_check_mark: (Promoting to production) Deployment of ${{ inputs.deployment_app_name }} version:$(cat version) successfull (Attempt: #${{ github.run_attempt }}). Cluster: ${{ inputs.aws_cluster_name }} revision: ${{ steps.deploy.outputs.deployment_revision}}"
             MESSAGE_ERR=":x: (Promoting to production) Deployment of ${{ inputs.deployment_app_name }} version:$(cat version) failed (Attempt: #${{ github.run_attempt }})"
           fi
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
