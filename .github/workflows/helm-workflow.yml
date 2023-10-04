@@ -142,7 +142,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           name: "Deployment ${{ steps.vars-after-raise.outputs.pkg_version }} of ${{ inputs.deployment_app_name }}"
-          body: "Please add release notes"
+          body: "Cluster: ${{ inputs.aws_cluster_name }} revision: ${{ steps.deploy.outputs.deployment_revision}}"
           tag_name: ${{ steps.vars-after-raise.outputs.pkg_version }}
           target_commitish: ${{ steps.commit.outputs.commit_id }}
           token: ${{ secrets.gh_token }}
