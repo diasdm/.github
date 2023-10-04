@@ -69,7 +69,7 @@ jobs:
         shell: bash
         run: |
             ./deploy.bash
-            echo "deployment_revision=${cat deployment_revision.txt}" >> $GITHUB_OUTPUT  
+            echo "deployment_revision=$(cat deployment_revision.txt)" >> $GITHUB_OUTPUT  
         env:
           IS_PROMOTION: ${{ inputs.promotion }}
 
