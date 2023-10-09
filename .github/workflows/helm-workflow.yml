@@ -72,7 +72,13 @@ jobs:
           echo "${{ secrets.chart_secrets }}">secrets.json
           python3 -m pip install jinja-cli
           find . -type f -name '*.yaml' -exec jinja -d secrets.json {} -o {} \;
-          rm secrets.json
+
+
+      - name: Stash secrets
+        uses: actions/upload-artifact@v3
+        with:
+          name: secrets
+          path: secrets.json
 
       - name: Deploy Helm Chart
         id: deploy
