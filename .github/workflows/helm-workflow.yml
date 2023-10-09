@@ -71,8 +71,9 @@ jobs:
         run: |
           echo '${{ secrets.chart_secrets }}'>secrets.json
           python3 -m pip install jinja-cli
-          jinja -d secrets.json secret_config.yml -o secret_config.yml \;
-        
+          find . -type f -name '*.yaml' -exec jinja -d secrets.json {} -o {} \;
+          rm secrets.json
+
       - name: Stash secrets
         uses: actions/upload-artifact@v3
         with:
