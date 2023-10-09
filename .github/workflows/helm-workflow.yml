@@ -37,6 +37,8 @@ on:
         required: true
       aws_secret_access_key:
         required: true
+      chart_secrets:
+        required: false
 
 
 env:
@@ -63,6 +65,14 @@ jobs:
         run: |
           aws eks --region ${{ env.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ inputs.aws_cluster_name }}  
           kubectl get svc,po
+
+      - name: Replace Secrets
+        shell: bash
+        run: |
+          echo "${{ secrets.chart_secrets }}">secrets.json
+          python3 -m pip install jinja-cli
+          find . -type f -name '*.yaml' -exec jinja -d secrets.json {} -o {} \;
+          rm secrets.json
 
       - name: Deploy Helm Chart
         id: deploy
