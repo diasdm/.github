@@ -63,7 +63,7 @@ jobs:
       - name: Set eks context and get pods
         shell: bash
         run: |
-          aws eks --region ${{ env.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ inputs.aws_cluster_name }}  
+          aws eks --region ${{ env.AWS_DEFAULT_REGION }} update-kubeconfig --name ${{ inputs.aws_cluster_name }}
           kubectl get svc,po
 
       - name: Replace Secrets
@@ -72,24 +72,13 @@ jobs:
           echo '${{ secrets.chart_secrets }}'>secrets.json
           python3 -m pip install jinja-cli
           find . -type f -name '*.yaml' -exec jinja -d secrets.json {} -o {} \;
-          rm secrets.json
 
-      - name: Stash secrets
-        uses: actions/upload-artifact@v3
-        with:
-          name: secrets
-          path: secrets.json
-      - name: Stash ymls
-        uses: actions/upload-artifact@v3
-        with:
-          name: yml
-          path: ./*.yamls
       - name: Deploy Helm Chart
         id: deploy
         shell: bash
         run: |
             ./deploy.bash
-            echo "deployment_revision=$(cat deployment_revision.txt)" >> $GITHUB_OUTPUT  
+            echo "deployment_revision=$(cat deployment_revision.txt)" >> $GITHUB_OUTPUT
         env:
           IS_PROMOTION: ${{ inputs.promotion }}
 
@@ -102,7 +91,7 @@ jobs:
           git checkout origin/${GITHUB_REF#refs/heads/} -- version
           PACKAGE_VERSION=$(cat version)
           echo "pkg_version=${PACKAGE_VERSION}" >> $GITHUB_OUTPUT
-  
+
       - name: Raise Version
         if: ${{ inputs.promotion == false }}
         id: vars-after-raise
@@ -114,7 +103,7 @@ jobs:
           RAISED_PACKAGE_VERSION="$main_version-$raised_buildid"
           echo $RAISED_PACKAGE_VERSION>version
           echo "pkg_version=${RAISED_PACKAGE_VERSION}" >> $GITHUB_OUTPUT
-  
+
       - name: Commit raise version
         id: raise
         if: ${{ inputs.promotion == false }}
@@ -123,7 +112,7 @@ jobs:
           git config --global user.name '${{ secrets.auto_commit_user }}'
           git config --global user.email '${{ secrets.auto_commit_mail }}'
           git config --global user.password ${{ secrets.auto_commit_pwd }}
-          
+
           version=$(cat version)
           # danger zone. Everything will be deleted.
           git restore version
@@ -132,13 +121,13 @@ jobs:
 
           git add version
           git commit -m "[skip actions] Automatic Bump of build version"
-  
+
       - name: Prepare raise variables
         if: ${{ inputs.promotion == false }}
         id: pre_raise
         run: |
           echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
-          
+
       - name: Raise App version
         uses: CasperWA/push-protected@v2
         if: ${{ inputs.promotion == false }}
@@ -146,7 +135,7 @@ jobs:
           token: ${{ secrets.auto_commit_pwd }}
           branch: ${{ steps.pre_raise.outputs.branch }}
           unprotect_reviews: true
-      
+
       - name: Commit info
         id: commit
         if: ${{ inputs.promotion == false }}
@@ -154,8 +143,8 @@ jobs:
         run: |
           commit_hash=$(git log --format="%H" -n 1)
           echo "commit_id=${commit_hash}" >> $GITHUB_OUTPUT
-          
-          
+
+
       - name: Create Github Release
         if: ${{ inputs.promotion == false }}
         id: create_gh_release
@@ -169,7 +158,7 @@ jobs:
           prerelease: true
           generate_release_notes: true
 
-      
+
       - name: Get current job id
         if: always()
         shell: bash
@@ -213,3 +202,10 @@ jobs:
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
           slack-channel: ${{ inputs.deployment_slack_channel }}
           slack-text: ${{ steps.pre_slack_result.outputs.msg_error }}
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf secrets.json
+          rm -rf deployment_revision.txt
+          rm -rf version
