@@ -40,6 +40,10 @@ on:
         required: false
         type: string
         default: "C050L85R6VC"
+      docker_registry:
+        required: false
+        type: string
+        default: "registry.hel.mov.ai"
 
     secrets:
       auto_commit_user:
@@ -80,7 +84,7 @@ env:
   GITHUB_API_USR: "OttoMation-Movai"
   AWS_ACCESS_KEY_ID: ${{ secrets.aws_key_id }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.aws_secret_key_id }}
-  REGISTRY: registry.hel.mov.ai
+  REGISTRY: ${{ inputs.docker_registry }}
   PUSH_REGISTRY: registry.cloud.mov.ai
   MID_REGISTRY: registry.harbor.es.mov.ai
   USERSPACE_FOLDER_PATH: userspace
@@ -469,8 +473,8 @@ jobs:
           docker exec -t "$container_id" bash -c '
             set -e
             export PATH="$HOME/.local/bin:$PATH"
-            python3 -m pip install -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple mobtest==${{ env.MOBTEST_VERSION }} --ignore-installed
-            mobtest proj /opt/ros/${{ matrix.distro }}/share/
+            python3 -m pip install -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple mobtest==0.0.4.3 --ignore-installed
+            mobtest proj /opt/ros/noetic/share/
           '
 
       - name: Collect Installed components
