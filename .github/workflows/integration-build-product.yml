@@ -44,7 +44,7 @@ on:
         required: false
         type: string
         default: "registry.hel.mov.ai"
-      publish_to_project_data_viewer:
+      use_project_data_viewer:
         required: false
         type: boolean
         default: false
@@ -527,7 +527,7 @@ jobs:
             echo "$PUSH_REGISTRY/qa/${{ inputs.product_name }}-${{ matrix.distro }}:$(cat product.version)">artifacts/product-${{ matrix.distro }}.image.artifact
 
       - name: Publish to project data viewer
-        if: ${{ inputs.publish_to_project_data_viewer == true }}
+        if: ${{ inputs.use_project_data_viewer == true }}
         continue-on-error: true
         shell: bash
         run: |
