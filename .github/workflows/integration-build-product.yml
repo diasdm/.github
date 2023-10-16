@@ -40,6 +40,10 @@ on:
         required: false
         type: string
         default: "C050L85R6VC"
+      publish_to_project_data_viewer:
+        required: false
+        type: boolean
+        default: false
 
     secrets:
       auto_commit_user:
@@ -72,6 +76,10 @@ on:
         required: true
       ssh_priv_key:
         required: true
+      pdv_user:
+        required: true
+      pdv_pass:
+        required: true
 
 env:
   CI_INTEGRATION_SCRIPTS_VERSION: "2.2.0.7"
@@ -91,6 +99,7 @@ env:
   SLACK_CHANNEL: ${{ inputs.overwrite_slack_channel }}
   # development slack channel
   #SLACK_CHANNEL: "C05K2KF1UP8"
+  PROJECT_DATA_VIEWER_API: "https://personal-7vf0v2cu.outsystemscloud.com/ProjectDataViewer5/rest/V1//CreateProject"
 
 jobs:
   Validate-boostrap-configs:
@@ -511,6 +520,17 @@ jobs:
             CONFIG_FILE_NAME=${{ inputs.product_name }}-${{ matrix.distro }}.json
 
             echo "$PUSH_REGISTRY/qa/${{ inputs.product_name }}-${{ matrix.distro }}:$(cat product.version)">artifacts/product-${{ matrix.distro }}.image.artifact
+
+      - name: Publish to project data viewer
+        if: ${{ inputs.publish_to_project_data_viewer == true }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          project_movai_solution_version=$(grep -A4 '^product_dependencies:$' product-manifest.yaml | awk '$1 == "version:" {print $2}')
+          curl --location '${{ env.PROJECT_DATA_VIEWER_API}}?Name=${{ inputs.product_name }}-${{ matrix.distro }}&Version=$(cat product.version)&SolutionVersion="$project_movai_solution_version"' \
+          --header 'Content-Type: application/json' \
+          --user '${{ secrets.pdv_user }}:${{ secrets.pdv_pass }}' \
+          --data @artifacts/${{ inputs.product_name }}-${{ matrix.distro }}-apt_packages.json
 
       - name: Get current job id
         if: always()
