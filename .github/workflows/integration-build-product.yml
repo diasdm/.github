@@ -81,9 +81,7 @@ on:
         required: true
       ssh_priv_key:
         required: true
-      pdv_user:
-        required: true
-      pdv_pass:
+      pdv_auth_token:
         required: true
 
 env:
@@ -534,7 +532,7 @@ jobs:
           project_movai_solution_version=$(grep -A4 '^product_dependencies:$' product-manifest.yaml | awk '$1 == "version:" {print $2}')
           curl --location '${{ env.PROJECT_DATA_VIEWER_API}}?Name=${{ inputs.product_name }}-${{ matrix.distro }}&Version=$(cat product.version)&SolutionVersion="$project_movai_solution_version"' \
           --header 'Content-Type: application/json' \
-          --user '${{ secrets.pdv_user }}:${{ secrets.pdv_pass }}' \
+          --header 'Authorization: Basic ${{ secrets.pdv_auth_token }}' \
           --data @artifacts/${{ inputs.product_name }}-${{ matrix.distro }}-apt_packages.json
 
       - name: Get current job id
