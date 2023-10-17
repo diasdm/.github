@@ -454,6 +454,8 @@ jobs:
           mkdir -p qa_artifacts
           cp -r "${UI_DIR}"/*.log ./qa_artifacts || true
           cp -r "${UI_DIR}"/*.tar ./qa_artifacts || true
+          cp -r "${UI_DIR}"/*.json ./qa_artifacts || true
+          cp -r "${UI_DIR}"/*.html ./qa_artifacts || true
 
       - name: Stash QA artifacts
         if: always()
