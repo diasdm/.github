@@ -366,6 +366,7 @@ jobs:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
     runs-on: integration-pipeline
+
     steps:
       - uses: rtCamp/action-cleanup@master
 
@@ -784,6 +785,7 @@ jobs:
     runs-on: integration-pipeline
     outputs:
       slack_thread_id: ${{ needs.Build-Spawner.outputs.slack_thread_id }}
+      skip_simulator: ${{ needs.Build-Simulator.outputs.skip_simulator }}
     steps:
       - uses: rtCamp/action-cleanup@master
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
@@ -811,13 +813,6 @@ jobs:
         with:
           name: manifest
           path: .
-
-      - name: unstash sim_configs
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
-        uses: actions/download-artifact@v3
-        with:
-          name: sim_configs
-          path: simulator_artifacts
 
       - name: unstash robot_jsons_${{ matrix.distro }}
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
@@ -928,16 +923,6 @@ jobs:
             python3 -m pip install -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple mobtest==${{ env.MOBTEST_VERSION }} --ignore-installed
             mobtest proj /opt/ros/${{ matrix.distro }}/share/
           '
-
-      - name: Collect Installed components
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
-        shell: bash
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          cd simulator_artifacts
-          integration-pipeline publish_simulator_state_artifacts \
-                --product_name ${{ inputs.product_name }} \
-                --branch ${GITHUB_REF#refs/heads/}
 
       - name: Output simulator image
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
@@ -1529,7 +1514,12 @@ jobs:
         with:
           name: manifest
           path: .
-
+      - name: unstash sim_configs
+        if: ${{ inputs.with_simulation == 'true' }}
+        uses: actions/download-artifact@v3
+        with:
+          name: sim_configs
+          path: simulator_artifacts
       - name: unstash project metadata
         uses: actions/download-artifact@v3
         with:
@@ -1566,6 +1556,16 @@ jobs:
           username: ${{ secrets.registry_user }}
           password: ${{ secrets.registry_password }}
           registry: ${{ env.PUSH_REGISTRY }}
+
+      - name: Publish simulator state
+        if: ${{ needs.Install-Simulator-Robot.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
+        shell: bash
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          cd simulator_artifacts
+          integration-pipeline publish_simulator_state_artifacts \
+                --product_name ${{ inputs.product_name }} \
+                --branch ${GITHUB_REF#refs/heads/}
 
       - name: Publish and create release
         if: ${{ inputs.is_nightly_run == false }}
