@@ -524,20 +524,24 @@ jobs:
 
             echo "$PUSH_REGISTRY/qa/${{ inputs.product_name }}-${{ matrix.distro }}:$(cat product.version)">artifacts/product-${{ matrix.distro }}.image.artifact
 
+      - name: Get project and solution version
+        id: project_and_solution_version
+        if: ${{ inputs.use_project_data_viewer == true }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          MOVAI_SOLUTION_VERSION=$(grep -A 2 'name: project-movai-solution' product-manifest.yaml | awk '/version:/ {print $2})
+          PROJECT_VERSION=$(cat product.version)
+          echo "MOVAI_SOLUTION_VERSION=$MOVAI_SOLUTION_VERSION" >> $GITHUB_OUTPUT
+          echo "PROJECT_VERSION=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+
       - name: Publish to project data viewer
         id: publish_to_pdv
         if: ${{ inputs.use_project_data_viewer == true }}
         continue-on-error: true
         shell: bash
         run: |
-          PROJECT_MOVAI_SOLUTION_VERSION=$(grep -A 2 'name: project-movai-solution' product-manifest.yaml | awk '/version:/ {print $2})
-          PROJECT_VERSION=$(cat product.version)
-          LOCATION="${{ env.PROJECT_DATA_VIEWER_API}}?Name=${{ inputs.product_name }}-${{ matrix.distro }}&Version=$PROJECT_VERSION&SolutionVersion=$PROJECT_MOVAI_SOLUTION_VERSION"
-          # Print variables
-          echo "PROJECT_MOVAI_SOLUTION_VERSION=$PROJECT_MOVAI_SOLUTION_VERSION"
-          echo "PROJECT_VERSION=$PROJECT_VERSION"
-
-          curl --location "$LOCATION" \
+          curl --location ${{ env.PROJECT_DATA_VIEWER_API}}?Name=${{ inputs.product_name }}-${{ matrix.distro }}&Version=${{ steps.project_and_solution_version.outputs.PROJECT_VERSION }}&SolutionVersion=${{ steps.project_and_solution_version.outputs.MOVAI_SOLUTION_VERSION }}" \
           --header 'Content-Type: application/json' \
           --header 'Authorization: Basic ${{ secrets.pdv_auth_token }}' \
           --data @artifacts/${{ inputs.product_name }}-${{ matrix.distro }}-apt_packages.json
