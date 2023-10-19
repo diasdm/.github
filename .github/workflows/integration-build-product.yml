@@ -530,8 +530,8 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          PROJECT_MOVAI_SOLUTION_VERSION="$(grep -A4 '^product_dependencies:$' ./product-manifest.yaml | awk '$1 == \"version:\" {print $2}')"
-          PROJECT_VERSION="$(cat product.version)"
+          PROJECT_MOVAI_SOLUTION_VERSION=$(grep -A4 '^product_dependencies:$' ./product-manifest.yaml | awk '$1 == "version:" {print $2}')
+          PROJECT_VERSION=$(cat product.version)
           LOCATION="${{ env.PROJECT_DATA_VIEWER_API}}?Name=${{ inputs.product_name }}-${{ matrix.distro }}&Version=$PROJECT_VERSION&SolutionVersion=$PROJECT_MOVAI_SOLUTION_VERSION"
           # Print variables
           echo "PROJECT_MOVAI_SOLUTION_VERSION=$PROJECT_MOVAI_SOLUTION_VERSION"
