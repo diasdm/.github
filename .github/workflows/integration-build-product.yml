@@ -530,11 +530,14 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          ls .
-          project_movai_solution_version=$(grep -A4 '^product_dependencies:$' ./product-manifest.yaml | awk '$1 == "version:" {print $2}')
-          project_version=$(cat product.version)
-          location=${{ env.PROJECT_DATA_VIEWER_API}}?Name=${{ inputs.product_name }}-${{ matrix.distro }}&Version=$project_version&SolutionVersion=$project_movai_solution_version
-          curl --location '$location' \
+          PROJECT_MOVAI_SOLUTION_VERSION="$(grep -A4 '^product_dependencies:$' ./product-manifest.yaml | awk '$1 == \"version:\" {print $2}')"
+          PROJECT_VERSION="$(cat product.version)"
+          LOCATION="${{ env.PROJECT_DATA_VIEWER_API}}?Name=${{ inputs.product_name }}-${{ matrix.distro }}&Version=$PROJECT_VERSION&SolutionVersion=$PROJECT_MOVAI_SOLUTION_VERSION"
+          # Print variables
+          echo "PROJECT_MOVAI_SOLUTION_VERSION=$PROJECT_MOVAI_SOLUTION_VERSION"
+          echo "PROJECT_VERSION=$PROJECT_VERSION"
+
+          curl --location "$LOCATION" \
           --header 'Content-Type: application/json' \
           --header 'Authorization: Basic ${{ secrets.pdv_auth_token }}' \
           --data @artifacts/${{ inputs.product_name }}-${{ matrix.distro }}-apt_packages.json
