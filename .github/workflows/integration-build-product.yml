@@ -44,6 +44,11 @@ on:
         required: false
         type: string
         default: "registry.hel.mov.ai"
+      use_project_data_viewer:
+        required: false
+        type: boolean
+        default: false
+  
 
     secrets:
       auto_commit_user:
@@ -76,6 +81,8 @@ on:
         required: true
       ssh_priv_key:
         required: true
+      pdv_auth_token:
+        required: true
 
 env:
   CI_INTEGRATION_SCRIPTS_VERSION: "2.2.0.7"
@@ -95,6 +102,7 @@ env:
   SLACK_CHANNEL: ${{ inputs.overwrite_slack_channel }}
   # development slack channel
   #SLACK_CHANNEL: "C05K2KF1UP8"
+  PROJECT_DATA_VIEWER_API: "https://personal-7vf0v2cu.outsystemscloud.com/ProjectDataViewer5/rest/V1//CreateProject"
 
 jobs:
   Validate-boostrap-configs:
@@ -282,11 +290,25 @@ jobs:
   
       - name: Prepare docker build variables
         id: pre_build
+        shell: bash
         run: |
 
           echo "base_name=$(cat ci_artifacts/spawner_base_name_${{ matrix.distro }}.ci)" >> $GITHUB_OUTPUT
           echo "base_version=$(cat ci_artifacts/spawner_base_version_${{ matrix.distro }}.ci)" >> $GITHUB_OUTPUT
           echo "raised_version=$(cat product.version)" >> $GITHUB_OUTPUT
+          # Check if propagated project is false
+          if [ "${{ inputs.propagate_project }}" = "false" ];
+          then
+            mkdir -p dependency_version
+            cp ci_artifacts/spawner_base_version_${{ matrix.distro }}.ci dependency_version/base_version
+          fi
+
+      - name: Stash dependency_version
+        if: ${{ inputs.propagate_project == false }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: manifest
+          path: dependency_version
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -516,6 +538,35 @@ jobs:
             CONFIG_FILE_NAME=${{ inputs.product_name }}-${{ matrix.distro }}.json
 
             echo "$PUSH_REGISTRY/qa/${{ inputs.product_name }}-${{ matrix.distro }}:$(cat product.version)">artifacts/product-${{ matrix.distro }}.image.artifact
+
+      - name: Un stash dependency_version
+        if: ${{ inputs.propagate_project == false }}
+        uses: actions/download-artifact@v3
+        with:
+          name: manifest
+          path: dependency_version
+
+      - name: Get project and solution version
+        id: project_and_solution_version
+        if: ${{ inputs.use_project_data_viewer == true &&  inputs.propagate_project == false }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          PROJECT_VERSION=$(cat product.version)
+          echo "PROJECT_VERSION=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+          MOVAI_SOLUTION_VERSION=$(cat dependency_version/base_version)
+          echo "MOVAI_SOLUTION_VERSION=$MOVAI_SOLUTION_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Publish to project data viewer
+        id: publish_to_pdv
+        if: ${{ inputs.use_project_data_viewer == true &&  inputs.propagate_project == false }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          curl --location '${{ env.PROJECT_DATA_VIEWER_API}}?Name=${{ inputs.product_name }}-${{ matrix.distro }}&Version=${{ steps.project_and_solution_version.outputs.PROJECT_VERSION }}&SolutionVersion=${{ steps.project_and_solution_version.outputs.MOVAI_SOLUTION_VERSION }}' \
+          --header 'Content-Type: application/json' \
+          --header 'Authorization: Basic ${{ secrets.pdv_auth_token }}' \
+          --data @artifacts/${{ inputs.product_name }}-${{ matrix.distro }}-apt_packages.json
 
       - name: Get current job id
         if: always()
