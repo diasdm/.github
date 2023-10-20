@@ -532,7 +532,7 @@ jobs:
         run: |
           PROJECT_VERSION=$(cat product.version)
           echo "PROJECT_VERSION=$PROJECT_VERSION" >> $GITHUB_OUTPUT
-          MOVAI_SOLUTION_VERSION=$(grep -A 2 'name: project-movai-solution' product-manifest.yaml | awk '/version:/ {print $2}')
+          MOVAI_SOLUTION_VERSION=$(awk '/name: project-movai-solution/ {getline; getline; if ($1 == "version:") print $2}' product-manifest.yaml)
           echo "MOVAI_SOLUTION_VERSION=$MOVAI_SOLUTION_VERSION" >> $GITHUB_OUTPUT
 
       - name: Publish to project data viewer
