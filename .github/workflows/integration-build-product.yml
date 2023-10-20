@@ -530,10 +530,10 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          MOVAI_SOLUTION_VERSION=$(grep -A 2 'name: project-movai-solution' product-manifest.yaml | awk '/version:/ {print $2}')
           PROJECT_VERSION=$(cat product.version)
-          echo "MOVAI_SOLUTION_VERSION=$MOVAI_SOLUTION_VERSION" >> $GITHUB_OUTPUT
           echo "PROJECT_VERSION=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+          MOVAI_SOLUTION_VERSION=$(grep -A 2 'name: project-movai-solution' product-manifest.yaml | awk '/version:/ {print $2}')
+          echo "MOVAI_SOLUTION_VERSION=$MOVAI_SOLUTION_VERSION" >> $GITHUB_OUTPUT
 
       - name: Publish to project data viewer
         id: publish_to_pdv
