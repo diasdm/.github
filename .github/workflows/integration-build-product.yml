@@ -969,7 +969,7 @@ jobs:
           path: install_logs/*
 
       - name: Run mobtest
-        if: ${{ false }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
           container_id=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
