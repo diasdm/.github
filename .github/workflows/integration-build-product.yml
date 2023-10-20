@@ -290,16 +290,17 @@ jobs:
   
       - name: Prepare docker build variables
         id: pre_build
+        shell: bash
         run: |
 
           echo "base_name=$(cat ci_artifacts/spawner_base_name_${{ matrix.distro }}.ci)" >> $GITHUB_OUTPUT
           echo "base_version=$(cat ci_artifacts/spawner_base_version_${{ matrix.distro }}.ci)" >> $GITHUB_OUTPUT
           echo "raised_version=$(cat product.version)" >> $GITHUB_OUTPUT
           # Check if propagated project is false
-          if [ ${{ inputs.propagate_project }} = false ];
+          if [ "${{ inputs.propagate_project }}" = "false" ];
           then
             mkdir -p dependency_version
-            echo "$base_version" > dependency_version/base_version
+            cp ci_artifacts/spawner_base_version_${{ matrix.distro }}.ci dependency_version/base_version
             cat dependency_version/base_version
           fi
 
