@@ -82,7 +82,7 @@ on:
       ssh_priv_key:
         required: true
       pdv_auth_token:
-        required: true
+        required: false
 
 env:
   CI_INTEGRATION_SCRIPTS_VERSION: "2.2.0.7"
