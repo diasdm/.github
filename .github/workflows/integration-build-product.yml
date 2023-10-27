@@ -831,7 +831,7 @@ jobs:
         run: |
           if [ "${{ inputs.with_simulation_tests }}" = "true" ];
           then
-            echo "simul_tests_infra=integration-pipeline-simulation" >> $GITHUB_OUTPUT
+            echo "simul_tests_infra=simul-mary-queuer" >> $GITHUB_OUTPUT
           else
             echo "simul_tests_infra=integration-pipeline" >> $GITHUB_OUTPUT
           fi
