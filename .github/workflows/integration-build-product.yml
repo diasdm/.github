@@ -1548,6 +1548,7 @@ jobs:
   publish:
     needs: [Install-Robot, Install-Simulator-Robot, Validation-Simulator-Tests]
     runs-on: integration-pipeline
+    if: ${{ inputs.is_nightly_run == false }}
     steps:
       - uses: rtCamp/action-cleanup@master
 
