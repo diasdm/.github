@@ -96,7 +96,7 @@ jobs:
     - name: Bump package.json metadata Version
       uses: restackio/update-json-values-action@v1.0.0
       with:
-        file: build/manifest.json
+        file: package.json
         values: |
           {
             "version": "${{steps.vars.outputs.npm_pkg_version}}"
