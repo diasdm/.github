@@ -1548,59 +1548,67 @@ jobs:
   publish:
     needs: [Install-Robot, Install-Simulator-Robot, Validation-Simulator-Tests]
     runs-on: integration-pipeline
-    if: ${{ inputs.is_nightly_run == false }}
     steps:
       - uses: rtCamp/action-cleanup@master
+        if: ${{ inputs.is_nightly_run == false }}
 
       - name: Checkout
         uses: actions/checkout@v3
+        if: ${{ inputs.is_nightly_run == false }}
 
       - name: Agent info
+        if: ${{ inputs.is_nightly_run == false }}
         run: |
           echo "public ip: $(curl ipinfo.io/ip)"
           echo "private ip: $(hostname -I | awk '{print $1}')"
 
       - name: unstash raised_meta
+        if: ${{ inputs.is_nightly_run == false }}
         uses: actions/download-artifact@v3
         with:
           name: raised_meta
           path: platform_configs
 
       - name: unstash deploy_artifacts_noetic
+        if: ${{ inputs.is_nightly_run == false }}
         uses: actions/download-artifact@v3
         with:
           name: deploy_artifacts_noetic
           path: artifacts
 
       - name: unstash manifest
+        if: ${{ inputs.is_nightly_run == false }}
         uses: actions/download-artifact@v3
         with:
           name: manifest
           path: .
       - name: unstash sim_configs
-        if: ${{ inputs.with_simulation == 'true' }}
+        if: ${{ inputs.with_simulation == 'true' && inputs.is_nightly_run == false }}
         uses: actions/download-artifact@v3
         with:
           name: sim_configs
           path: simulator_artifacts
       - name: unstash project metadata
+        if: ${{ inputs.is_nightly_run == false }}
         uses: actions/download-artifact@v3
         with:
           name: project_metadata
           path: .
 
       - name: unstash deploy_simulator_artifacts
-        if: ${{ inputs.with_simulation == 'true' }}
+        if: ${{ inputs.with_simulation == 'true' && inputs.is_nightly_run == false }}
         uses: actions/download-artifact@v3
         with:
           name: deploy_simulator_artifacts
           path: .
 
       - name: Install CI Scripts
+        if: ${{ inputs.is_nightly_run == false }}
         shell: bash
         run: python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
 
       - name: Install Package Deployer
+        if: ${{ inputs.is_nightly_run == false }}
         shell: bash
         run: python3 -m pip install movai-package-deployer==$PACKAGE_DEPLOYER_VERSION --ignore-installed
 
@@ -1621,7 +1629,7 @@ jobs:
           registry: ${{ env.PUSH_REGISTRY }}
 
       - name: Publish simulator state
-        if: ${{ needs.Install-Simulator-Robot.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
+        if: ${{ needs.Install-Simulator-Robot.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' && inputs.is_nightly_run == false }}
         shell: bash
         run: |
           export PATH="$HOME/.local/bin:$PATH"
@@ -1704,12 +1712,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare raise variables
+        if: ${{ inputs.is_nightly_run == false }}
         id: pre_raise
         run: |
           #echo ::set-output name=branch::${GITHUB_REF#refs/heads/}
           echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
 
       - name: Raise App version
+        if: ${{ inputs.is_nightly_run == false }}
         uses: CasperWA/push-protected@v2.14.0
         with:
           token: ${{ secrets.auto_commit_pwd }}
