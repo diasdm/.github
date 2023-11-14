@@ -92,9 +92,15 @@ jobs:
         echo "npm_pkg_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
         echo "npm_pkg_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
 
+    - name: Check package.json exists
+      id: check_package_json
+      uses: thebinaryfelix/check-file-existence-action@1.0.0
+      with:
+        files: 'package.json'
 
     - name: Bump package.json metadata Version
       uses: restackio/update-json-values-action@v1.0.0
+      if: ${{ steps.check_package_json.outputs.exists == 'true' }}
       with:
         file: package.json
         values: |
