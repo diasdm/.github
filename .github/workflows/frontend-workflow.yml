@@ -147,7 +147,13 @@ jobs:
         echo "Please check report here: https://sonarqube.aws.cloud.mov.ai/dashboard?id=${{ github.event.repository.name }}"
       id: sonar_links
 
+    - name: Check manifest.json exists
+      id: check_manifest_json
+      uses: thebinaryfelix/check-file-existence-action@1.0.0
+      with:
+        files: 'manifest.json'
     - name: Bump manifest.json metadata Version
+      if: ${{ steps.check_manifest_json.outputs.exists == 'true' }}
       uses: restackio/update-json-values-action@v1.0.0
       with:
         file: build/manifest.json
