@@ -1377,7 +1377,6 @@ jobs:
           echo "movai_pwd=4Iva6UHAQq9DGITj" >> $GITHUB_OUTPUT
 
       - name: Remote - Simulation Tests
-        timeout-minutes: 180
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
         run: |
