@@ -1378,6 +1378,7 @@ jobs:
 
       - name: Remote - Simulation Tests
         if: ${{ inputs.with_simulation_tests }}
+        timeout-minutes: 720
         shell: bash
         run: |
           ssh robot '
