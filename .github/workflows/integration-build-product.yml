@@ -1070,6 +1070,7 @@ jobs:
   Validation-Simulator-Tests:
     needs: [Build-Spawner, Build-Simulator]
     runs-on: ${{ needs.Build-Simulator.outputs.simulator_tests_agent_name }}
+    timeout-minutes: 720
     steps:
       - uses: rtCamp/action-cleanup@master
         if: ${{ inputs.with_simulation_tests }}
