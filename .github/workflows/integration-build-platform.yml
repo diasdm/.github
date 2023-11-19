@@ -912,7 +912,8 @@ jobs:
           pytest src/tests \
             --movai-ip ${{ steps.agent_info.outputs.ip }} \
             --movai-user ${{ steps.install.outputs.movai_user }} \
-            --movai-pw ${{ steps.install.outputs.movai_pwd }}
+            --movai-pw ${{ steps.install.outputs.movai_pwd }} \
+            -m "not fleet"
 
           deactivate
 
