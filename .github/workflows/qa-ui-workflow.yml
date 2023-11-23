@@ -76,11 +76,13 @@ jobs:
 
       - name: Update/upgrade host packages
         run: |
+          
           while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
           sudo apt-get update
           while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
           sudo apt-get upgrade -y
-
+          python3.8 -m pip install pip --upgrade
+          python3.8 -m pip install pyopenssl --upgrade
           # needed for pre-commit execution
           sudo apt install python-is-python3
 
