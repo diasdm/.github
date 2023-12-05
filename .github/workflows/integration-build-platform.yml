@@ -1588,23 +1588,15 @@ jobs:
           # for sanity
           docker ps -a
 
-          # backend
-          CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^backend-.*")
-          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
-
-          # spawner
-          CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^spawner-.*")
-          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log"
-
-          # message-server
-          CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^message-server-.*") || true
-          docker logs "${CONTAINER_ID}" &> "${CONTAINER_ID}.log" || true
+          for container in backend spawner messager-server; do
+             CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^${container}-.*")
+             docker logs "${CONTAINER_ID}" &> "${container}.log" || true
+          done || true
 
           # movai-service
           journalctl -u movai-service --since '1hour ago' &> "movai-service.log"
 
-          # spawner (mobros firmware)
-          journalctl -u movai-service -t mobros --since '1hour ago' &> spawner-firmware.log || true
+
       - name: Get current job id
         if: always()
         shell: bash
