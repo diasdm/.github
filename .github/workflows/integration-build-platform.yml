@@ -1592,7 +1592,7 @@ jobs:
         with:
           name: fleet_qa_artifacts
           path: ${{ steps.ansible_install_setup.outputs.target_dir }}/fleet_qa_artifacts/*
-          retention-days: 1
+          retention-days: 5
 
       - name: Teardown remote vms (Proxmox)
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
