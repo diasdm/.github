@@ -924,7 +924,7 @@ jobs:
 
           . venv/bin/activate
 
-          pytest src/tests \
+          pytest src \
             --movai-ip ${{ steps.agent_info.outputs.ip }} \
             --movai-user ${{ steps.install.outputs.movai_user }} \
             --movai-pw ${{ steps.install.outputs.movai_pwd }} \
@@ -1572,7 +1572,7 @@ jobs:
 
           . venv/bin/activate
 
-          pytest src/tests \
+          pytest src \
             --movai-ip ${{ steps.ansible_install_platform.outputs.manager_ip }} \
             --movai-user admin \
             --movai-pw admin@123 \
