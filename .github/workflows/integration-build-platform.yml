@@ -1561,6 +1561,7 @@ jobs:
           pip install -r requirements.txt
           deactivate
           popd
+
       - name: API tests
         timeout-minutes: 30
         working-directory: ${{ steps.api_tests_setup.outputs.target_dir }}
@@ -1646,6 +1647,7 @@ jobs:
         env:
           API_DIR: ${{ steps.api_tests_setup.outputs.target_dir }}
         run: |
+          rm -rf fleet_qa_artifacts
           mkdir -p fleet_qa_artifacts/install
           source ansible-venv/bin/activate
           # install fleet_tests artifacts
@@ -1657,19 +1659,16 @@ jobs:
             echo "$(tail -n +2 fleet_qa_artifacts/install/$fleet_host-docker_ps.log )"
 
             ansible $fleet_host -i ../staging/hosts --key-file ~/.ssh/aws_slave.pem -m shell -a 'journalctl -u docker --boot --lines=all' > fleet_qa_artifacts/install/$fleet_host-all-docker.log || true
-          done         
+          done
 
           deactivate
-          
+
           # qa api tests artifacts
-          # cleanup
-          rm -rf qa_artifacts
-          # tests artifacts
           # *.log and *.zip might not exist if the test fails early
-          mkdir -p qa_artifacts
-          cp -r "${API_DIR}"/*.log ./qa_artifacts || true
-          cp -r "${API_DIR}"/*.tar ./qa_artifacts || true
-          cp -r "${API_DIR}"/results/*.zip ./qa_artifacts || true      
+          mkdir -p fleet_qa_artifacts/api
+          cp -r "${API_DIR}"/*.log fleet_qa_artifacts/api || true
+          cp -r "${API_DIR}"/*.tar fleet_qa_artifacts/api || true
+          cp -r "${API_DIR}"/results/*.zip fleet_qa_artifacts/api || true
 
       - name: Stash Fleet QA artifacts
         if: always()
@@ -1930,7 +1929,7 @@ jobs:
           python3 -m venv venv
           . venv/bin/activate
           python3 -m pip install pip --upgrade
-          python3 -m pip install pyopenssl --upgrade          
+          python3 -m pip install pyopenssl --upgrade
           pip install -r requirements.txt
           deactivate
           popd
@@ -2207,7 +2206,7 @@ jobs:
 
       - name: Install CI Scripts
         shell: bash
-        run: | 
+        run: |
           python3 -m pip install pip --upgrade
           python3 -m pip install pyopenssl --upgrade
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
