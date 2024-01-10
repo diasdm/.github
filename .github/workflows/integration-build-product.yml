@@ -1545,8 +1545,9 @@ jobs:
           --endpoint-url https://s3.lis.mov.ai \
           s3 \
           cp \
-          qa_artifacts/* \
-          s3://simulation-artifacts/product_pipelines/${{ inputs.product_name }}/${{ github.run_id}}/attempts/${{ github.run_attempt }}
+          qa_artifacts/ \
+          s3://simulation-artifacts/product_pipelines/${{ inputs.product_name }}/${{ github.run_id}}/attempts/${{ github.run_attempt }} \
+          --recursive
 
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.minio_key_id }}
