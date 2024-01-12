@@ -1212,6 +1212,7 @@ jobs:
           user=$(terraform output user)
           echo "host_ip=$(echo $ip | sed "s;\";;g")" >> $GITHUB_OUTPUT
           echo "host_user=$(echo $user | sed "s;\";;g")" >> $GITHUB_OUTPUT
+          echo "ssh_connect_string=$(echo $user | sed "s;\";;g")@$(echo $ip | sed "s;\";;g")" >> $GITHUB_OUTPUT
 
       - name: Configure SSH
         if: ${{ inputs.with_simulation_tests }}
@@ -1221,30 +1222,16 @@ jobs:
           ssh-keygen -f ~/.ssh/known_hosts -R ${{ steps.infra_outputs.outputs.host_ip }} || true
           ssh-keyscan -H ${{ steps.infra_outputs.outputs.host_ip }} >> ~/.ssh/known_hosts || true
 
-          test -f ~/.ssh/config
-          CONFIG_FILE_EXISTS=1
-          if [ $? -eq 0 ]; then
-            mv ~/.ssh/config ~/.ssh/config.bak
-            CONFIG_FILE_EXISTS=0
-          fi
+          ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
+            cloud-init status --wait; rm -rf ./${{ env.REMOTE_WORKSPACE_PATH }}; mkdir -p ./${{ env.REMOTE_WORKSPACE_PATH }}
+          '
 
-          touch ~/.ssh/config
-          echo "Host robot" >> ~/.ssh/config
-          echo "  HostName ${{ steps.infra_outputs.outputs.host_ip }}" >> ~/.ssh/config
-          echo "  User ${{ steps.infra_outputs.outputs.host_user }}" >> ~/.ssh/config
-          echo "  IdentityFile ~/.ssh/ci_priv_key.pem" >> ~/.ssh/config
-          echo "  StrictHostKeyChecking no" >> ~/.ssh/config
-          cat ~/.ssh/config
-
-          ssh robot 'cloud-init status --wait; rm -rf ./${{ env.REMOTE_WORKSPACE_PATH }}; mkdir -p ./${{ env.REMOTE_WORKSPACE_PATH }}'
-
-          echo "config_pre_exists=$CONFIG_FILE_EXISTS" >> $GITHUB_OUTPUT
 
       - name: Remote - Agent info
         if: ${{ inputs.with_simulation_tests }}
         id: agent_info
         run: |
-          ssh robot '
+          ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
             ip=$(hostname -I | awk "{print $1}")
             echo $ip
           '
@@ -1253,7 +1240,7 @@ jobs:
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
         run: |
-          ssh robot '
+          ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
             docker login ${{ env.MID_REGISTRY }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
           '
 
@@ -1261,7 +1248,7 @@ jobs:
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
         run: |
-          ssh robot '
+          ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
             set -e
             docker pull "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}"
             docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-noetic:${{ needs.Build-Spawner.outputs.raised_version }}"
@@ -1271,7 +1258,7 @@ jobs:
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
         run: |
-          ssh robot '
+          ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
             set -e
             promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g" | sed "s-${{ env.MID_REGISTRY }}-${{ env.REGISTRY }}-g")
             docker pull "${{ needs.Build-Simulator.outputs.image_name }}" || true
@@ -1281,29 +1268,29 @@ jobs:
       - name: Remote - Install CI Scripts
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
-        run: ssh robot "set -e ; python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION"
+        run: ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no "set -e ; python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION"
 
       - name: Remote - unstash manifest
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
-        run: scp product-manifest.yaml robot:${{ env.REMOTE_WORKSPACE_PATH }}/product-manifest.yaml
+        run: scp -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no product-manifest.yaml ${{ steps.infra_outputs.outputs.ssh_connect_string }}:${{ env.REMOTE_WORKSPACE_PATH }}/product-manifest.yaml
 
       - name: Remote - unstash sim_configs
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
-        run: scp -r simulator_artifacts robot:${{ env.REMOTE_WORKSPACE_PATH }}/simulator_artifacts
+        run: scp -r -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no simulator_artifacts ${{ steps.infra_outputs.outputs.ssh_connect_string }}:${{ env.REMOTE_WORKSPACE_PATH }}/simulator_artifacts
 
       - name: Remote - unstash robot_jsons_noetic
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
-        run: scp -r *.json* robot:${{ env.REMOTE_WORKSPACE_PATH }}/
+        run: scp -r -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no *.json* ${{ steps.infra_outputs.outputs.ssh_connect_string }}:${{ env.REMOTE_WORKSPACE_PATH }}/
 
       - name: Remote - Setup QA Simulation tests
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
         id: simulator_tests_setup
         run: |
-          ssh robot '
+          ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
             set -e
             cd ${{ env.REMOTE_WORKSPACE_PATH }}
 
@@ -1345,7 +1332,7 @@ jobs:
 
           '
           rm -f /tmp/target_dir.txt /tmp/version.txt /tmp/repo_name.txt /tmp/test_set.txt /tmp/test_exec_dir.txt
-          scp -r robot:/tmp/*.txt /tmp/
+          scp -r -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no ${{ steps.infra_outputs.outputs.ssh_connect_string }}:/tmp/*.txt /tmp/
 
           echo "target_dir=$(cat /tmp/target_dir.txt)" >> $GITHUB_OUTPUT
           echo "version=$(cat /tmp/version.txt)" >> $GITHUB_OUTPUT
@@ -1357,7 +1344,7 @@ jobs:
         id: install
         shell: bash
         run: |
-          ssh robot '
+          ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
           set -e
 
           export DISPLAY="$(w -oush | grep -Eo " :[0-9]+" | uniq | cut -d \  -f 2)"            
@@ -1406,7 +1393,7 @@ jobs:
         timeout-minutes: 720
         shell: bash
         run: |
-          ssh robot '
+          ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
             set -e
 
             export DISPLAY="$(w -oush | grep -Eo " :[0-9]+" | uniq | cut -d \  -f 2)"           
@@ -1445,7 +1432,7 @@ jobs:
         if: ${{ always() &&  inputs.with_simulation_tests }}
         shell: bash
         run: |
-          ssh robot '
+          ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
 
             cd ${{ env.REMOTE_WORKSPACE_PATH }}/${{ steps.simulator_tests_setup.outputs.target_dir }}
 
@@ -1471,7 +1458,7 @@ jobs:
         if: ${{ always() &&  inputs.with_simulation_tests }}
         shell: bash
         run: |
-          ssh robot '
+          ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
             cd ${{ env.REMOTE_WORKSPACE_PATH }}
 
             # cleanup
@@ -1482,7 +1469,8 @@ jobs:
             mkdir -p qa_artifacts
             cp -r "${{ steps.simulator_tests_setup.outputs.target_dir }}"/*.log ./qa_artifacts || true
           '
-          scp -r robot:${{ env.REMOTE_WORKSPACE_PATH }}/qa_artifacts .
+          scp -r -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no ${{ steps.infra_outputs.outputs.ssh_connect_string }}:${{ env.REMOTE_WORKSPACE_PATH }}/qa_artifacts .
+
 
       - name: Get current job id
         if: always()
@@ -1546,7 +1534,7 @@ jobs:
           s3 \
           cp \
           qa_artifacts/ \
-          s3://simulation-artifacts/product_pipelines/${{ inputs.product_name }}/${{ github.run_id}}/attempts/${{ github.run_attempt }} \
+          s3://ci-artifacts/${{ github.repository }}/${{ github.run_id}}/${{ github.job }}/attempts/${{ github.run_attempt }} \
           --recursive
 
         env:
@@ -1555,15 +1543,6 @@ jobs:
           AWS_DEFAULT_REGION: "us-east-1"
           AWS_DEFAULT_OUTPUT: "none"
 
-      - name: Teardown ssh setup
-        shell: bash
-        if: ${{ always() && inputs.with_simulation_tests }}
-        run: |
-          if [ "${{ steps.remote_ssh_setup.outputs.config_pre_exists }}" = "0" ];
-          then
-            rm ~/.ssh/config
-            mv ~/.ssh/config.bak ~/.ssh/config
-          fi
 
       - name: Teardown remote vms (Proxmox)
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
