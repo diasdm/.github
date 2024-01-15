@@ -408,7 +408,43 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
-  Release:
+  Release-Pypi:
+    if: ${{ inputs.release == 'true' }}
+    runs-on: ubuntu-20.04
+    container:
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
+      credentials:
+        username: ${{secrets.registry_user}}
+        password: ${{secrets.registry_password}}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+  
+      - name: Set tag output
+        id: vars
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+  
+      - name: Fetch python artifact from github release
+        run: |
+          mkdir dist
+          git config --global --add safe.directory $(pwd)
+          cd dist
+          gh release download ${{ steps.vars.outputs.tag}} -p *.whl
+          gh release download ${{ steps.vars.outputs.tag}} -p *.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.gh_token }}
+    
+      - name: Publish package to prod PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: ${{ secrets.nexus_publisher_user }}
+          password: ${{ secrets.nexus_publisher_password }}
+          repository_url: https://artifacts.cloud.mov.ai/repository/${{ inputs.prod_publish_pypi }}/
+      
+
+  Release-Deb:
+    needs: [Release-Pypi]
     strategy:
       matrix:
         publish_repo: ${{ fromJSON(inputs.prod_publish_repos) }}
@@ -428,38 +464,14 @@ jobs:
       id: vars
       run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
-    - name: Fetch python artifact from github release
+    - name: Fetch debian artifacts from github release
       run: |
-        mkdir dist artifacts
+        mkdir artifacts
         git config --global --add safe.directory $(pwd)
-        cd dist
-        gh release download ${{ steps.vars.outputs.tag}} -p *.whl
-        gh release download ${{ steps.vars.outputs.tag}} -p *.tar.gz
         cd ../artifacts
         gh release download ${{ steps.vars.outputs.tag}} -p *.deb
       env:
         GITHUB_TOKEN: ${{ secrets.gh_token }}
-
-    - name: Archive python artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: packages
-        path: dist/*
-        retention-days: 5
-
-    - name: Archive debian artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: artifacts
-        path: artifacts/*.deb
-        retention-days: 5
-
-    - name: Publish package to prod PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        user: ${{ secrets.nexus_publisher_user }}
-        password: ${{ secrets.nexus_publisher_password }}
-        repository_url: https://artifacts.cloud.mov.ai/repository/${{ inputs.prod_publish_pypi }}/
 
     - name: Publish to Nexus
       shell: bash
@@ -496,16 +508,3 @@ jobs:
               fi
 
             done
-    # - name: Publish to Nexus
-    #   run: |
-    #       NEXUS_REPO="${{ matrix.publish_repo }}"
-    #       if [ "$NEXUS_REPO" != "ppa-public" ]; then
-    #         NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
-    #       else
-    #         NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
-    #       fi
-    #       FILE_LOCATION=$(find artifacts/*.deb)
-    #       find artifacts -type f -name '*.deb' -exec curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
-    #       -H "Content-Type: multipart/form-data" \
-    #       --data-binary "@{}" \
-    #       "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/" \;
