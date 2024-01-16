@@ -1652,7 +1652,7 @@ jobs:
           source ansible-venv/bin/activate
           # install fleet_tests artifacts
           for fleet_host in "manager" "member0" "member1"; do
-            ansible $fleet_host -i ../staging/hosts --key-file ~/.ssh/aws_slave.pem -m shell -a 'journalctl -u movai-service' > fleet_qa_artifacts/install/$fleet_host.log || true
+            ansible $fleet_host -i ../staging/hosts --key-file ~/.ssh/aws_slave.pem -m shell -a 'journalctl -u movai-service --since "1hour ago"' > fleet_qa_artifacts/install/$fleet_host.log || true
 
             echo "From $fleet_host:"
             ansible $fleet_host -i ../staging/hosts --key-file ~/.ssh/aws_slave.pem -m shell -a 'docker ps -a' > fleet_qa_artifacts/install/$fleet_host-docker_ps.log || true
