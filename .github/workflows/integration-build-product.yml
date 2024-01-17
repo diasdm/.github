@@ -48,7 +48,7 @@ on:
         required: false
         type: boolean
         default: false
-  
+
 
     secrets:
       auto_commit_user:
@@ -203,7 +203,7 @@ jobs:
         shell: bash
         run: |
           MESSAGE="CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version)(Attempt: #${{ github.run_attempt }}) is starting to be validated :construction: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          
+
           if [ "${{ inputs.is_nightly_run }}" == "true" ] ; then
             MESSAGE="NIGHTLY: ${GITHUB_REPOSITORY} ${{inputs.nightly_run_branch}}, (Attempt: #${{ github.run_attempt }}) is starting to be validated :construction: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           fi
@@ -301,7 +301,7 @@ jobs:
           username: ${{ secrets.registry_user }}
           password: ${{ secrets.registry_password }}
           registry: ${{ env.MID_REGISTRY }}
-  
+
       - name: Prepare docker build variables
         id: pre_build
         shell: bash
@@ -494,8 +494,8 @@ jobs:
           rm -rf install_logs
 
           mkdir -p install_logs
-          journalctl -u movai-service -t mobros -n 100 > install_logs/spawner-firmware.log
-          journalctl -u movai-service > install_logs/movai-service.log
+          journalctl -u movai-service -t mobros --since "1hour ago" > install_logs/spawner-firmware.log
+          journalctl -u movai-service --since "1hour ago" > install_logs/movai-service.log
 
       - name: Stash Install logs artifacts
         continue-on-error: true
@@ -974,8 +974,8 @@ jobs:
           rm -rf install_logs
 
           mkdir -p install_logs
-          journalctl -u movai-service -t mobros -n 100 > install_logs/spawner-firmware.log
-          journalctl -u movai-service > install_logs/movai-service.log
+          journalctl -u movai-service -t mobros --since "1hour ago" > install_logs/spawner-firmware.log
+          journalctl -u movai-service --since "1hour ago" > install_logs/movai-service.log
 
       - name: Stash Install simulator logs artifacts
         continue-on-error: true
@@ -1314,7 +1314,7 @@ jobs:
             test_exec_dir="."
             if [ -f /tmp/test_dir.txt ]; then
               test_exec_dir="$test_exec_dir/$(cat /tmp/test_dir.txt)"
-            fi 
+            fi
             echo "$test_exec_dir">/tmp/test_exec_dir.txt
             rm -rf $tests_repo_name
             integration-pipeline fetch_by_tag --repo $tests_repo_name --version $tests_version --gh_api_user ${{ env.GITHUB_API_USR }} --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $tests_dir
@@ -1348,7 +1348,7 @@ jobs:
           ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
           set -e
 
-          export DISPLAY="$(w -oush | grep -Eo " :[0-9]+" | uniq | cut -d \  -f 2)"            
+          export DISPLAY="$(w -oush | grep -Eo " :[0-9]+" | uniq | cut -d \  -f 2)"
           echo "Display detected (dinamic) is $DISPLAY"
           export DISPLAY=":0"
           echo "Display detected is $DISPLAY"
@@ -1397,7 +1397,7 @@ jobs:
           ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
             set -e
 
-            export DISPLAY="$(w -oush | grep -Eo " :[0-9]+" | uniq | cut -d \  -f 2)"           
+            export DISPLAY="$(w -oush | grep -Eo " :[0-9]+" | uniq | cut -d \  -f 2)"
             echo "Display detected (dinamic) is $DISPLAY"
             export DISPLAY=":0"
             echo "Display detected is $DISPLAY"
@@ -1838,7 +1838,7 @@ jobs:
         shell: bash
         run: |
           MESSAGE=":white_check_mark: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version) (Attempt: #${{ github.run_attempt }}) is stable :sunny: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          
+
           if [ "${{ inputs.is_nightly_run }}" == "true" ] ; then
             MESSAGE=":white_check_mark: NIGHTLY: ${GITHUB_REPOSITORY} ${{inputs.nightly_run_branch}}, (Attempt: #${{ github.run_attempt }}) is stable :sunny: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           fi
@@ -1876,7 +1876,7 @@ jobs:
         shell: bash
         run: |
           MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) (Attempt: #${{ github.run_attempt }}) is unstable (or canceled) :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          
+
           if [ "${{ inputs.is_nightly_run }}" == "true" ] ; then
             MESSAGE_ERR=":x: NIGHTLY: ${GITHUB_REPOSITORY} ${{inputs.nightly_run_branch}}, (Attempt: #${{ github.run_attempt }}) is unstable (or canceled) :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           fi
