@@ -1537,6 +1537,7 @@ jobs:
           qa_artifacts/ \
           s3://ci-artifacts/${{ github.repository }}/${{ github.run_id}}/${{ github.job }}/attempts/${{ github.run_attempt }} \
           --recursive
+          --content-type="text/plain"
 
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.minio_key_id }}
