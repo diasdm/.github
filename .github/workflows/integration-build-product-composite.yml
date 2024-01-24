@@ -1,0 +1,331 @@
+name: Build Packer images
+on:
+  workflow_call:
+    inputs:
+      product_name:
+        required: true
+        type: string
+      ros_distro:
+        required: true
+        type: string
+      nightly_run_branch:
+        required: false
+        type: string
+        default: "UNDEFINED"
+      overwrite_slack_channel:
+        required: false
+        type: string
+        default: "C050L85R6VC"
+      docker_registry:
+        required: false
+        type: string
+        default: "registry.hel.mov.ai"
+      use_project_data_viewer:
+        required: false
+        type: boolean
+        default: false
+
+
+    secrets:
+      auto_commit_user:
+        required: true
+      auto_commit_mail:
+        required: true
+      auto_commit_pwd:
+        required: true
+      registry_user:
+        required: true
+      registry_password:
+        required: true
+      nexus_publisher_user:
+        required: true
+      nexus_publisher_password:
+        required: true
+      gh_token:
+        required: true
+      aws_key_id:
+        required: true
+      aws_secret_key_id:
+        required: true
+      slack_token_id:
+        required: true
+      proxmox_api_url:
+        required: true
+      proxmox_api_token_id:
+        required: true
+      proxmox_api_token_secret:
+        required: true
+      ssh_priv_key:
+        required: true
+      pdv_auth_token:
+        required: false
+      minio_key_id:
+        required: false
+      minio_secret_key_id:
+        required: false
+
+env:
+  CI_INTEGRATION_SCRIPTS_VERSION: "2.2.0.15"
+  MOBTEST_VERSION: "0.0.4.3"
+  PACKAGE_DEPLOYER_VERSION: "1.0.0.26"
+  GITHUB_API_USR: "OttoMation-Movai"
+  AWS_ACCESS_KEY_ID: ${{ secrets.aws_key_id }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.aws_secret_key_id }}
+  REGISTRY: ${{ inputs.docker_registry }}
+  PUSH_REGISTRY: registry.cloud.mov.ai
+  MID_REGISTRY: registry.cloud.mov.ai
+  USERSPACE_FOLDER_PATH: userspace
+  REMOTE_WORKSPACE_PATH: workspace
+  PROVISION_INFRA_REPO: "devops-tf-proxmox-fleet"
+  PROVISION_INFRA_VERSION: "0.1.0-7"
+  # slack channel movai-projects
+  #SLACK_CHANNEL: ${{ inputs.overwrite_slack_channel }}
+  # development slack channel
+  SLACK_CHANNEL: "C05K2KF1UP8"
+  PROJECT_DATA_VIEWER_API: "https://personal-7vf0v2cu.outsystemscloud.com/ProjectDataViewer5/rest/V1//CreateProject"
+  MINIO_S3_URL: "https://s3.mov.ai"
+
+jobs:
+  Validate-boostrap-configs:
+    runs-on: integration-pipeline
+    container:
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
+      credentials:
+        username: ${{secrets.registry_user}}
+        password: ${{secrets.registry_password}}
+    outputs:
+      slack_thread_id: ${{ fromJson(steps.send-message.outputs.slack-result).response.message.ts }}
+    steps:
+      - name: Checkout
+        if: ${{ inputs.is_nightly_run == false }}
+        uses: actions/checkout@v4
+
+      - name: Nightly Checkout
+        if: ${{ inputs.is_nightly_run }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.nightly_run_branch }}
+
+      - name: Validate Manifest
+        shell: bash
+        run: |
+          apt install -y yamllint
+          yamllint product-manifest.yaml
+
+      - name: Install CI Scripts
+        shell: bash
+        run: |
+          python3 -m pip install pip --upgrade
+          python3 -m pip install pyopenssl --upgrade
+          python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
+
+      - name: Bootstraping simulator metadata
+        run: |
+          git config --global --add safe.directory $(pwd)
+          git fetch
+          git checkout origin/${GITHUB_REF#refs/heads/} -- product.version
+          cat product.version
+          rm -rf simulator_artifacts ci_artifacts
+
+          merge_manifest_args=" --dependency_name products"
+          merge_manifest_args="$merge_manifest_args --gh_api_user $GITHUB_API_USR"
+          merge_manifest_args="$merge_manifest_args --gh_api_pwd ${{ secrets.auto_commit_pwd }}"
+          merge_manifest_args="$merge_manifest_args --merge_sub_prod_dep_keys platform_config,platform_components"
+          merge_manifest_args="$merge_manifest_args --merge_sub_prod_main_keys product_config,system_config
+
+          integration-pipeline merge_manifest_multi_dependency $merge_manifest_args 
+
+          fi
+
+      - name: raise
+        run: |
+          rm -rf simulator_artifacts ci_artifacts
+          mkdir platform_configs
+          integration-pipeline raise
+          cp product.version ./platform_configs/product.version
+          cp product-manifest.yaml ./platform_configs/product-manifest.yaml
+
+      - name: Prepare slack variables
+        if: always()
+        id: pre_slack
+        shell: bash
+        run: |
+          MESSAGE="CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version)(Attempt: #${{ github.run_attempt }}) is starting to be validated :construction: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+          echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
+
+      - name: Send Slack Message
+        uses: archive/github-actions-slack@master
+        id: send-message
+
+        with:
+          slack-function: send-message
+          slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-text: ${{ steps.pre_slack.outputs.msg }}
+
+      - name: Stash raised_meta
+        uses: actions/upload-artifact@v3
+        with:
+          name: raised_meta
+          path: platform_configs/*
+          retention-days: 5
+
+  Build-Spawner:
+    needs: [Validate-boostrap-configs]
+    strategy:
+      matrix:
+        distro: ${{ fromJSON(inputs.ros_distro) }}
+    runs-on: integration-pipeline
+    outputs:
+      raised_version: ${{ steps.pre_build.outputs.raised_version }}
+      slack_thread_id: ${{ needs.Validate-boostrap-configs.outputs.slack_thread_id }}
+    steps:
+      - uses: rtCamp/action-cleanup@master
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Agent info
+        run: |
+          echo "public ip: $(curl ipinfo.io/ip)"
+          echo "private ip: $(hostname -I | awk '{print $1}')"
+
+      - name: Install CI Scripts
+        shell: bash
+        run: |
+          python3 -m pip install pip --upgrade
+          python3 -m pip install pyopenssl --upgrade
+          python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
+
+      - name: unstash raised_meta
+        uses: actions/download-artifact@v3
+        with:
+          name: raised_meta
+          path: platform_configs
+
+      - name: Generate product configs from manifest
+        shell: bash
+        run: |
+          cp ./platform_configs/product.version product.version
+          cp ./platform_configs/product-manifest.yaml product-manifest.yaml
+          export PATH="$HOME/.local/bin:$PATH"
+          cat product-manifest.yaml
+          integration-pipeline generate_composite_meta_artifacts --manifest_platform_base_key "product_dependencies.products" --override_spawner ${{ inputs.product_name }}
+
+      - name: Stash manifest
+        uses: actions/upload-artifact@v3
+        with:
+          name: manifest
+          path: product-manifest.yaml
+          retention-days: 5
+
+      - name: Lint docker image
+        shell: bash
+        run: |
+          wget https://github.com/hadolint/hadolint/releases/download/v2.9.3/hadolint-Linux-x86_64
+          chmod +x hadolint-Linux-x86_64
+          ./hadolint-Linux-x86_64 docker/${{ matrix.distro }}/Dockerfile -t error
+
+      - name: Login to ${{ env.REGISTRY }} Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.REGISTRY }}
+
+      - name: Login to ${{ env.PUSH_REGISTRY }} Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.PUSH_REGISTRY }}
+
+      - name: Login to ${{ env.MID_REGISTRY }} Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.MID_REGISTRY }}
+
+      - name: Prepare docker build variables
+        id: pre_build
+        shell: bash
+        run: |
+
+          echo "base_name=$(cat ci_artifacts/spawner_base_name.ci)" >> $GITHUB_OUTPUT
+          echo "base_version=$(cat ci_artifacts/spawner_base_version.ci)" >> $GITHUB_OUTPUT
+          echo "raised_version=$(cat product.version)" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Docker build
+        shell: bash
+        run: |
+          docker build --add-host ${{ env.REGISTRY }}:172.22.0.106 \
+            --build-arg DOCKER_REGISTRY=${{ env.REGISTRY }} \
+            --build-arg BASE_IMAGE=${{ steps.pre_build.outputs.base_name }} \
+            --build-arg TAG=${{ steps.pre_build.outputs.base_version }} \
+            --build-arg CI_SCRIPT_VERSION=${{ env.CI_INTEGRATION_SCRIPTS_VERSION }} \
+            --file docker/${{ matrix.distro }}/Dockerfile \
+            --platform linux/amd64 \
+            --tag ${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ steps.pre_build.outputs.raised_version }} \
+            --pull \
+            --progress=plain
+            --push .
+
+      - name: Get current job id
+        if: always()
+        shell: bash
+        id: job_info
+        run: |
+          sudo apt install jq -y
+          job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
+          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
+          echo "$job_id"
+          echo "$job_html_url"
+          echo "job_url=$job_html_url" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.gh_token }}
+
+      - name: Prepare slack variables
+        if: always()
+        id: pre_slack_result
+        run: |
+          MESSAGE=":white_check_mark: Build Spawner (Attempt: #${{ github.run_attempt }}) job passed"
+          MESSAGE_ERR=":x: Build Spawner (Attempt: #${{ github.run_attempt }}) job failed"
+          echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
+          echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
+
+      - name: Slack message success
+        uses: archive/github-actions-slack@master
+        with:
+          slack-function: send-message
+          slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-text: ${{ steps.pre_slack_result.outputs.msg }}
+          slack-optional-thread_ts: ${{ needs.Validate-boostrap-configs.outputs.slack_thread_id }}
+
+      - name: Slack message failure
+        uses: archive/github-actions-slack@master
+        if: failure()
+        with:
+          slack-function: send-message
+          slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-text: ${{ steps.pre_slack_result.outputs.msg_error }}
+          slack-optional-thread_ts: ${{ needs.Validate-boostrap-configs.outputs.slack_thread_id }}
+
+
+      - name: Stash robot_jsons_${{ matrix.distro }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: robot_jsons_${{ matrix.distro }}
+          path: "*.json*"
+          retention-days: 10
+
+      - name: Docker cleanups
+        if: always()
+        shell: bash
+        run: |
+          docker system prune -f
+          docker image prune --all -f
