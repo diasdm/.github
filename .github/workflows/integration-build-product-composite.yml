@@ -252,16 +252,17 @@ jobs:
         run: |
 
 
-          mkdir -p ./ci_artifacts/dependency/
+          mkdir -p /tmp/ci_artifacts/dependency/
 
-          integration-pipeline get_yml_value --file product-manifest.yaml --key product_dependencies.product_base.name --output_file ./ci_artifacts/product_base_name.txt
-          integration-pipeline get_yml_value --file product-manifest.yaml --key product_dependencies.product_base.version --output_file ./ci_artifacts/product_base_version.txt
+          integration-pipeline get_yml_value --file product-manifest.yaml --key product_dependencies.product_base.name --output_file /tmp/ci_artifacts/product_base_name.txt
+          integration-pipeline get_yml_value --file product-manifest.yaml --key product_dependencies.product_base.version --output_file /tmp/ci_artifacts/product_base_version.txt
 
-          integration-pipeline fetch_github_release_asset --asset_name product-manifest.yaml --repo $(cat ci_artifacts/product_base_name.txt) --version $(cat ci_artifacts/product_base_version.txt) --gh_api_user $GITHUB_USER --gh_api_pwd $GITHUB_TOKEN --target_dir ./ci_artifacts/dependency/
+          integration-pipeline fetch_github_release_asset --asset_name product-manifest.yaml --repo $(cat /tmp/ci_artifacts/product_base_name.txt) --version $(cat /tmp/ci_artifacts/product_base_version.txt) --gh_api_user $GITHUB_USER --gh_api_pwd $GITHUB_TOKEN --target_dir /tmp/ci_artifacts/dependency/
           
-          integration-pipeline get_yml_value --file /tmp/ci_artifacts/dependency/product-manifest.yaml --key product_dependencies.platform_config.spawner_noetic.name --output_file ./ci_artifacts/spawner_base_name.txt
-          integration-pipeline get_yml_value --file /tmp/ci_artifacts/dependency/product-manifest.yaml --key product_dependencies.platform_config.spawner_noetic.version --output_file ./ci_artifacts/spawner_base_version.txt
+          integration-pipeline get_yml_value --file /tmp/ci_artifacts/dependency/product-manifest.yaml --key product_dependencies.platform_config.spawner_noetic.name --output_file /tmp/ci_artifacts/spawner_base_name.txt
+          integration-pipeline get_yml_value --file /tmp/ci_artifacts/dependency/product-manifest.yaml --key product_dependencies.platform_config.spawner_noetic.version --output_file /tmp/ci_artifacts/spawner_base_version.txt
 
+          cp /tmp/ci_artifacts ./ci_artifacts -r
           ls -la
           ls -la ci_artifacts
           echo "base_name=$(cat ci_artifacts/spawner_base_name.txt)" >> $GITHUB_OUTPUT
