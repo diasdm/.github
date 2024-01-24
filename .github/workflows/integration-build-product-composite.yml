@@ -250,7 +250,12 @@ jobs:
         id: pre_build
         shell: bash
         run: |
-
+          mkdir -p /tmp/ci_artifacts/dependency/
+          integration-pipeline fetch_github_release_asset --asset_name product-manifest.yaml --repo \$(cat /tmp/ci_artifacts/product_base_name.txt) --version \$(cat /tmp/ci_artifacts/product_base_version.txt) --gh_api_user $GITHUB_USER --gh_api_pwd $GITHUB_TOKEN --target_dir /tmp/ci_artifacts/dependency/
+          
+          integration-pipeline get_yml_value --file /tmp/ci_artifacts/dependency/product-manifest.yaml --key product_dependencies.platform_config.spawner_noetic.name --output_file ci_artifacts/spawner_base_name.txt
+          integration-pipeline get_yml_value --file /tmp/ci_artifacts/dependency/product-manifest.yaml --key product_dependencies.platform_config.spawner_noetic.version --output_file ci_artifacts/spawner_base_version.txt
+        
           echo "base_name=$(cat ci_artifacts/spawner_base_name.txt)" >> $GITHUB_OUTPUT
           echo "base_version=$(cat ci_artifacts/spawner_base_version.txt)" >> $GITHUB_OUTPUT
           echo "raised_version=$(cat product.version)" >> $GITHUB_OUTPUT
