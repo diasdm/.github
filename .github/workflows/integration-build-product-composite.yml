@@ -342,3 +342,388 @@ jobs:
         run: |
           docker system prune -f
           docker image prune --all -f
+
+  Install-Robot:
+    needs: [Build-Spawner]
+    strategy:
+      matrix:
+        distro: ${{ fromJSON(inputs.ros_distro) }}
+    runs-on: integration-pipeline
+    outputs:
+      slack_thread_id: ${{ needs.Build-Spawner.outputs.slack_thread_id }}
+
+    steps:
+      - uses: rtCamp/action-cleanup@master
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Agent info
+        run: |
+          echo "public ip: $(curl ipinfo.io/ip)"
+          echo "private ip: $(hostname -I | awk '{print $1}')"
+
+      - name: unstash raised_meta
+        uses: actions/download-artifact@v3
+        with:
+          name: raised_meta
+          path: .
+
+      - name: unstash manifest
+        uses: actions/download-artifact@v3
+        with:
+          name: manifest
+          path: .
+
+      - name: unstash robot_jsons_${{ matrix.distro }}
+        uses: actions/download-artifact@v3
+        with:
+          name: robot_jsons_${{ matrix.distro }}
+          path: .
+
+      - name: Login to ${{ env.REGISTRY }} Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.REGISTRY }}
+
+      - name: Login to ${{ env.PUSH_REGISTRY }} Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.PUSH_REGISTRY }}
+
+      - name: Login to ${{ env.MID_REGISTRY }} Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.MID_REGISTRY }}
+
+      - name: Docker load spawner image
+        shell: bash
+        run: |
+          docker pull "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
+          docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
+          docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.PUSH_REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
+
+      - name: Collect Installed components
+        if: always()
+        shell: bash
+        run: |
+            echo "$PUSH_REGISTRY/qa/${{ inputs.product_name }}-${{ matrix.distro }}:$(cat product.version)">artifacts/product-${{ matrix.distro }}.image.artifact
+  
+      - name: Get current job id
+        if: always()
+        shell: bash
+        id: job_info
+        run: |
+          sudo apt install jq -y
+          job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
+          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
+          echo "$job_id"
+          echo "$job_html_url"
+          echo "job_url=$job_html_url" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.gh_token }}
+
+      - name: Prepare slack variables
+        if: always()
+        id: pre_slack_result
+        run: |
+          MESSAGE=":white_check_mark: Install Robot (Attempt: #${{ github.run_attempt }}) job passed"
+          MESSAGE_ERR=":x: Install Robot (Attempt: #${{ github.run_attempt }}) job failed"
+          echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
+          echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
+
+      - name: Slack message success
+        uses: archive/github-actions-slack@master
+        with:
+          slack-function: send-message
+          slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-text: ${{ steps.pre_slack_result.outputs.msg }}
+          slack-optional-thread_ts: ${{ needs.Build-Spawner.outputs.slack_thread_id }}
+
+      - name: Slack message failure
+        uses: archive/github-actions-slack@master
+        if: failure()
+        with:
+          slack-function: send-message
+          slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-text: ${{ steps.pre_slack_result.outputs.msg_error }}
+          slack-optional-thread_ts: ${{ needs.Build-Spawner.outputs.slack_thread_id }}
+
+      - name: Stash project metadata
+
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: project_metadata
+          path: metadata_artifact/*
+          retention-days: 3
+
+      - name: Stash deploy_artifacts_noetic
+        uses: actions/upload-artifact@v3
+        with:
+          name: deploy_artifacts_noetic
+          path: artifacts/*
+          retention-days: 5
+
+      - name: Remove robots
+        if: always()
+        shell: bash
+        run: |
+          for robot in $(movai-cli robots list); do
+            movai-cli robots stop $robot
+            sleep 5
+            movai-cli robots remove $robot
+          done || true
+
+      - name: Docker cleanups
+        if: always()
+        shell: bash
+        run: |
+          docker system prune -f
+          docker image prune --all -f
+        
+  publish:
+    needs: [Install-Robot]
+    runs-on: integration-pipeline
+    steps:
+      - uses: rtCamp/action-cleanup@master
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Agent info
+        run: |
+          echo "public ip: $(curl ipinfo.io/ip)"
+          echo "private ip: $(hostname -I | awk '{print $1}')"
+
+      - name: unstash raised_meta
+        uses: actions/download-artifact@v3
+        with:
+          name: raised_meta
+          path: platform_configs
+
+      - name: unstash deploy_artifacts_noetic
+        uses: actions/download-artifact@v3
+        with:
+          name: deploy_artifacts_noetic
+          path: artifacts
+
+      - name: unstash manifest
+        uses: actions/download-artifact@v3
+        with:
+          name: manifest
+          path: .
+
+      - name: Install CI Scripts
+        shell: bash
+        run: |
+          python3 -m pip install pip --upgrade
+          python3 -m pip install pyopenssl --upgrade
+          python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
+
+      - name: Install Package Deployer
+        shell: bash
+        run: python3 -m pip install movai-package-deployer==$PACKAGE_DEPLOYER_VERSION --ignore-installed
+
+      - name: Login to ${{ env.MID_REGISTRY }} Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.MID_REGISTRY }}
+
+      - name: Login to ${{ env.PUSH_REGISTRY }} Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.PUSH_REGISTRY }}
+
+
+      - name: Publish and create release
+        id: bump
+        shell: bash
+        run: |
+          git config --global --add safe.directory $(pwd)
+          git config --global user.name '${{ secrets.auto_commit_user }}'
+          git config --global user.email '${{ secrets.auto_commit_mail }}'
+          git config --global user.password ${{ secrets.auto_commit_pwd }}
+
+          cp ./platform_configs/product.version product.version
+          cp ./platform_configs/product-manifest.yaml product-manifest.yaml
+          mkdir -p deployment_artifacts
+
+          export PATH="$HOME/.local/bin:$PATH"
+
+          cp artifacts/*.json deployment_artifacts
+          cp ./artifacts/product-noetic.image.artifact deployment_artifacts/product.image.artifact
+          cp deployment_artifacts/product.image.artifact ./
+
+          SAVEIFS=$IFS
+          IFS=$'\n'
+          images=($(cat product.image.artifact))
+          IFS=$SAVEIFS   # Restore original IFS
+
+          for image in "${images[@]}"
+          do
+            source=$(echo $image | sed "s-/qa/-/ci/-g" |  sed "s-${{ env.PUSH_REGISTRY }}-${{ env.MID_REGISTRY }}-g" )
+            target=$(echo $image | sed "s-${{ env.MID_REGISTRY }}-${{ env.PUSH_REGISTRY }}-g" )
+            docker pull $source
+            echo "tagging $source as $target"
+            docker tag $source $target
+            docker push $target
+          done
+
+          cat product-manifest.yaml
+          cp product-manifest.yaml deployment_artifacts
+
+          product_version=$(cat product.version)
+          # danger zone. Everything will be deleted.
+          git restore product.version
+          git restore product-manifest.yaml
+          git pull
+          echo "$product_version" > product.version
+
+          git add product.version
+          git commit -m "[skip actions] Automatic Raise"
+
+          echo "version=${product_version}" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.gh_token }}
+
+      - name: Prepare raise variables
+        id: pre_raise
+        run: |
+          #echo ::set-output name=branch::${GITHUB_REF#refs/heads/}
+          echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
+
+      - name: Raise App version
+        uses: CasperWA/push-protected@v2.14.0
+        with:
+          token: ${{ secrets.auto_commit_pwd }}
+          branch: ${{ steps.pre_raise.outputs.branch }}
+          unprotect_reviews: true
+
+      - name: Github Publish
+        shell: bash
+        run: |
+          commit_hash=$(git log --format="%H" -n 1)
+          product_version=$(cat product.version)
+          gh release create -p --generate-notes --target "$commit_hash" -t "${{ inputs.product_name }} $product_version" $product_version
+          # add all files in the deployment_artifacts folder
+          find deployment_artifacts -type f -exec gh release upload $product_version {} \;
+        env:
+          GITHUB_TOKEN: ${{ secrets.gh_token }}
+
+      - name: Update release notes
+        shell: bash
+        run: |
+          # release version
+          product_version=$(cat product.version)
+
+          # get existent release body
+          ORIGINAL_RN=$(gh release view "${product_version}" --json body | jq -r .body)
+          echo -e "ORIGINAL_RN:\n ${ORIGINAL_RN}"
+
+          # get release PRs
+          PRS=$(echo "${ORIGINAL_RN}" | sed -rn "s/.* by @.* in https:\/\/github\.com\/${{ github.repository_owner }}\/${{ github.event.repository.name }}\/pull\/([0-9]+).*/\1/p" | tr '\n' ' ')
+          # change to array
+          PRS=($PRS)
+          echo "Found the following PRs: ${PRS[@]}"
+
+          # new release notes file
+          rm -rf notes.txt
+
+          # What's Changed - with info from PRs
+          echo "## What's Changed" >> notes.txt
+
+          if [ ${#PRS[@]} -eq 0 ]; then
+              # no PRs exist
+              echo "No relevant changes." >> notes.txt
+          else
+              # PRs exist
+              for pr in "${PRS[@]}"; do
+                  gh pr view "${pr}" --json body | jq -r .body >> notes.txt
+              done
+          fi
+          echo "" >> notes.txt
+
+          # PRs
+          echo "## PRs" >> notes.txt
+          if [ ${#PRS[@]} -eq 0 ]; then
+              # no PRs exist
+              echo "No PRs." >> notes.txt
+          else
+              # PRs exist
+              echo "${ORIGINAL_RN}" | grep "\* .* by @.* in https://github.com/${{ github.repository_owner }}/" >> notes.txt
+          fi
+          echo "" >> notes.txt
+
+          ## Diff
+          echo "## Diff" >> notes.txt
+          echo "${ORIGINAL_RN}" | grep "\*\*Full Changelog\*\*" >> notes.txt
+
+          # set new release notes
+          gh release edit "${product_version}" --notes-file notes.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.gh_token }}
+
+      - name: Prepare slack variables
+        if: always()
+        id: pre_slack
+        shell: bash
+        run: |
+          MESSAGE=":white_check_mark: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version) (Attempt: #${{ github.run_attempt }}) is stable :sunny: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          echo "msg=$MESSAGE" >> $GITHUB_OUTPUT
+
+      - name: Slack message
+        uses: archive/github-actions-slack@master
+        with:
+          slack-function: update-message
+          slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-update-message-text: ${{ steps.pre_slack.outputs.msg }}
+          slack-update-message-ts: ${{ needs.Install-Robot.outputs.slack_thread_id }}
+
+  Run-Status:
+    runs-on: ubuntu-20.04
+    needs: [publish, Validate-boostrap-configs]
+    if: ${{ always() && ( needs.publish.result == 'failure' || needs.publish.result == 'cancelled' || needs.publish.result == 'skipped' ) }}
+    steps:
+
+      - name: unstash raised_meta
+        uses: actions/download-artifact@v3
+        with:
+          name: raised_meta
+          path: platform_configs
+
+      - name: Copy product configs
+        shell: bash
+        run: |
+          cp ./platform_configs/product.version product.version
+          cp ./platform_configs/product-manifest.yaml product-manifest.yaml
+
+      - name: Prepare slack variables
+        id: pre_slack
+        shell: bash
+        run: |
+          MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) (Attempt: #${{ github.run_attempt }}) is unstable (or canceled) :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+          echo "msg_error=${MESSAGE_ERR}" >> $GITHUB_OUTPUT
+
+      - name: Slack message
+        uses: archive/github-actions-slack@master
+        with:
+          slack-function: update-message
+          slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-update-message-text: ${{ steps.pre_slack.outputs.msg_error }}
+          slack-update-message-ts: ${{ needs.Validate-boostrap-configs.outputs.slack_thread_id }}
