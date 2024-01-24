@@ -135,7 +135,6 @@ jobs:
 
           integration-pipeline merge_manifest_multi_dependency $merge_manifest_args 
 
-          fi
 
       - name: raise
         run: |
