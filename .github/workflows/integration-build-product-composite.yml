@@ -131,7 +131,7 @@ jobs:
           merge_manifest_args="$merge_manifest_args --gh_api_user $GITHUB_API_USR"
           merge_manifest_args="$merge_manifest_args --gh_api_pwd ${{ secrets.auto_commit_pwd }}"
           merge_manifest_args="$merge_manifest_args --merge_sub_prod_dep_keys platform_config,platform_components"
-          merge_manifest_args="$merge_manifest_args --merge_sub_prod_main_keys product_config,system_config
+          merge_manifest_args="$merge_manifest_args --merge_sub_prod_main_keys product_config,system_config"
 
           integration-pipeline merge_manifest_multi_dependency $merge_manifest_args 
 
