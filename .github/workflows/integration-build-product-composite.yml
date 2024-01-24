@@ -283,7 +283,7 @@ jobs:
             --platform linux/amd64 \
             --tag ${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ steps.pre_build.outputs.raised_version }} \
             --pull \
-            --progress=plain
+            --progress=plain \
             --push .
 
       - name: Get current job id
