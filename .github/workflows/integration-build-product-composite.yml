@@ -409,6 +409,18 @@ jobs:
           docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
           docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.PUSH_REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
 
+      - name: Installation
+        shell: bash
+        run: |
+          for robot in $(movai-cli robots list); do
+            movai-cli robots stop $robot
+            sleep 5
+            movai-cli robots remove $robot
+          done || true
+
+          mkdir -p artifacts
+          cp *.json artifacts/
+
       - name: Collect Installed components
         if: always()
         shell: bash
