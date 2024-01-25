@@ -84,7 +84,7 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.aws_secret_key_id }}
   REGISTRY: ${{ inputs.docker_registry }}
   PUSH_REGISTRY: registry.cloud.mov.ai
-  MID_REGISTRY: registry.cloud.mov.ai
+  MID_REGISTRY: registry.hel.mov.ai
   USERSPACE_FOLDER_PATH: userspace
   REMOTE_WORKSPACE_PATH: workspace
   PROVISION_INFRA_REPO: "devops-tf-proxmox-fleet"
@@ -290,7 +290,7 @@ jobs:
             --build-arg CI_SCRIPT_VERSION=${{ env.CI_INTEGRATION_SCRIPTS_VERSION }} \
             --file docker/${{ matrix.distro }}/Dockerfile \
             --platform linux/amd64 \
-            --tag ${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ steps.pre_build.outputs.raised_version }} \
+            --tag ${{ env.PUSH_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ steps.pre_build.outputs.raised_version }} \
             --pull \
             --progress=plain \
             --push .
