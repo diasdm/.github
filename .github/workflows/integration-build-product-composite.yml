@@ -826,6 +826,7 @@ jobs:
 
       - name: Remove robots
         if: always()
+        continue-on-error: true
         shell: bash
         run: |
           for robot in $(movai-cli robots list); do
@@ -836,11 +837,11 @@ jobs:
 
       - name: Docker cleanups
         if: always()
+        continue-on-error: true
         shell: bash
         run: |
           docker system prune -f
           docker image prune --all -f
-
 
   publish:
     needs: [Install-Robot, Install-Heterogeneos-Fleet]
