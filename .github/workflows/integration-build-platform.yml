@@ -283,7 +283,7 @@ jobs:
         id: pre_slack
         run: |
           MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is unstable :rain_cloud: \
-          UI tests feature file validation: ${{ steps.feature_file_ui.outcome }} \
+          ${{ github.job }} feature file validation: ${{ steps.feature_file_ui.outcome }} \
           Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           echo "msg_error=${MESSAGE_ERR}" >> $GITHUB_OUTPUT
 
@@ -400,8 +400,8 @@ jobs:
         if: always()
         id: pre_slack_result
         run: |
-          MESSAGE=":white_check_mark: UI tests (Attempt: #${{ github.run_attempt }}) job passed"
-          MESSAGE_ERR=":x: UI tests (Attempt: #${{ github.run_attempt }}) job failed"
+          MESSAGE=":white_check_mark:${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
+          MESSAGE_ERR=":x: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job failed"
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
@@ -589,7 +589,7 @@ jobs:
         id: pre_slack
         run: |
           MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is unstable :rain_cloud: \
-          Install tests feature file validation: ${{ steps.feature_file_install.outcome }} \
+          ${{ github.job }} feature file validation: ${{ steps.feature_file_install.outcome }} \
           Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           echo "msg_error=${MESSAGE_ERR}" >> $GITHUB_OUTPUT
 
@@ -663,8 +663,8 @@ jobs:
         if: always()
         id: pre_slack_result
         run: |
-          MESSAGE=":white_check_mark: Install tests (Attempt: #${{ github.run_attempt }}) job passed"
-          MESSAGE_ERR=":x: Install tests (Attempt: #${{ github.run_attempt }}) job failed"
+          MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
+          MESSAGE_ERR=":x: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job failed"
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
@@ -950,8 +950,8 @@ jobs:
         if: always()
         id: pre_slack_result
         run: |
-          MESSAGE=":white_check_mark: API tests (Attempt: #${{ github.run_attempt }}) job passed"
-          MESSAGE_ERR=":x: API tests (Attempt: #${{ github.run_attempt }}) job failed"
+          MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
+          MESSAGE_ERR=":x: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job failed"
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
@@ -1206,8 +1206,8 @@ jobs:
         if: always()
         id: pre_slack_result
         run: |
-          MESSAGE=":white_check_mark: Flow tests (Attempt: #${{ github.run_attempt }}) job passed"
-          MESSAGE_ERR=":x: Flow tests (Attempt: #${{ github.run_attempt }}) job failed"
+          MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
+          MESSAGE_ERR=":x: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job failed"
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
@@ -1616,8 +1616,8 @@ jobs:
         if: always()
         id: pre_slack_result
         run: |
-          MESSAGE=":white_check_mark: Fleet tests (Attempt: #${{ github.run_attempt }}) job passed"
-          MESSAGE_ERR=":x: Fleet tests (Attempt: #${{ github.run_attempt }}) job failed"
+          MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
+          MESSAGE_ERR=":x: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job failed"
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
@@ -1813,8 +1813,8 @@ jobs:
         if: always()
         id: pre_slack_result
         run: |
-          MESSAGE=":white_check_mark: Build Simulator (Attempt: #${{ github.run_attempt }}) job passed"
-          MESSAGE_ERR=":x: Build Simulator (Attempt: #${{ github.run_attempt }}) job failed"
+          MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
+          MESSAGE_ERR=":x: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job failed"
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
@@ -2022,8 +2022,8 @@ jobs:
         if: always()
         id: pre_slack_result
         run: |
-          MESSAGE=":white_check_mark: Simulator tests (Attempt: #${{ github.run_attempt }}) job passed"
-          MESSAGE_ERR=":x: Simulator tests (Attempt: #${{ github.run_attempt }}) job failed"
+          MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
+          MESSAGE_ERR=":x: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job failed"
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 

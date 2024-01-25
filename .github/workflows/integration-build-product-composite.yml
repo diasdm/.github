@@ -699,9 +699,9 @@ jobs:
         run: |
           ssh_conn_string=${{ steps.wait_for_machines.outputs.manager_ssh_conn_string }}
           ssh $ssh_conn_string -i ~/.ssh/aws_slave.pem -o StrictHostKeyChecking=no '
-            docker login ${{ env.REGISTRY }}-u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
-            docker login ${{ env.PUSH_REGISTRY }}-u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
-            docker login ${{ env.MID_REGISTRY }}-u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
+            docker login ${{ env.REGISTRY }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
+            docker login ${{ env.PUSH_REGISTRY }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
+            docker login ${{ env.MID_REGISTRY }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
 
             docker pull "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
             docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
