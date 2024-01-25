@@ -24,6 +24,12 @@ on:
         required: false
         type: boolean
         default: false
+      fleet_ips:
+        required: true
+        type: string
+      fleet_number_members:
+        required: true
+        type: number
 
 
     secrets:
@@ -585,6 +591,88 @@ jobs:
           docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
           docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.PUSH_REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
 
+          - name: Install terraform
+          shell: bash
+          run: |
+            wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+            echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+            sudo apt update && sudo apt install terraform -y
+  
+      - name: Setup terraform proxmox provisioner
+        id: provision_infra_setup
+        shell: bash
+        run: |
+          provision_infra_dir=provision_scripts
+          provision_infra_version=0.0.1-38
+          provision_infra_repo_name=devops-tf-proxmox-fleet
+
+          rm -rf $provision_infra_dir
+          export PATH="$HOME/.local/bin:$PATH"
+          integration-pipeline fetch_by_tag --repo $provision_infra_repo_name --version $provision_infra_version --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $provision_infra_dir
+          ls -la $provision_infra_dir
+          echo "target_dir=${provision_infra_dir}/hosts/generic/" >> $GITHUB_OUTPUT
+
+      - name: Define Instance names
+        id: infra_names
+        shell: bash
+        run: |
+          branch=$(echo ${GITHUB_REF#refs/heads/} | sed "s;\.;-;g" )
+
+          local_manager_prefix="ip-hgf-$branch-manager"
+          local_worker_prefix="ip-$branch-worker"
+          echo "$local_manager_prefix"
+          echo "$local_worker_prefix"
+
+          echo "manager_prefix=${local_manager_prefix}" >> $GITHUB_OUTPUT
+          echo "worker_prefix=${local_worker_prefix}" >> $GITHUB_OUTPUT
+
+      - name: Provision remote vms (Proxmox)
+        working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
+        shell: bash
+        run: |
+          terraform init -backend-config="key=hel-fleet-${{ steps.infra_names.outputs.manager_prefix }}.tfstate"
+          terraform plan
+          terraform apply -auto-approve
+        env:
+          TF_VAR_number_agents: ${{ inputs.fleet_number_members }}
+          TF_VAR_proxmox_api_url: "https://hel.mov.ai:8006/api2/json"
+          TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
+          TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
+          TF_VAR_provision_ssh_pem: ${{ secrets.ssh_pem_fleet_aws_vm }}
+          TF_VAR_ip_list: ${{ inputs.fleet_ips }}
+          TF_VAR_proxmox_host: "hel"
+          TF_VAR_vm_gateway: "172.22.0.1"
+          TF_VAR_ip_mask: 24
+          TF_VAR_bios: "seabios"
+          TF_VAR_pool: "IP-Temp-VMs"
+          TF_VAR_tags: "ip-fleet"
+
+          TF_VAR_fleet_hosts_user: "devops"
+          TF_VAR_template_name: "ubuntu-2004-cloudinit-template2"
+          TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.manager_prefix }}
+          TF_VAR_fleet_manager_memory: 8192
+          TF_VAR_template_name_no_gpu: "ubuntu-2004-cloudinit-template2"
+          TF_VAR_fleet_worker_name_prefix: ${{ steps.infra_names.outputs.worker_prefix }}
+          TF_VAR_fleet_worker_memory: 8192
+
+      - name: Prepare Devops provisioning slack message
+        if: always()
+        id: pre_slack_infra
+        run: |
+          MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is being impacted by an infrastructural issue. \
+          Provisioning of fleet infrastructure failed. Please take a look! \
+          Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          echo "msg_error=${MESSAGE_ERR}" >> $GITHUB_OUTPUT
+
+      - name: Slack message failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          channel-id: "G0102LEV1CL"
+          slack-message: ${{ steps.pre_slack_infra.outputs.msg_error }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
+  
       - name: Setup ansible installation
         id: ansible_install_setup
         shell: bash
@@ -611,15 +699,58 @@ jobs:
         shell: bash
         run: |
 
+          function ensure_agent_up(){
+            vm_ip=$1
+            i="0"
+            max=15
+            success=1
+            while [ $success -ne 0 ]
+            do
+            echo "Checking if $vm_ip is reachable ($i/$max)"
+            ping -c1 $vm_ip &>/dev/null
+            success=$?
+
+            if [ $i -lt $max ]
+            then
+              i=$[$i+1]
+            else
+              echo "Timeout waiting for $vm_ip"
+              exit 2
+            fi
+
+            sleep 2
+            done
+
+          }
+          echo "${{ secrets.ssh_pem_fleet_aws_vm }}" > ~/.ssh/aws_slave.pem
+          sudo chmod 600 ~/.ssh/aws_slave.pem
+
           cp -r ../*.json ./templates/fleet/
           cp ../product-manifest.yaml ./templates/fleet/product-manifest.yaml
+          
           echo "---" >> inventory.yaml
           echo "fleet:" >> inventory.yaml
           echo "  hosts:" >> inventory.yaml
           echo "    host:" >> inventory.yaml
           echo "      ansible_host: localhost" >> inventory.yaml
 
-          ./fleet_install.sh setup --product-artifacts ./templates/fleet/ -i inventory.yaml
+          stripped_ips=$(echo ${{ inputs.fleet_ips }} | sed "s;\[;;g" | sed "s;];;g" | sed "s; ;;g")
+          touch ~/.ssh/known_hosts
+          sudo chmod 600 ~/.ssh/known_hosts
+          IFS=',' read -r -a stripped_ips_arr <<< $stripped_ips
+          manager_ip=${stripped_ips_arr[0]}
+          echo $manager_ip
+          echo "manager_ip=${manager_ip}" >> $GITHUB_OUTPUT
+          for ip in "${stripped_ips_arr[@]}"
+          do
+            ensure_agent_up $ip
+            ssh-keygen -f ~/.ssh/known_hosts -R $ip
+            ssh-keyscan -H $ip >> ~/.ssh/known_hosts
+          done
+          cat ../staging/hosts
+          echo "------------"
+          cat inventory.yaml
+          ./fleet_install.sh setup --product-artifacts ./templates/fleet/ -i ../staging/hosts
 
 
       - name: Collect Installed components
