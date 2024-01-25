@@ -409,6 +409,8 @@ jobs:
           docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
           docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.PUSH_REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
 
+
+
       - name: Installation
         shell: bash
         run: |
@@ -420,6 +422,23 @@ jobs:
 
           mkdir -p artifacts
           cp *.json artifacts/
+          CONFIG_FILE_NAME="standalone-manager-${{ matrix.distro }}.json"
+          mkdir -p userspace/models_database/ userspace/tugbot_ignition/
+
+          export USERSPACE_FOLDER_PATH="$(pwd)/userspace"
+          export PUBLIC_IP=$(hostname -I | awk '{print $1}')
+
+          export PATH="$HOME/.local/bin:$PATH"
+          integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key services_version --output_file movai_service_version
+          integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key quickstart_version --output_file quickstart_version
+
+          wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat quickstart_version).bash
+          chmod +x ./QuickStart_$(cat quickstart_version).bash
+          ./QuickStart_$(cat quickstart_version).bash --apps $(cat movai_service_version) $CONFIG_FILE_NAME
+
+          execution_status=$?
+          exit $execution_status
+          rm movai_service_version
 
       - name: Collect Installed components
         if: always()
@@ -501,7 +520,190 @@ jobs:
         run: |
           docker system prune -f
           docker image prune --all -f
-        
+
+  Install-Heterogeneos-Fleet:
+    needs: [Build-Spawner]
+    strategy:
+      matrix:
+        distro: ${{ fromJSON(inputs.ros_distro) }}
+    runs-on: integration-pipeline
+
+    steps:
+      - uses: rtCamp/action-cleanup@master
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Agent info
+        run: |
+          echo "public ip: $(curl ipinfo.io/ip)"
+          echo "private ip: $(hostname -I | awk '{print $1}')"
+
+      - name: unstash raised_meta
+        uses: actions/download-artifact@v3
+        with:
+          name: raised_meta
+          path: .
+
+      - name: unstash manifest
+        uses: actions/download-artifact@v3
+        with:
+          name: manifest
+          path: .
+
+      - name: unstash robot_jsons_${{ matrix.distro }}
+        uses: actions/download-artifact@v3
+        with:
+          name: robot_jsons_${{ matrix.distro }}
+          path: .
+
+      - name: Login to ${{ env.REGISTRY }} Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.REGISTRY }}
+
+      - name: Login to ${{ env.PUSH_REGISTRY }} Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.PUSH_REGISTRY }}
+
+      - name: Login to ${{ env.MID_REGISTRY }} Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.MID_REGISTRY }}
+
+      - name: Docker load spawner image
+        shell: bash
+        run: |
+          docker pull "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
+          docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
+          docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.PUSH_REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
+
+      - name: Setup ansible installation
+        id: ansible_install_setup
+        shell: bash
+        run: |
+          install_key=ansible_deploy
+
+          rm -f /tmp/target_dir.txt /tmp/version.txt /tmp/repo_name.txt
+          export PATH="$HOME/.local/bin:$PATH"
+          integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.installation.$install_key.target_dir --output_file /tmp/target_dir.txt
+          integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.installation.$install_key.version --output_file /tmp/version.txt
+          integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.installation.$install_key.name --output_file /tmp/repo_name.txt
+          install_infra_dir=$(cat /tmp/target_dir.txt)
+          install_infra_version=$(cat /tmp/version.txt)
+          install_infra_repo_name=$(cat /tmp/repo_name.txt)
+
+          rm -rf $install_infra_repo_name
+          integration-pipeline fetch_by_tag --repo $install_infra_repo_name --version $install_infra_version --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $install_infra_dir
+          ls -la $install_infra_dir
+          echo "target_dir=${install_infra_dir}" >> $GITHUB_OUTPUT
+
+      - name: Ansible install platform
+        id: ansible_install_platform
+        working-directory: ${{ steps.ansible_install_setup.outputs.target_dir }}
+        shell: bash
+        run: |
+
+          cp -r *.json ./templates/fleet/
+          cp product-manifest.yaml ./templates/fleet/product-manifest.yaml
+          echo "---" >> inventory.yaml
+          echo "fleet:" >> inventory.yaml
+          echo "  hosts:" >> inventory.yaml
+          echo "    host:" >> inventory.yaml
+          echo "      ansible_host: localhost" >> inventory.yaml
+
+          ./fleet_install.sh setup --product-artifacts ./templates/fleet/ -i inventory.yaml
+
+
+      - name: Collect Installed components
+        if: always()
+        shell: bash
+        run: |
+            echo "PLACEHOLDER"
+  
+      - name: Get current job id
+        if: always()
+        shell: bash
+        id: job_info
+        run: |
+          sudo apt install jq -y
+          job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
+          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
+          echo "$job_id"
+          echo "$job_html_url"
+          echo "job_url=$job_html_url" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.gh_token }}
+
+      - name: Prepare slack variables
+        if: always()
+        id: pre_slack_result
+        run: |
+          MESSAGE=":white_check_mark: Install Robot (Attempt: #${{ github.run_attempt }}) job passed"
+          MESSAGE_ERR=":x: Install Robot (Attempt: #${{ github.run_attempt }}) job failed"
+          echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
+          echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
+
+      - name: Slack message success
+        uses: archive/github-actions-slack@master
+        with:
+          slack-function: send-message
+          slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-text: ${{ steps.pre_slack_result.outputs.msg }}
+          slack-optional-thread_ts: ${{ needs.Build-Spawner.outputs.slack_thread_id }}
+
+      - name: Slack message failure
+        uses: archive/github-actions-slack@master
+        if: failure()
+        with:
+          slack-function: send-message
+          slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-text: ${{ steps.pre_slack_result.outputs.msg_error }}
+          slack-optional-thread_ts: ${{ needs.Build-Spawner.outputs.slack_thread_id }}
+
+      - name: Stash project metadata
+
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: project_metadata
+          path: metadata_artifact/*
+          retention-days: 3
+
+      - name: Stash deploy_artifacts_noetic
+        uses: actions/upload-artifact@v3
+        with:
+          name: deploy_artifacts_noetic
+          path: artifacts/*
+          retention-days: 5
+
+      - name: Remove robots
+        if: always()
+        shell: bash
+        run: |
+          for robot in $(movai-cli robots list); do
+            movai-cli robots stop $robot
+            sleep 5
+            movai-cli robots remove $robot
+          done || true
+
+      - name: Docker cleanups
+        if: always()
+        shell: bash
+        run: |
+          docker system prune -f
+          docker image prune --all -f
+
+
   publish:
     needs: [Install-Robot]
     runs-on: integration-pipeline
