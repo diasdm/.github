@@ -843,7 +843,7 @@ jobs:
 
 
   publish:
-    needs: [Install-Robot]
+    needs: [Install-Robot, Install-Heterogeneos-Fleet]
     runs-on: integration-pipeline
     steps:
       - uses: rtCamp/action-cleanup@master
