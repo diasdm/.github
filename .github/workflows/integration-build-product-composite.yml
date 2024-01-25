@@ -58,6 +58,8 @@ on:
         required: true
       slack_token_id:
         required: true
+      ssh_pem_fleet_aws_vm:
+        required: true
       proxmox_api_url:
         required: true
       proxmox_api_token_id:
