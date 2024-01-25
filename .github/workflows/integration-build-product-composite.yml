@@ -690,6 +690,7 @@ jobs:
             ensure_agent_up $ip
             ssh-keygen -f ~/.ssh/known_hosts -R $ip
             ssh-keyscan -H $ip >> ~/.ssh/known_hosts
+          done
 
       - name: Docker load manager spawner (Remote)
         shell: bash
