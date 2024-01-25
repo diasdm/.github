@@ -422,7 +422,7 @@ jobs:
 
           mkdir -p artifacts
           cp *.json artifacts/
-          CONFIG_FILE_NAME="standalone-manager-${{ matrix.distro }}.json"
+          CONFIG_FILE_NAME="standalone-manager-${{ matrix.distro }}-template.json"
           mkdir -p userspace/models_database/ userspace/tugbot_ignition/
 
           export USERSPACE_FOLDER_PATH="$(pwd)/userspace"
@@ -611,8 +611,8 @@ jobs:
         shell: bash
         run: |
 
-          cp -r *.json ./templates/fleet/
-          cp product-manifest.yaml ./templates/fleet/product-manifest.yaml
+          cp -r ../*.json ./templates/fleet/
+          cp ../product-manifest.yaml ./templates/fleet/product-manifest.yaml
           echo "---" >> inventory.yaml
           echo "fleet:" >> inventory.yaml
           echo "  hosts:" >> inventory.yaml
