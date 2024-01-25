@@ -259,8 +259,6 @@ jobs:
         id: pre_build
         shell: bash
         run: |
-
-
           mkdir -p /tmp/ci_artifacts/dependency/
 
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_dependencies.product_base.name --output_file /tmp/ci_artifacts/product_base_name.txt
@@ -313,8 +311,8 @@ jobs:
         if: always()
         id: pre_slack_result
         run: |
-          MESSAGE=":white_check_mark: Build Spawner (Attempt: #${{ github.run_attempt }}) job passed"
-          MESSAGE_ERR=":x: Build Spawner (Attempt: #${{ github.run_attempt }}) job failed"
+          MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
+          MESSAGE_ERR=":x: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job failed"
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
@@ -473,8 +471,8 @@ jobs:
         if: always()
         id: pre_slack_result
         run: |
-          MESSAGE=":white_check_mark: Install Robot (Attempt: #${{ github.run_attempt }}) job passed"
-          MESSAGE_ERR=":x: Install Robot (Attempt: #${{ github.run_attempt }}) job failed"
+          MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
+          MESSAGE_ERR=":x: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job failed"
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
@@ -772,8 +770,8 @@ jobs:
         if: always()
         id: pre_slack_result
         run: |
-          MESSAGE=":white_check_mark: Install Robot (Attempt: #${{ github.run_attempt }}) job passed"
-          MESSAGE_ERR=":x: Install Robot (Attempt: #${{ github.run_attempt }}) job failed"
+          MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
+          MESSAGE_ERR=":x: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job failed"
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
