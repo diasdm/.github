@@ -5,6 +5,9 @@ on:
       product_name:
         required: true
         type: string
+      debug_fleet_keep_alive:
+        required: false
+        type: boolean
       ros_distro:
         required: true
         type: string
@@ -676,15 +679,6 @@ jobs:
           echo "${{ secrets.ssh_pem_fleet_aws_vm }}" > ~/.ssh/aws_slave.pem
           sudo chmod 600 ~/.ssh/aws_slave.pem
 
-          cp -r ../*.json ./templates/fleet/
-          cp ../product-manifest.yaml ./templates/fleet/product-manifest.yaml
-          
-          echo "---" >> inventory.yaml
-          echo "fleet:" >> inventory.yaml
-          echo "  hosts:" >> inventory.yaml
-          echo "    host:" >> inventory.yaml
-          echo "      ansible_host: localhost" >> inventory.yaml
-
           stripped_ips=$(echo ${{ inputs.fleet_ips }} | sed "s;\[;;g" | sed "s;];;g" | sed "s; ;;g")
           touch ~/.ssh/known_hosts
           sudo chmod 600 ~/.ssh/known_hosts
@@ -738,8 +732,16 @@ jobs:
         working-directory: ${{ steps.ansible_install_setup.outputs.target_dir }}
         shell: bash
         run: |
+          cp -r ../*.json ./templates/fleet/
+          cp ../product-manifest.yaml ./templates/fleet/product-manifest.yaml
+          
+          echo "---" >> inventory.yaml
+          echo "fleet:" >> inventory.yaml
+          echo "  hosts:" >> inventory.yaml
+          echo "    host:" >> inventory.yaml
+          echo "      ansible_host: localhost" >> inventory.yaml
 
-          done
+
           cat ../staging/hosts
           echo "------------"
           cat inventory.yaml
@@ -794,8 +796,20 @@ jobs:
           slack-text: ${{ steps.pre_slack_result.outputs.msg_error }}
           slack-optional-thread_ts: ${{ needs.Build-Spawner.outputs.slack_thread_id }}
 
+      - name: Teardown remote vms (Proxmox)
+        working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
+        if: ${{ ( !inputs.debug_fleet_keep_alive && success() ) || cancelled() || ( !inputs.debug_fleet_keep_alive && failure() ) }}
+        shell: bash
+        run: terraform destroy -auto-approve
+        env:
+          TF_VAR_number_agents: ${{ inputs.fleet_number_members }}
+          TF_VAR_proxmox_api_url: "https://hel.mov.ai:8006/api2/json"
+          TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
+          TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
+          TF_VAR_provision_ssh_pem: ${{ secrets.ssh_pem_fleet_aws_vm }}
+          TF_VAR_ip_list: ${{ inputs.fleet_ips }}
+  
       - name: Stash project metadata
-
         if: always()
         uses: actions/upload-artifact@v3
         with:
