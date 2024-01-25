@@ -736,7 +736,7 @@ jobs:
         shell: bash
         run: |
           
-          cp ${{ steps.provision_infra_setup.outputs.target_dir }}/hosts hosts
+          cp ../${{ steps.provision_infra_setup.outputs.target_dir }}/hosts hosts
           cp -r ../*.json ./templates/fleet/
           cp ../product-manifest.yaml ./templates/fleet/product-manifest.yaml
           
