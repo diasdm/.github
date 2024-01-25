@@ -733,6 +733,8 @@ jobs:
         working-directory: ${{ steps.ansible_install_setup.outputs.target_dir }}
         shell: bash
         run: |
+          
+          cp ${{ steps.provision_infra_setup.outputs.target_dir }}/hosts hosts
           cp -r ../*.json ./templates/fleet/
           cp ../product-manifest.yaml ./templates/fleet/product-manifest.yaml
           
@@ -743,10 +745,10 @@ jobs:
           echo "      ansible_host: localhost" >> inventory.yaml
 
 
-          cat ../staging/hosts
+          cat hosts
           echo "------------"
           cat inventory.yaml
-          ./fleet_install.sh setup --product-artifacts ./templates/fleet/ -i ../staging/hosts
+          ./fleet_install.sh setup --product-artifacts ./templates/fleet/ -i hosts
 
 
       - name: Collect Installed components
