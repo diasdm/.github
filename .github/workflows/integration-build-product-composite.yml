@@ -782,7 +782,8 @@ jobs:
           cp -r ../*.json ./templates/fleet/
           cp ../product-manifest.yaml ./templates/fleet/product-manifest.yaml
           cat hosts
-          ./fleet_install.sh setup --product-artifacts ./templates/fleet/ -i hosts
+          cat inventory.yaml
+          ./fleet_install.sh setup --product-artifacts ./templates/fleet/ -i hosts -m install
 
 
       - name: Collect Installed components
