@@ -783,7 +783,9 @@ jobs:
           cp ../product-manifest.yaml ./templates/fleet/product-manifest.yaml
           cat hosts
           ./fleet_install.sh setup --product-artifacts ./templates/fleet/ -i hosts -m install
-
+        env:
+          GITHUB_USER: ${{ env.GITHUB_API_USR }}
+          GITHUB_TOKEN: ${{ secrets.auto_commit_pwd }}
 
       - name: Collect Installed components
         if: always()
