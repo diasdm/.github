@@ -33,6 +33,10 @@ on:
       fleet_number_members:
         required: true
         type: number
+      with_simulation:
+        required: false
+        type: string
+        default: true
 
 
     secrets:
@@ -146,10 +150,25 @@ jobs:
 
           integration-pipeline merge_manifest_multi_dependency $merge_manifest_args 
 
+          integration-pipeline generate_meta_simulator_artifacts \
+          --manifest_platform_base_key product_dependencies.product_base \
+          --product_name ${{ inputs.product_name }} \
+          --update_simulator \
+          --branch ${GITHUB_REF#refs/heads/}
 
+          mkdir simulator_artifacts
+          cp ci_artifacts/* ./simulator_artifacts
+
+      - name: Stash sim_configs
+        uses: actions/upload-artifact@v3
+        with:
+          name: sim_configs
+          path: simulator_artifacts/*
+          retention-days: 5
+  
       - name: raise
         run: |
-          rm -rf simulator_artifacts ci_artifacts
+          rm -rf simulator_artifacts
           mkdir platform_configs
           integration-pipeline raise
           cp product.version ./platform_configs/product.version
@@ -572,6 +591,197 @@ jobs:
           docker system prune -f
           docker image prune --all -f
 
+  Build-Simulator:
+    needs: [Validate-boostrap-configs, Build-Spawner]
+    runs-on: integration-pipeline
+    env:
+      DISTRO: noetic
+    outputs:
+      image_name: "${{ steps.pre_build.outputs.push_name }}"
+      skip_simulator: "${{ steps.pre_simulator_build.outputs.skip_simulator_build }}"
+      simulator_tests_agent_name: "${{ steps.post_simulator_build.outputs.simul_tests_infra }}"
+      slack_thread_id: ${{ needs.Validate-boostrap-configs.outputs.slack_thread_id }}
+    steps:
+      - name: Pre clean ups
+        uses: rtCamp/action-cleanup@master
+        if: ${{ inputs.with_simulation == 'true' }}
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        if: ${{ inputs.with_simulation == 'true' }}
+
+      - name: Agent info
+        if: ${{ inputs.with_simulation == 'true' }}
+        run: |
+          echo "public ip: $(curl ipinfo.io/ip)"
+          echo "private ip: $(hostname -I | awk '{print $1}')"
+
+      - name: Install CI Scripts
+        if: ${{ inputs.with_simulation == 'true' }}
+        shell: bash
+        run: |
+          python3 -m pip install pip --upgrade
+          python3 -m pip install pyopenssl --upgrade
+          python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
+
+      - name: unstash sim_configs
+        if: ${{ inputs.with_simulation == 'true' }}
+        uses: actions/download-artifact@v3
+        with:
+          name: sim_configs
+          path: simulator_artifacts
+
+      - name: unstash manifest
+        if: ${{ inputs.with_simulation == 'true' }}
+        uses: actions/download-artifact@v3
+        with:
+          name: manifest
+          path: .
+
+      - name: Prepare Skip variables
+        id: pre_simulator_build
+        if: ${{ inputs.with_simulation == 'true' }}
+        run: |
+          if [ ! -f "simulator_artifacts/version" ]; then
+            #echo ::set-output name=skip_simulator_build::"true"
+            echo "skip_simulator_build=true" >> $GITHUB_OUTPUT
+          else
+            #echo ::set-output name=skip_simulator_build::"false"
+            echo "skip_simulator_build=false" >> $GITHUB_OUTPUT
+          fi
+          #echo ::set-output name=image_name::"${{ env.REGISTRY }}/ci/$(cat simulator_artifacts/simulator_name.ci)"
+          echo "image_name=${{ env.REGISTRY }}/ci/$(cat simulator_artifacts/simulator_name.ci)" >> $GITHUB_OUTPUT
+
+      - name: Lint docker image
+        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
+        shell: bash
+        run: |
+          wget https://github.com/hadolint/hadolint/releases/download/v2.9.3/hadolint-Linux-x86_64
+          chmod +x hadolint-Linux-x86_64
+          ./hadolint-Linux-x86_64 docker/$DISTRO/Dockerfile-simulator -t error
+
+      - name: Fetch artifacts
+        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
+        shell: bash
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          integration-pipeline fetch_simulator_models \
+          --manifest_platform_base_key product_components \
+          --gh_api_user $GITHUB_API_USR \
+          --gh_api_pwd ${{ secrets.auto_commit_pwd }} \
+          --target_dir "./models"
+          if [ ! -d ./models ]; then mkdir -p ./models; fi
+
+      - name: Login to ${{ env.REGISTRY }} Registry
+        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.REGISTRY }}
+
+      - name: Login to ${{ env.PUSH_REGISTRY }} Registry
+        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.PUSH_REGISTRY }}
+
+      - name: Login to ${{ env.MID_REGISTRY }} Registry
+        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.MID_REGISTRY }}
+
+      - name: Prepare docker build variables
+        if: ${{ inputs.with_simulation == 'true' }}
+        id: pre_build
+        run: |
+          push_name_tmp=$(echo "${{ steps.pre_simulator_build.outputs.image_name }}" | sed "s-${{ env.REGISTRY }}-${{ env.MID_REGISTRY }}-g")
+          echo "base_name=$(cat simulator_artifacts/simulator_base.ci)" >> $GITHUB_OUTPUT
+          echo "push_name=$push_name_tmp" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Docker build
+        if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true'}}
+        shell: bash
+        run: |
+          docker build --add-host ${{ env.REGISTRY }}:172.22.0.106 \
+            --build-arg BASE_IMAGE=${{ steps.pre_build.outputs.base_name }} \
+            --build-arg CI_SCRIPT_VERSION=${{ env.CI_INTEGRATION_SCRIPTS_VERSION }} \
+            --file docker/${{ env.DISTRO }}/Dockerfile-simulator \
+            --platform linux/amd64 \
+            --tag ${{ steps.pre_build.outputs.push_name }} \
+            --pull \
+            --push .
+
+
+      - name: Get current job id
+        if: always()
+        shell: bash
+        id: job_info
+        run: |
+          sudo apt install jq -y
+          job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
+          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
+          echo "$job_id"
+          echo "$job_html_url"
+          echo "job_url=$job_html_url" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.gh_token }}
+
+      - name: Prepare slack variables
+        if: always()
+        id: pre_slack_result
+        run: |
+          MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
+          MESSAGE_ERR=":x: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job failed"
+          echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
+          echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
+
+      - name: Slack message success
+        uses: archive/github-actions-slack@master
+        with:
+          slack-function: send-message
+          slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-text: ${{ steps.pre_slack_result.outputs.msg }}
+          slack-optional-thread_ts: ${{ needs.Validate-boostrap-configs.outputs.slack_thread_id }}
+
+      - name: Slack message failure
+        uses: archive/github-actions-slack@master
+        if: failure()
+        with:
+          slack-function: send-message
+          slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-text: ${{ steps.pre_slack_result.outputs.msg_error }}
+          slack-optional-thread_ts: ${{ needs.Validate-boostrap-configs.outputs.slack_thread_id }}
+
+      - name: Docker cleanups
+        if: always()
+        shell: bash
+        run: |
+          docker system prune -f
+          docker image prune --all -f
+
+      - name: Setup simulation Tests
+        id: post_simulator_build
+        shell: bash
+        run: |
+          if [ "${{ inputs.with_simulation_tests }}" = "true" ];
+          then
+            echo "simul_tests_infra=simul-mary-queuer" >> $GITHUB_OUTPUT
+          else
+            echo "simul_tests_infra=integration-pipeline" >> $GITHUB_OUTPUT
+          fi
+    
+
   Install-Heterogeneos-Fleet:
     needs: [Build-Spawner]
     strategy:
@@ -887,6 +1097,7 @@ jobs:
         run: |
           docker system prune -f
           docker image prune --all -f
+
 
   publish:
     needs: [Install-Robot, Install-Heterogeneos-Fleet]
