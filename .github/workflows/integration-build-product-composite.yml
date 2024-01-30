@@ -80,7 +80,7 @@ on:
         required: false
 
 env:
-  CI_INTEGRATION_SCRIPTS_VERSION: "2.2.0.15"
+  CI_INTEGRATION_SCRIPTS_VERSION: "2.2.0.25"
   MOBTEST_VERSION: "0.0.4.3"
   PACKAGE_DEPLOYER_VERSION: "1.0.0.26"
   GITHUB_API_USR: "OttoMation-Movai"
@@ -145,8 +145,8 @@ jobs:
           merge_manifest_args=" --dependency_name products"
           merge_manifest_args="$merge_manifest_args --gh_api_user $GITHUB_API_USR"
           merge_manifest_args="$merge_manifest_args --gh_api_pwd ${{ secrets.auto_commit_pwd }}"
-          merge_manifest_args="$merge_manifest_args --merge_sub_prod_dep_keys platform_config,platform_components"
-          merge_manifest_args="$merge_manifest_args --merge_sub_prod_main_keys product_config,system_config"
+          merge_manifest_args="$merge_manifest_args --merge_sub_prod_dep_keys platform_config,platform_components,installation"
+          merge_manifest_args="$merge_manifest_args --merge_sub_prod_main_keys product_config,system_config,simulator_components"
 
           integration-pipeline merge_manifest_multi_dependency $merge_manifest_args 
 
