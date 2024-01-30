@@ -150,12 +150,13 @@ jobs:
 
           integration-pipeline merge_manifest_multi_dependency $merge_manifest_args 
 
-          integration-pipeline generate_meta_simulator_artifacts \
-          --manifest_platform_base_key product_dependencies.product_base \
-          --product_name ${{ inputs.product_name }} \
-          --update_simulator \
-          --branch ${GITHUB_REF#refs/heads/}
-          --docker_registry ${{ env.PUSH_REGISTRY }}
+          generate_meta_sim_args="--manifest_platform_base_key product_dependencies.product_base"
+          generate_meta_sim_args="$generate_meta_sim_args --product_name ${{ inputs.product_name }}"
+          generate_meta_sim_args="$generate_meta_sim_args --update_simulator"
+          generate_meta_sim_args="$generate_meta_sim_args --branch ${GITHUB_REF#refs/heads/}"
+          generate_meta_sim_args="$generate_meta_sim_args --docker_registry ${{ env.PUSH_REGISTRY }}"
+
+          integration-pipeline generate_meta_simulator_artifacts $generate_meta_sim_args
 
           mkdir simulator_artifacts
           cp ci_artifacts/* ./simulator_artifacts
