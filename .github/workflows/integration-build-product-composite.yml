@@ -155,6 +155,7 @@ jobs:
           --product_name ${{ inputs.product_name }} \
           --update_simulator \
           --branch ${GITHUB_REF#refs/heads/}
+          --docker_registry ${{ env.PUSH_REGISTRY }}
 
           mkdir simulator_artifacts
           cp ci_artifacts/* ./simulator_artifacts
