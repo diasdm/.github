@@ -80,7 +80,7 @@ on:
         required: false
 
 env:
-  CI_INTEGRATION_SCRIPTS_VERSION: "2.2.0.25"
+  CI_INTEGRATION_SCRIPTS_VERSION: "2.2.0.26"
   MOBTEST_VERSION: "0.0.4.3"
   PACKAGE_DEPLOYER_VERSION: "1.0.0.26"
   GITHUB_API_USR: "OttoMation-Movai"
@@ -668,7 +668,8 @@ jobs:
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           integration-pipeline fetch_simulator_models \
-          --manifest_platform_base_key product_components \
+          --manifest_platform_base_key simulator_components.plugins \
+          --composite_key product_dependencies.products \
           --gh_api_user $GITHUB_API_USR \
           --gh_api_pwd ${{ secrets.auto_commit_pwd }} \
           --target_dir "./models"
