@@ -687,7 +687,6 @@ jobs:
         shell: bash
         run: |
           source ci_scripts/bin/activate
-          export PATH="$HOME/.local/bin:$PATH"
           integration-pipeline fetch_simulator_models \
           --manifest_platform_base_key product_dependencies.products \
           --gh_api_user $GITHUB_API_USR \
