@@ -138,6 +138,7 @@ jobs:
           deactivate
 
       - name: Bootstraping simulator metadata
+        shell: bash
         run: |
           git config --global --add safe.directory $(pwd)
           git fetch
@@ -176,6 +177,7 @@ jobs:
           retention-days: 5
   
       - name: raise
+        shell: bash
         run: |
           rm -rf simulator_artifacts
           mkdir platform_configs
