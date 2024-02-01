@@ -668,8 +668,7 @@ jobs:
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           integration-pipeline fetch_simulator_models \
-          --manifest_platform_base_key simulator_components.plugins \
-          --composite_key product_dependencies.products \
+          --manifest_platform_base_key product_dependencies.products \
           --gh_api_user $GITHUB_API_USR \
           --gh_api_pwd ${{ secrets.auto_commit_pwd }} \
           --target_dir "./models"
