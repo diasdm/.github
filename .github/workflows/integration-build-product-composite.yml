@@ -802,7 +802,238 @@ jobs:
           else
             echo "simul_tests_infra=integration-pipeline" >> $GITHUB_OUTPUT
           fi
-    
+
+  Install-Simulator-Robot:
+    needs: [Build-Spawner, Build-Simulator]
+    strategy:
+      matrix:
+        distro: ${{ fromJSON(inputs.ros_distro) }}
+    runs-on: integration-pipeline
+    outputs:
+      slack_thread_id: ${{ needs.Build-Spawner.outputs.slack_thread_id }}
+      skip_simulator: ${{ needs.Build-Simulator.outputs.skip_simulator }}
+    steps:
+      - uses: rtCamp/action-cleanup@master
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
+
+      - name: Checkout
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
+        uses: actions/checkout@v3
+
+      - name: Agent info
+        if: ${{ inputs.with_simulation == 'true' }}
+        run: |
+          echo "public ip: $(curl ipinfo.io/ip)"
+          echo "private ip: $(hostname -I | awk '{print $1}')"
+
+      - name: unstash raised_meta
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
+        uses: actions/download-artifact@v3
+        with:
+          name: raised_meta
+          path: .
+
+      - name: unstash manifest
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
+        uses: actions/download-artifact@v3
+        with:
+          name: manifest
+          path: .
+
+      - name: unstash robot_jsons_${{ matrix.distro }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
+        uses: actions/download-artifact@v3
+        with:
+          name: robot_jsons_${{ matrix.distro }}
+          path: .
+
+      - name: Login to ${{ env.REGISTRY }} Registry
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.REGISTRY }}
+
+      - name: Login to ${{ env.PUSH_REGISTRY }} Registry
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.PUSH_REGISTRY }}
+
+      - name: Login to ${{ env.MID_REGISTRY }} Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.registry_user }}
+          password: ${{ secrets.registry_password }}
+          registry: ${{ env.MID_REGISTRY }}
+
+      - name: Docker load spawner image
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
+        shell: bash
+        run: |
+          docker pull "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
+          docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
+          docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.PUSH_REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
+
+      - name: Docker load simulator image
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
+        shell: bash
+        run: |
+          promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g" | sed "s-${{ env.MID_REGISTRY }}-${{ env.REGISTRY }}-g")
+
+          docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
+          docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
+
+
+      - name: Installation
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
+        shell: bash
+        run: |
+          for robot in $(movai-cli robots list); do
+            movai-cli robots stop $robot
+            sleep 5
+            movai-cli robots remove $robot
+          done || true
+
+          mkdir -p artifacts
+          cp *.json artifacts/
+          CONFIG_FILE_NAME="manager-${{ matrix.distro }}-simulation-template.json"
+          mkdir -p userspace/models_database/ userspace/tugbot_ignition/
+
+          export USERSPACE_FOLDER_PATH="$(pwd)/userspace"
+          export PUBLIC_IP=$(hostname -I | awk '{print $1}')
+
+          export PATH="$HOME/.local/bin:$PATH"
+          integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key services_version --output_file movai_service_version
+          integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key quickstart_version --output_file quickstart_version
+
+          wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat quickstart_version).bash
+          chmod +x ./QuickStart_$(cat quickstart_version).bash
+          ./QuickStart_$(cat quickstart_version).bash --apps $(cat movai_service_version) $CONFIG_FILE_NAME
+
+          execution_status=$?
+          exit $execution_status
+          rm movai_service_version
+        env:
+          SIMULATION_ID: "CI"
+
+      - name: Collect Install logs
+        continue-on-error: true
+        run: |
+          # cleanup
+          rm -rf install_logs
+
+          mkdir -p install_logs
+          journalctl -u movai-service -t mobros --since "1hour ago" > install_logs/spawner-firmware.log
+          journalctl -u movai-service --since "1hour ago" > install_logs/movai-service.log
+
+      - name: Stash Install simulator logs artifacts
+        continue-on-error: true
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: install_simulator_logs
+          path: install_logs/*
+          retention-days: 5
+
+      - name: Run mobtest
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
+        shell: bash
+        run: |
+          container_id=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
+          docker exec -t "$container_id" bash -c '
+            set -e
+            export PATH="$HOME/.local/bin:$PATH"
+            python3 -m pip install -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple mobtest==${{ env.MOBTEST_VERSION }} --ignore-installed
+            mobtest proj /opt/ros/${{ matrix.distro }}/share/
+          '
+
+      - name: Output simulator image
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
+        id: promote
+        shell: bash
+        run: |
+          sim_img_name="$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g")"
+          push_name=$(echo "$sim_img_name" | sed "s-${{ env.REGISTRY }}-${{ env.PUSH_REGISTRY }}-g")
+
+          echo "image_name=$push_name" >> $GITHUB_OUTPUT
+
+      - name: Get current job id
+        if: always()
+        shell: bash
+        id: job_info
+        run: |
+          sudo apt install jq -y
+          job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
+          job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
+          echo "$job_id"
+          echo "$job_html_url"
+          echo "job_url=$job_html_url" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.gh_token }}
+
+      - name: Prepare slack variables
+        if: always()
+        id: pre_slack_result
+        run: |
+          MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
+          MESSAGE_ERR=":x: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job failed"
+          echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
+          echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
+
+      - name: Slack message success
+        uses: archive/github-actions-slack@master
+        with:
+          slack-function: send-message
+          slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-text: ${{ steps.pre_slack_result.outputs.msg }}
+          slack-optional-thread_ts: ${{ needs.Build-Simulator.outputs.slack_thread_id }}
+
+      - name: Slack message failure
+        uses: archive/github-actions-slack@master
+        if: failure()
+        with:
+          slack-function: send-message
+          slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-text: ${{ steps.pre_slack_result.outputs.msg_error }}
+          slack-optional-thread_ts: ${{ needs.Build-Simulator.outputs.slack_thread_id }}
+
+      - name: pre-stash
+        if: ${{ inputs.with_simulation == 'true' }}
+        shell: bash
+        run: |
+          echo "${{ steps.promote.outputs.image_name }}" > simulator.image.artifact
+
+      - name: Stash deploy_simulator_artifacts
+        if: ${{ inputs.with_simulation == 'true' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: deploy_simulator_artifacts
+          path: simulator.image.artifact
+          retention-days: 5
+
+      - name: Remove robots
+        if: always()
+        shell: bash
+        run: |
+          for robot in $(movai-cli robots list); do
+            movai-cli robots stop $robot
+            sleep 5
+            movai-cli robots remove $robot
+          done || true
+
+      - name: Docker cleanups
+        if: always()
+        shell: bash
+        run: |
+          docker system prune -f
+          docker image prune --all -f
+        
 
   Install-Heterogeneos-Fleet:
     needs: [Build-Spawner]
