@@ -130,15 +130,21 @@ jobs:
       - name: Install CI Scripts
         shell: bash
         run: |
+          python3 -m venv ci_scripts
+          source ci_scripts/bin/activate
           python3 -m pip install pip --upgrade
           python3 -m pip install pyopenssl --upgrade
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
+          deactivate
 
       - name: Bootstraping simulator metadata
         run: |
           git config --global --add safe.directory $(pwd)
           git fetch
           git checkout origin/${GITHUB_REF#refs/heads/} -- product.version
+          
+          source ci_scripts/bin/activate
+
           cat product.version
           rm -rf simulator_artifacts ci_artifacts
 
@@ -160,6 +166,7 @@ jobs:
 
           mkdir simulator_artifacts
           cp ci_artifacts/* ./simulator_artifacts
+          deactivate
 
       - name: Stash sim_configs
         uses: actions/upload-artifact@v3
@@ -172,9 +179,11 @@ jobs:
         run: |
           rm -rf simulator_artifacts
           mkdir platform_configs
+          source ci_scripts/bin/activate
           integration-pipeline raise
           cp product.version ./platform_configs/product.version
           cp product-manifest.yaml ./platform_configs/product-manifest.yaml
+          deactivate
 
       - name: Prepare slack variables
         if: always()
@@ -224,9 +233,12 @@ jobs:
       - name: Install CI Scripts
         shell: bash
         run: |
+          python3 -m venv ci_scripts
+          source ci_scripts/bin/activate
           python3 -m pip install pip --upgrade
           python3 -m pip install pyopenssl --upgrade
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
+          deactivate
 
       - name: unstash raised_meta
         uses: actions/download-artifact@v3
@@ -240,8 +252,10 @@ jobs:
           cp ./platform_configs/product.version product.version
           cp ./platform_configs/product-manifest.yaml product-manifest.yaml
           export PATH="$HOME/.local/bin:$PATH"
+          source ci_scripts/bin/activate
           cat product-manifest.yaml
           integration-pipeline generate_composite_meta_artifacts --manifest_platform_base_key "product_dependencies.products" --override_spawner ${{ inputs.product_name }}
+          deactivate
 
       - name: Stash manifest
         uses: actions/upload-artifact@v3
@@ -283,7 +297,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p /tmp/ci_artifacts/dependency/
-
+          source ci_scripts/bin/activate
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_dependencies.product_base.name --output_file /tmp/ci_artifacts/product_base_name.txt
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_dependencies.product_base.version --output_file /tmp/ci_artifacts/product_base_version.txt
 
@@ -295,6 +309,7 @@ jobs:
           cp /tmp/ci_artifacts ./ci_artifacts -r
           ls -la
           ls -la ci_artifacts
+          deactivate
           echo "base_name=$(cat ci_artifacts/spawner_base_name.txt)" >> $GITHUB_OUTPUT
           echo "base_version=$(cat ci_artifacts/spawner_base_version.txt)" >> $GITHUB_OUTPUT
           echo "raised_version=$(cat product.version)" >> $GITHUB_OUTPUT
@@ -622,9 +637,12 @@ jobs:
         if: ${{ inputs.with_simulation == 'true' }}
         shell: bash
         run: |
+          python3 -m venv ci_scripts
+          source ci_scripts/bin/activate
           python3 -m pip install pip --upgrade
           python3 -m pip install pyopenssl --upgrade
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
+          deactivate
 
       - name: unstash sim_configs
         if: ${{ inputs.with_simulation == 'true' }}
