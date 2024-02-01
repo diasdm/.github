@@ -1353,7 +1353,7 @@ jobs:
 
 
   publish:
-    needs: [Install-Robot, Install-Heterogeneos-Fleet]
+    needs: [Install-Robot, Install-Heterogeneos-Fleet, Install-Simulator-Robot]
     runs-on: integration-pipeline
     steps:
       - uses: rtCamp/action-cleanup@master
@@ -1383,7 +1383,18 @@ jobs:
         with:
           name: manifest
           path: .
-
+      - name: unstash sim_configs
+        if: ${{ inputs.with_simulation == 'true' }}
+        uses: actions/download-artifact@v3
+        with:
+          name: sim_configs
+          path: simulator_artifacts
+      - name: unstash deploy_simulator_artifacts
+        if: ${{ inputs.with_simulation == 'true' }}
+        uses: actions/download-artifact@v3
+        with:
+          name: deploy_simulator_artifacts
+          path: .
       - name: Install CI Scripts
         shell: bash
         run: |
@@ -1409,7 +1420,16 @@ jobs:
           password: ${{ secrets.registry_password }}
           registry: ${{ env.PUSH_REGISTRY }}
 
-
+      - name: Publish simulator state
+        if: ${{ needs.Install-Simulator-Robot.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
+        shell: bash
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          cd simulator_artifacts
+          integration-pipeline publish_simulator_state_artifacts \
+                --product_name ${{ inputs.product_name }} \
+                --branch ${GITHUB_REF#refs/heads/}
+  
       - name: Publish and create release
         id: bump
         shell: bash
@@ -1439,7 +1459,14 @@ jobs:
           rm -rf pkgs_deployable pkgs_undeployable
 
           cp artifacts/*.json deployment_artifacts
-          cp ./artifacts/product-noetic.image.artifact deployment_artifacts/product.image.artifact
+
+          if [ "${{ inputs.with_simulation }}" = "true" ];
+          then
+            echo -e "$(cat ./artifacts/product-noetic.image.artifact)\n$(cat ./simulator.image.artifact)" > deployment_artifacts/product.image.artifact
+          else
+            cp ./artifacts/product-noetic.image.artifact deployment_artifacts/product.image.artifact
+          fi
+
           cp deployment_artifacts/product.image.artifact ./
 
           SAVEIFS=$IFS
