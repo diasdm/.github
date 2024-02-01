@@ -900,7 +900,7 @@ jobs:
 
           mkdir -p artifacts
           cp *.json artifacts/
-          CONFIG_FILE_NAME="manager-${{ matrix.distro }}-simulation-template.json"
+          CONFIG_FILE_NAME="standalone-manager-${{ matrix.distro }}-simulation-template.json"
           mkdir -p userspace/models_database/ userspace/tugbot_ignition/
 
           export USERSPACE_FOLDER_PATH="$(pwd)/userspace"
