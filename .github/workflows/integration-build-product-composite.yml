@@ -686,6 +686,7 @@ jobs:
         if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
+          source ci_scripts/bin/activate
           export PATH="$HOME/.local/bin:$PATH"
           integration-pipeline fetch_simulator_models \
           --manifest_platform_base_key product_dependencies.products \
