@@ -1398,9 +1398,12 @@ jobs:
       - name: Install CI Scripts
         shell: bash
         run: |
+          python3 -m venv ci_scripts
           python3 -m pip install pip --upgrade
           python3 -m pip install pyopenssl --upgrade
+          source ci_scripts/bin/activate
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
+          deactivate
 
       - name: Install Package Deployer
         shell: bash
@@ -1424,11 +1427,12 @@ jobs:
         if: ${{ needs.Install-Simulator-Robot.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
-          export PATH="$HOME/.local/bin:$PATH"
+          source ci_scripts/bin/activate
           cd simulator_artifacts
           integration-pipeline publish_simulator_state_artifacts \
                 --product_name ${{ inputs.product_name }} \
                 --branch ${GITHUB_REF#refs/heads/}
+          deactivate
   
       - name: Publish and create release
         id: bump
