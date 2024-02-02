@@ -113,7 +113,9 @@ jobs:
     steps:
       - name: docker
         shell: bash
-        run: docker ps
+        run: |
+          sudo apt install docker-ce-cli
+          docker ps
       - name: Checkout
         if: ${{ inputs.is_nightly_run == false }}
         uses: actions/checkout@v4
