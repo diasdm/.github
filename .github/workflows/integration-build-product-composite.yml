@@ -111,6 +111,9 @@ jobs:
     outputs:
       slack_thread_id: ${{ fromJson(steps.send-message.outputs.slack-result).response.message.ts }}
     steps:
+      - name: docker
+        shell: bash
+        run: docker ps
       - name: Checkout
         if: ${{ inputs.is_nightly_run == false }}
         uses: actions/checkout@v4
