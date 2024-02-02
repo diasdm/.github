@@ -114,7 +114,7 @@ jobs:
       - name: docker
         shell: bash
         run: |
-          sudo apt install docker-ce-cli
+          apt install -y docker-ce-cli
           docker ps
       - name: Checkout
         if: ${{ inputs.is_nightly_run == false }}
