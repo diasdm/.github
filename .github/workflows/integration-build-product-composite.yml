@@ -1405,9 +1405,9 @@ jobs:
         shell: bash
         run: |
           python3 -m venv ci_scripts
+          source ci_scripts/bin/activate
           python3 -m pip install pip --upgrade
           python3 -m pip install pyopenssl --upgrade
-          source ci_scripts/bin/activate
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
           deactivate
 
