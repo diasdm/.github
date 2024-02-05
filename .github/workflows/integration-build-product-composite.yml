@@ -1251,12 +1251,24 @@ jobs:
           sudo apt install -y python3.9 python3.9-venv
           python3.9 -m venv ansible-venv
           source ansible-venv/bin/activate
-
+          echo "./fleet_install.sh setup --product-artifacts ./templates/fleet/ -i hosts -m install" >> INSTALL.TXT
           ./fleet_install.sh setup --product-artifacts ./templates/fleet/ -i hosts -m install
         env:
           GITHUB_USER: ${{ env.GITHUB_API_USR }}
           GITHUB_TOKEN: ${{ secrets.auto_commit_pwd }}
 
+      - name: Compress install
+        shell: bash
+        run: |
+          tar -czf fleet_install.tar.gz -C ${{ steps.ansible_install_setup.outputs.target_dir }} .
+
+      - name: Stash Install scripts
+        uses: actions/upload-artifact@v3
+        with:
+          name: install_archive
+          path: fleet_install.tar.gz
+          retention-days: 3
+  
       - name: Collect Installed components
         if: always()
         shell: bash
@@ -1401,6 +1413,12 @@ jobs:
         with:
           name: deploy_simulator_artifacts
           path: .
+      - name: unstash install_archive
+        uses: actions/download-artifact@v3
+        with:
+          name: install_archive
+          path: .
+          
       - name: Install CI Scripts
         shell: bash
         run: |
@@ -1476,7 +1494,7 @@ jobs:
           else
             cp ./artifacts/product-noetic.image.artifact deployment_artifacts/product.image.artifact
           fi
-
+          cp fleet_install.tar.gz deployment_artifacts/
           cp deployment_artifacts/product.image.artifact ./
 
           SAVEIFS=$IFS
