@@ -46,7 +46,7 @@ jobs:
       - name: Packer build
         if: ${{ inputs.deploy == 'true' }}
         run: |
-          sudo ./build.bash
+          ./build.bash
         working-directory: "${{ inputs.build_dir }}"
 
       - name: Commit raise
