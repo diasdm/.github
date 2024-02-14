@@ -32,42 +32,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Raise Template identifier
-        if: ${{ inputs.deploy == 'true' }}
-        id: raise
-        shell: bash
-        run: |
-          TEMPLATE_ID=$(cat version)
-          if [ ${TEMPLATE_ID: -2} ==  99 ]
-          then
-
-            template_prefix=$(echo "${TEMPLATE_ID}" | head -c2)
-            TEMPLATE_ID="$template_prefix"
-            TEMPLATE_ID+="00"
-          fi
-          TEMPLATE_ID=$(($TEMPLATE_ID+1))
-          echo "Raised to $TEMPLATE_ID"
-          echo "$TEMPLATE_ID" > version
-          echo ::set-output name=RAISED_VERSION::$TEMPLATE_ID
-        working-directory: "${{ inputs.build_dir }}"
-
       - name: Packer Validate
         run: |
-          packer validate \
-            -var 'vm_id=0000' \
-            -var 'proxmox_api_url=${{secrets.packer_build_server}}' \
-            -var 'proxmox_api_token_id=${{secrets.packer_token_id}}' \
-            -var 'proxmox_api_token_secret=${{secrets.packer_token_secret}}' .
+          packer validate .
+        working-directory: "${{ inputs.build_dir }}"
+      
+      - name: Packer Qemu seed
+        run: |
+          packer build -force packer_qemu.seed.pkr.hcl
         working-directory: "${{ inputs.build_dir }}"
 
       - name: Packer build
         if: ${{ inputs.deploy == 'true' }}
         run: |
-          packer build \
-            -var 'vm_id=${{steps.raise.outputs.RAISED_VERSION}}' \
-            -var 'proxmox_api_url=${{secrets.packer_build_server}}' \
-            -var 'proxmox_api_token_id=${{secrets.packer_token_id}}' \
-            -var 'proxmox_api_token_secret=${{secrets.packer_token_secret}}' .
+          sudo ./build.bash
         working-directory: "${{ inputs.build_dir }}"
 
       - name: Commit raise
