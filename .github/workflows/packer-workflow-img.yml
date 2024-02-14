@@ -34,6 +34,7 @@ jobs:
 
       - name: Packer Validate
         run: |
+          packer init .
           packer validate .
         working-directory: "${{ inputs.build_dir }}"
       
