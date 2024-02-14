@@ -1434,7 +1434,7 @@ jobs:
           branch=$(echo ${GITHUB_REF#refs/heads/} | sed "s;\.;-;g" )
 
           local_manager_prefix="ip-hgf-$branch-manager"
-          local_worker_prefix="ip-$branch-worker"
+          local_worker_prefix="ip-hgf-$branch-worker"
           echo "$local_manager_prefix"
           echo "$local_worker_prefix"
 
