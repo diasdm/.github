@@ -1106,8 +1106,8 @@ jobs:
         run: |
           branch=$(echo ${GITHUB_REF#refs/heads/} | sed "s;\.;-;g" )
 
-          local_manager_prefix="ip-hgf-$branch-manager"
-          local_worker_prefix="ip-$branch-worker"
+          local_manager_prefix="ip-hgf-multi-$branch-manager"
+          local_worker_prefix="ip-hgf-multi-$branch-worker"
           echo "$local_manager_prefix"
           echo "$local_worker_prefix"
 
@@ -1118,7 +1118,7 @@ jobs:
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
         shell: bash
         run: |
-          terraform init -backend-config="key=hel-fleet-${{ steps.infra_names.outputs.manager_prefix }}.tfstate"
+          terraform init -backend-config="key=hel-fleet-${{ steps.infra_names.outputs.manager_prefix }}-multi.tfstate"
           terraform plan
           terraform apply -auto-approve
         env:
