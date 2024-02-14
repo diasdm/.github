@@ -46,7 +46,7 @@ jobs:
       - name: Packer build
         if: ${{ inputs.deploy == 'true' }}
         run: |
-          ./build.bash
+          packer build -force ubuntu.pkr.hcl
         working-directory: "${{ inputs.build_dir }}"
 
       - name: Commit raise
