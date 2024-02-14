@@ -1255,8 +1255,6 @@ jobs:
           while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
           
           sudo apt install -y python3.9 python3.9-venv
-          python3.9 -m venv ansible-venv
-          source ansible-venv/bin/activate
           echo "./fleet_install.sh setup --product-artifacts ./templates/fleet/ -i hosts -m install" >> INSTALL.TXT
           ./fleet_install.sh setup --product-artifacts ./templates/fleet/ -i hosts -m install
         env:
@@ -1266,6 +1264,7 @@ jobs:
       - name: Compress install
         shell: bash
         run: |
+          rm -rf ${{ steps.ansible_install_setup.outputs.target_dir }}/ansible-venv
           tar -czf fleet_install.tar.gz -C ${{ steps.ansible_install_setup.outputs.target_dir }} .
 
       - name: Stash Install scripts
@@ -1583,25 +1582,12 @@ jobs:
           while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
           
           sudo apt install -y python3.9 python3.9-venv
-          python3.9 -m venv ansible-venv
-          source ansible-venv/bin/activate
+
           echo "./fleet_install.sh setup --product-artifacts ./templates/fleet/ -i hosts -m install" >> INSTALL.TXT
           ./fleet_install.sh setup --product-artifacts ./templates/fleet/ -i hosts -m install
         env:
           GITHUB_USER: ${{ env.GITHUB_API_USR }}
           GITHUB_TOKEN: ${{ secrets.auto_commit_pwd }}
-
-      - name: Compress install
-        shell: bash
-        run: |
-          tar -czf fleet_install.tar.gz -C ${{ steps.ansible_install_setup.outputs.target_dir }} .
-
-      - name: Stash Install scripts
-        uses: actions/upload-artifact@v3
-        with:
-          name: install_archive
-          path: fleet_install.tar.gz
-          retention-days: 3
   
       - name: Collect Installed components
         if: always()
@@ -1663,21 +1649,6 @@ jobs:
           TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
           TF_VAR_provision_ssh_pem: ${{ secrets.ssh_pem_fleet_aws_vm }}
           TF_VAR_ip_list: ${{ inputs.multi_vm_fleet_ips }}
-  
-      - name: Stash project metadata
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: project_metadata
-          path: metadata_artifact/*
-          retention-days: 3
-
-      - name: Stash deploy_artifacts_noetic
-        uses: actions/upload-artifact@v3
-        with:
-          name: deploy_artifacts_noetic
-          path: artifacts/*
-          retention-days: 5
 
       - name: Remove robots
         if: always()
