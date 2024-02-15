@@ -24,6 +24,12 @@ on:
         required: true
       packer_token_secret:
         required: true
+ env:
+  # slack channel movai-projects
+  SLACK_CHANNEL: ${{ inputs.overwrite_slack_channel }}
+  # development slack channel
+  #SLACK_CHANNEL: "C05K2KF1UP8"
+  MINIO_S3_URL: "https://s3.mov.ai"   
 
 jobs:
   Build:
@@ -48,6 +54,26 @@ jobs:
         run: |
           packer build -force ubuntu.pkr.hcl
         working-directory: "${{ inputs.build_dir }}"
+
+      - name: Stash QA artifacts (Minio)
+        if: ${{ always() &&  inputs.with_simulation_tests }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          aws \
+          --endpoint-url ${{ env.MINIO_S3_URL }} \
+          s3 \
+          cp \
+          output/ \
+          s3://ci-artifacts/${{ github.repository }}/${{ github.run_id}}/${{ github.job }}/attempts/${{ github.run_attempt }} \
+          --recursive
+          --content-type="text/plain"
+
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.minio_key_id }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.minio_secret_key_id }}
+          AWS_DEFAULT_REGION: "us-east-1"
+          AWS_DEFAULT_OUTPUT: "none"  
 
       - name: Commit raise
         if: ${{ inputs.deploy == 'true' }}
