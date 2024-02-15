@@ -1231,6 +1231,7 @@ jobs:
           ssh-keyscan -H ${{ steps.infra_outputs.outputs.host_ip }} >> ~/.ssh/known_hosts || true
 
           ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
+            set -e
             cloud-init status --wait; rm -rf ./${{ env.REMOTE_WORKSPACE_PATH }}; mkdir -p ./${{ env.REMOTE_WORKSPACE_PATH }}
           '
 
@@ -1240,6 +1241,7 @@ jobs:
         id: agent_info
         run: |
           ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
+            set -e
             ip=$(hostname -I | awk "{print $1}")
             echo $ip
           '
@@ -1249,6 +1251,7 @@ jobs:
         shell: bash
         run: |
           ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
+            set -e
             docker login ${{ env.MID_REGISTRY }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
           '
 
@@ -1269,8 +1272,8 @@ jobs:
           ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
             set -e
             promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g" | sed "s-${{ env.MID_REGISTRY }}-${{ env.REGISTRY }}-g")
-            docker pull "${{ needs.Build-Simulator.outputs.image_name }}" || true
-            docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name || true
+            docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
+            docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
           '
 
       - name: Remote - Install CI Scripts
