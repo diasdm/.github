@@ -1251,6 +1251,8 @@ jobs:
           cp ../${{ steps.provision_infra_setup.outputs.target_dir }}/hosts hosts
           cp -r ../*.json ./templates/fleet/
           cp ../product-manifest.yaml ./templates/fleet/product-manifest.yaml
+          sed -i "s/member0/pallet-worker1/g" ./hosts
+          sed -i "s/member1/tugger-worker2/g" ./hosts
           cat hosts
           while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
           
