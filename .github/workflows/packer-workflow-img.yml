@@ -24,6 +24,10 @@ on:
         required: true
       packer_token_secret:
         required: true
+      minio_key_id:
+        required: true
+      minio_secret_key_id:
+        required: true  
  env:
   # slack channel movai-projects
   SLACK_CHANNEL: ${{ inputs.overwrite_slack_channel }}
