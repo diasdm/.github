@@ -1251,16 +1251,14 @@ jobs:
           cp ../${{ steps.provision_infra_setup.outputs.target_dir }}/hosts hosts
           cp -r ../*.json ./templates/fleet/
           cp ../product-manifest.yaml ./templates/fleet/product-manifest.yaml
-          sed -i "s/member0/pallet-worker1/g" ./hosts
-          sed -i "s/member1/tugger-worker2/g" ./hosts
+
           cat hosts
           while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
           
           sudo apt install -y python3.9 python3.9-venv
-          python3.9 -m venv ansible-venv
-          source ansible-venv/bin/activate
-          echo "./fleet_install.sh setup --product-artifacts ./templates/fleet/ -i hosts -m install" >> INSTALL.TXT
-          ./fleet_install.sh setup --product-artifacts ./templates/fleet/ -i hosts -m install
+
+          echo "./fleet_install.sh setup --python-path python3.9 --product-artifacts ./templates/fleet/ -i hosts -m install" >> INSTALL.TXT
+          ./fleet_install.sh setup --python-path python3.9 --product-artifacts ./templates/fleet/ -i hosts -m install
         env:
           GITHUB_USER: ${{ env.GITHUB_API_USR }}
           GITHUB_TOKEN: ${{ secrets.auto_commit_pwd }}
@@ -1582,14 +1580,15 @@ jobs:
           cp ../${{ steps.provision_infra_setup.outputs.target_dir }}/hosts hosts
           cp -r ../*.json ./templates/fleet/
           cp ../product-manifest.yaml ./templates/fleet/product-manifest.yaml
+          sed -i "s/member0/pallet-worker1/g" ./hosts
+          sed -i "s/member1/tugger-worker2/g" ./hosts
           cat hosts
           while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
           
           sudo apt install -y python3.9 python3.9-venv
-          python3.9 -m venv ansible-venv
-          source ansible-venv/bin/activate
-          echo "./fleet_install.sh setup --product-artifacts ./templates/fleet/ -i hosts -m install" >> INSTALL.TXT
-          ./fleet_install.sh setup --product-artifacts ./templates/fleet/ -i hosts -m install
+
+          echo "./fleet_install.sh setup --python-path python3.9 --product-artifacts ./templates/fleet/ -i hosts -m install" >> INSTALL.TXT
+          ./fleet_install.sh setup --python-path python3.9 --product-artifacts ./templates/fleet/ -i hosts -m install
         env:
           GITHUB_USER: ${{ env.GITHUB_API_USR }}
           GITHUB_TOKEN: ${{ secrets.auto_commit_pwd }}
