@@ -73,6 +73,7 @@ jobs:
           s3://ci-artifacts/${{ github.repository }}/${{ github.run_id}}/${{ github.job }}/attempts/${{ github.run_attempt }} \
           --recursive
           --content-type="text/plain"
+        working-directory: "${{ inputs.build_dir }}"
 
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.minio_key_id }}
