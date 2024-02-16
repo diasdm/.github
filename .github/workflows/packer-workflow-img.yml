@@ -60,7 +60,7 @@ jobs:
           packer build -force ubuntu.pkr.hcl
         working-directory: "${{ inputs.build_dir }}"
 
-      - name: Stash QA artifacts (Minio)
+      - name: Stash build artifacts (Minio)
         # if: ${{ always() &&  inputs.with_simulation_tests }}
         continue-on-error: true
         shell: bash
@@ -72,7 +72,6 @@ jobs:
           output/ \
           s3://ci-artifacts/${{ github.repository }}/${{ github.run_id}}/${{ github.job }}/attempts/${{ github.run_attempt }} \
           --recursive
-          --content-type="text/plain"
         working-directory: "${{ inputs.build_dir }}"
 
         env:
