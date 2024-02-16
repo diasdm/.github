@@ -28,8 +28,8 @@ on:
         required: false
       minio_secret_key_id:
         required: false
-  
- env:
+
+env:
   # slack channel movai-projects
   SLACK_CHANNEL: ${{ inputs.overwrite_slack_channel }}
   # development slack channel
