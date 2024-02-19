@@ -1259,8 +1259,8 @@ jobs:
           cp ../product-manifest.yaml ./templates/fleet/product-manifest.yaml
           export PATH="$HOME/.local/bin:$PATH"
           integration-pipeline transform_inventory_offline_fleet --file hosts --nr_members ${{ inputs.multi_vm_fleet_number_members }}
-          sed -i "s/member0/pallet-worker1/g" ./hosts
-          sed -i "s/member1/tugger-worker2/g" ./hosts
+          sed -i "s/member1/pallet-worker1/g" ./hosts
+          sed -i "s/member2/tugger-worker2/g" ./hosts
           cat hosts
 
           while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
