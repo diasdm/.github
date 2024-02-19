@@ -1295,9 +1295,8 @@ jobs:
             if [ $? -eq 0 ]; then
               set -e
               docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
+              docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
             fi
-
-            docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
           '
 
       - name: Remote - Install CI Scripts
