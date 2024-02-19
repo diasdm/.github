@@ -1232,8 +1232,6 @@ jobs:
 
           ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
             set -e
-            # https://github.com/canonical/cloud-init/issues/4676 solving with sleep 60 seconds
-            sleep 60
             cloud-init status --wait; rm -rf ./${{ env.REMOTE_WORKSPACE_PATH }}; mkdir -p ./${{ env.REMOTE_WORKSPACE_PATH }}
           '
 
