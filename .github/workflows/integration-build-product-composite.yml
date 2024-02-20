@@ -1273,19 +1273,6 @@ jobs:
           GITHUB_USER: ${{ env.GITHUB_API_USR }}
           GITHUB_TOKEN: ${{ secrets.auto_commit_pwd }}
 
-      - name: Compress install
-        shell: bash
-        run: |
-          rm -rf ${{ steps.ansible_install_setup.outputs.target_dir }}/ansible-venv
-          tar -czf fleet_install.tar.gz -C ${{ steps.ansible_install_setup.outputs.target_dir }} .
-
-      - name: Stash Install scripts
-        uses: actions/upload-artifact@v3
-        with:
-          name: install_archive
-          path: fleet_install.tar.gz
-          retention-days: 3
-  
       - name: Collect Fleet QA artifacts
         working-directory: ${{ steps.ansible_install_setup.outputs.target_dir }}
         if: always()
@@ -1295,7 +1282,7 @@ jobs:
           mkdir -p fleet_qa_artifacts/install
           source ansible-venv/bin/activate
           # install fleet_tests artifacts
-          for fleet_host in "manager" "pallet-worker1" "tugger-worker2"; do
+          for fleet_host in "manager"; do
             ansible $fleet_host -i hosts --key-file ~/.ssh/aws_slave.pem -m shell -a 'journalctl -u movai-service --since "1hour ago"' > fleet_qa_artifacts/install/$fleet_host.log || true
 
             echo "From $fleet_host:"
@@ -1306,7 +1293,7 @@ jobs:
           done
 
           deactivate
-  
+    
       - name: Stash Fleet QA artifacts
         if: always()
         uses: actions/upload-artifact@v3
@@ -1314,6 +1301,20 @@ jobs:
           name: fleet_qa_artifacts_single_vm
           path: ${{ steps.ansible_install_setup.outputs.target_dir }}/fleet_qa_artifacts/*
           retention-days: 5
+
+      - name: Compress install
+        shell: bash
+        run: |
+          rm -rf ${{ steps.ansible_install_setup.outputs.target_dir }}/ansible-venv
+          rm -rf ${{ steps.ansible_install_setup.outputs.target_dir }}/fleet_qa_artifacts
+          tar -czf fleet_install.tar.gz -C ${{ steps.ansible_install_setup.outputs.target_dir }} .
+
+      - name: Stash Install scripts
+        uses: actions/upload-artifact@v3
+        with:
+          name: install_archive
+          path: fleet_install.tar.gz
+          retention-days: 3
   
       - name: Get current job id
         if: always()
