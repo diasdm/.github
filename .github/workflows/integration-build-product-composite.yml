@@ -1286,11 +1286,34 @@ jobs:
           path: fleet_install.tar.gz
           retention-days: 3
   
-      - name: Collect Installed components
+      - name: Collect Fleet QA artifacts
+        working-directory: ${{ steps.ansible_install_setup.outputs.target_dir }}
         if: always()
         shell: bash
         run: |
-            echo "PLACEHOLDER"
+          rm -rf fleet_qa_artifacts
+          mkdir -p fleet_qa_artifacts/install
+          source ansible-venv/bin/activate
+          # install fleet_tests artifacts
+          for fleet_host in "manager" "pallet-worker1" "tugger-worker2"; do
+            ansible $fleet_host -i hosts --key-file ~/.ssh/aws_slave.pem -m shell -a 'journalctl -u movai-service --since "1hour ago"' > fleet_qa_artifacts/install/$fleet_host.log || true
+
+            echo "From $fleet_host:"
+            ansible $fleet_host -i hosts --key-file ~/.ssh/aws_slave.pem -m shell -a 'docker ps -a' > fleet_qa_artifacts/install/$fleet_host-docker_ps.log || true
+            echo "$(tail -n +2 fleet_qa_artifacts/install/$fleet_host-docker_ps.log )"
+
+            ansible $fleet_host -i hosts --key-file ~/.ssh/aws_slave.pem -m shell -a 'journalctl -u docker --boot --lines=all' > fleet_qa_artifacts/install/$fleet_host-all-docker.log || true
+          done
+
+          deactivate
+  
+      - name: Stash Fleet QA artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: fleet_qa_artifacts_single_vm
+          path: ${{ steps.ansible_install_setup.outputs.target_dir }}/fleet_qa_artifacts/*
+          retention-days: 5
   
       - name: Get current job id
         if: always()
@@ -1602,12 +1625,35 @@ jobs:
         env:
           GITHUB_USER: ${{ env.GITHUB_API_USR }}
           GITHUB_TOKEN: ${{ secrets.auto_commit_pwd }}
-  
-      - name: Collect Installed components
+
+      - name: Collect Fleet QA artifacts
+        working-directory: ${{ steps.ansible_install_setup.outputs.target_dir }}
         if: always()
         shell: bash
         run: |
-            echo "PLACEHOLDER"
+          rm -rf fleet_qa_artifacts
+          mkdir -p fleet_qa_artifacts/install
+          source ansible-venv/bin/activate
+          # install fleet_tests artifacts
+          for fleet_host in "manager" "pallet-worker1" "tugger-worker2"; do
+            ansible $fleet_host -i hosts --key-file ~/.ssh/aws_slave.pem -m shell -a 'journalctl -u movai-service --since "1hour ago"' > fleet_qa_artifacts/install/$fleet_host.log || true
+
+            echo "From $fleet_host:"
+            ansible $fleet_host -i hosts --key-file ~/.ssh/aws_slave.pem -m shell -a 'docker ps -a' > fleet_qa_artifacts/install/$fleet_host-docker_ps.log || true
+            echo "$(tail -n +2 fleet_qa_artifacts/install/$fleet_host-docker_ps.log )"
+
+            ansible $fleet_host -i hosts --key-file ~/.ssh/aws_slave.pem -m shell -a 'journalctl -u docker --boot --lines=all' > fleet_qa_artifacts/install/$fleet_host-all-docker.log || true
+          done
+
+          deactivate
+
+      - name: Stash Fleet QA artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: fleet_qa_artifacts_multi_vm
+          path: ${{ steps.ansible_install_setup.outputs.target_dir }}/fleet_qa_artifacts/*
+          retention-days: 5
   
       - name: Get current job id
         if: always()
