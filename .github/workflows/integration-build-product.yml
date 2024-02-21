@@ -1265,13 +1265,30 @@ jobs:
             echo $ip
           '
 
-      - name: Remote - Login to Private Registry
+      - name: Remote - Login to ${{ env.MID_REGISTRY }} Registry
         if: ${{ inputs.with_simulation_tests }}
         shell: bash
         run: |
           ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
             set -e
             docker login ${{ env.MID_REGISTRY }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
+          '
+
+      - name: Remote - Login to ${{ env.REGISTRY }} Registry
+        if: ${{ inputs.with_simulation_tests }}
+        shell: bash
+        run: |
+          ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
+            set -e
+            docker login ${{ env.REGISTRY }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
+          '
+      - name: Remote - Login to ${{ env.PUSH_REGISTRY }} Registry
+        if: ${{ inputs.with_simulation_tests }}
+        shell: bash
+        run: |
+          ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
+            set -e
+            docker login ${{ env.PUSH_REGISTRY }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
           '
 
       - name: Remote - Docker load spawner image
@@ -1291,7 +1308,7 @@ jobs:
           ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
             
             promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g" | sed "s-${{ env.MID_REGISTRY }}-${{ env.REGISTRY }}-g")
-            docker manifest inspect "$promoted_name" > /dev/null
+            docker manifest inspect "$promoted_name"
             if [ $? -ne 0 ]; then
               set -e
               docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
