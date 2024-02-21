@@ -1052,7 +1052,7 @@ jobs:
         distro: ${{ fromJSON(inputs.ros_distro) }}
     runs-on: integration-pipeline
     container:
-      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v2.0.1
+      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v2.0.2
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -1440,7 +1440,7 @@ jobs:
         distro: ${{ fromJSON(inputs.ros_distro) }}
     runs-on: integration-pipeline
     container:
-      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v2.0.1
+      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v2.0.2
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
