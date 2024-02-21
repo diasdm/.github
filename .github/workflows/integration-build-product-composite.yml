@@ -357,6 +357,7 @@ jobs:
       - name: Prepare slack variables
         if: always()
         id: pre_slack_result
+        shell: bash
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
           MESSAGE_ERR=":x: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job failed"
@@ -559,6 +560,7 @@ jobs:
       - name: Prepare slack variables
         if: always()
         id: pre_slack_result
+        shell: bash
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
           MESSAGE_ERR=":x: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job failed"
@@ -767,6 +769,7 @@ jobs:
       - name: Prepare slack variables
         if: always()
         id: pre_slack_result
+        shell: bash
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
           MESSAGE_ERR=":x: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job failed"
@@ -989,6 +992,7 @@ jobs:
       - name: Prepare slack variables
         if: always()
         id: pre_slack_result
+        shell: bash
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
           MESSAGE_ERR=":x: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job failed"
@@ -1338,6 +1342,7 @@ jobs:
       - name: Prepare slack variables
         if: always()
         id: pre_slack_result
+        shell: bash
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
           MESSAGE_ERR=":x: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job failed"
@@ -1683,6 +1688,7 @@ jobs:
       - name: Prepare slack variables
         if: always()
         id: pre_slack_result
+        shell: bash
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
           MESSAGE_ERR=":x: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job failed"
