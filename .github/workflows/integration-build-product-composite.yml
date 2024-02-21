@@ -1473,7 +1473,12 @@ jobs:
           name: robot_jsons_${{ matrix.distro }}
           path: .
 
-
+      - name: Install CI Scripts
+        shell: bash
+        run: |
+          python3 -m pip install pip --upgrade
+          python3 -m pip install pyopenssl --upgrade
+          python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
       - name: Install terraform
         shell: bash
         run: |
