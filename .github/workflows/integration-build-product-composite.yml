@@ -1178,7 +1178,7 @@ jobs:
         id: wait_for_machines
         shell: bash
         run: |
-
+          touch ~/.ssh/aws_slave.pem
           echo "${{ secrets.ssh_pem_fleet_aws_vm }}" > ~/.ssh/aws_slave.pem
           chmod 600 ~/.ssh/aws_slave.pem
 
@@ -1542,6 +1542,8 @@ jobs:
         id: wait_for_machines
         shell: bash
         run: |
+          ls -la ~/.ssh
+          touch ~/.ssh/aws_slave.pem
           echo "${{ secrets.ssh_pem_fleet_aws_vm }}" > ~/.ssh/aws_slave.pem
           chmod 600 ~/.ssh/aws_slave.pem
 
