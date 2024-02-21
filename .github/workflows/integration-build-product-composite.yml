@@ -1051,7 +1051,11 @@ jobs:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
     runs-on: integration-pipeline
-
+    container:
+      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v2.0.1
+      credentials:
+        username: ${{secrets.registry_user}}
+        password: ${{secrets.registry_password}}
     steps:
       - uses: rtCamp/action-cleanup@master
 
@@ -1435,7 +1439,11 @@ jobs:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
     runs-on: integration-pipeline
-
+    container:
+      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v2.0.1
+      credentials:
+        username: ${{secrets.registry_user}}
+        password: ${{secrets.registry_password}}
     steps:
       - uses: rtCamp/action-cleanup@master
 
