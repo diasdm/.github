@@ -1095,9 +1095,9 @@ jobs:
       - name: Install terraform
         shell: bash
         run: |
-          wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
-          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-          sudo apt update && sudo apt install terraform -y
+          wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
+          apt update && apt install terraform -y
   
       - name: Setup terraform proxmox provisioner
         id: provision_infra_setup
@@ -1202,11 +1202,11 @@ jobs:
 
           }
           echo "${{ secrets.ssh_pem_fleet_aws_vm }}" > ~/.ssh/aws_slave.pem
-          sudo chmod 600 ~/.ssh/aws_slave.pem
+          chmod 600 ~/.ssh/aws_slave.pem
 
           stripped_ips=$(echo ${{ inputs.single_vm_fleet_ips }} | sed "s;\[;;g" | sed "s;];;g" | sed "s; ;;g")
           touch ~/.ssh/known_hosts
-          sudo chmod 600 ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
           IFS=',' read -r -a stripped_ips_arr <<< $stripped_ips
           manager_ip=${stripped_ips_arr[0]}
           echo $manager_ip
@@ -1291,9 +1291,9 @@ jobs:
           sed -i "s/member2/tugger-worker2/g" ./hosts
           cat hosts
 
-          while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
+          while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
           
-          sudo apt install -y python3.9 python3.9-venv
+          apt install -y python3.9 python3.9-venv
 
           echo "./fleet_install.sh setup --python-path python3.9 --product-artifacts ./templates/fleet/ -i hosts -m install" >> INSTALL.TXT
           ./fleet_install.sh setup --python-path python3.9 --product-artifacts ./templates/fleet/ -i hosts -m install
@@ -1349,7 +1349,7 @@ jobs:
         shell: bash
         id: job_info
         run: |
-          sudo apt install jq -y
+          apt install jq -y
           job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
           job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
           echo "$job_id"
@@ -1477,9 +1477,9 @@ jobs:
       - name: Install terraform
         shell: bash
         run: |
-          wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
-          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-          sudo apt update && sudo apt install terraform -y
+          wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
+          apt update && apt install terraform -y
   
       - name: Setup terraform proxmox provisioner
         id: provision_infra_setup
@@ -1584,11 +1584,11 @@ jobs:
 
           }
           echo "${{ secrets.ssh_pem_fleet_aws_vm }}" > ~/.ssh/aws_slave.pem
-          sudo chmod 600 ~/.ssh/aws_slave.pem
+          chmod 600 ~/.ssh/aws_slave.pem
 
           stripped_ips=$(echo ${{ inputs.multi_vm_fleet_ips }} | sed "s;\[;;g" | sed "s;];;g" | sed "s; ;;g")
           touch ~/.ssh/known_hosts
-          sudo chmod 600 ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
           IFS=',' read -r -a stripped_ips_arr <<< $stripped_ips
           manager_ip=${stripped_ips_arr[0]}
           echo $manager_ip
@@ -1667,9 +1667,9 @@ jobs:
           sed -i "s/member0/pallet-worker1/g" ./hosts
           sed -i "s/member1/tugger-worker2/g" ./hosts
           cat hosts
-          while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
+          while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
           
-          sudo apt install -y python3.9 python3.9-venv
+          apt install -y python3.9 python3.9-venv
 
           echo "./fleet_install.sh setup --python-path python3.9 --product-artifacts ./templates/fleet/ -i hosts -m install" >> INSTALL.TXT
           ./fleet_install.sh setup --python-path python3.9 --product-artifacts ./templates/fleet/ -i hosts -m install
@@ -1711,7 +1711,7 @@ jobs:
         shell: bash
         id: job_info
         run: |
-          sudo apt install jq -y
+          apt install jq -y
           job_id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | .[0].id')
           job_html_url=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs | jq -r '.jobs | map(select(.name | contains("${{ github.job }}"))) | .[0].html_url')
           echo "$job_id"
