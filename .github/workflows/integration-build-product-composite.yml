@@ -889,10 +889,14 @@ jobs:
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
-          promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g" | sed "s-${{ env.MID_REGISTRY }}-${{ env.REGISTRY }}-g")
 
-          docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
-          docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
+          promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g" | sed "s-${{ env.MID_REGISTRY }}-${{ env.REGISTRY }}-g")
+          docker manifest inspect "$promoted_name"
+          if [ $? -ne 0 ]; then
+            set -e
+            docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
+            docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
+          fi
 
 
       - name: Installation
@@ -1040,10 +1044,9 @@ jobs:
         run: |
           docker system prune -f
           docker image prune --all -f
-        
 
   Install-Heterogeneos-Fleet-Single-VM:
-    needs: [Build-Spawner]
+    needs: [Build-Spawner, Build-Simulator]
     strategy:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
@@ -1228,6 +1231,22 @@ jobs:
             docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.PUSH_REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
           '
 
+      - name: Docker load Composite Simulator (Remote)
+        shell: bash
+        run: |
+          ssh_conn_string=${{ steps.wait_for_machines.outputs.manager_ssh_conn_string }}
+          ssh $ssh_conn_string -i ~/.ssh/aws_slave.pem -o StrictHostKeyChecking=no '
+
+          promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g" | sed "s-${{ env.MID_REGISTRY }}-${{ env.REGISTRY }}-g")
+          docker manifest inspect "$promoted_name"
+          if [ $? -ne 0 ]; then
+            set -e
+            docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
+            docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
+            docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $(echo $promoted_name | sed "s-${{ env.MID_REGISTRY }}-${{ env.PUSH_REGISTRY }}-g")
+          fi
+          '
+
       - name: Setup ansible installation
         id: ansible_install_setup
         shell: bash
@@ -1406,7 +1425,7 @@ jobs:
           docker image prune --all -f
 
   Install-Heterogeneos-Fleet-Multi-VM:
-    needs: [Build-Spawner]
+    needs: [Build-Spawner, Build-Simulator]
     strategy:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
@@ -1584,7 +1603,21 @@ jobs:
             docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
             docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.PUSH_REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
           '
+      - name: Docker load Composite Simulator (Remote)
+        shell: bash
+        run: |
+          ssh_conn_string=${{ steps.wait_for_machines.outputs.manager_ssh_conn_string }}
+          ssh $ssh_conn_string -i ~/.ssh/aws_slave.pem -o StrictHostKeyChecking=no '
 
+          promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g" | sed "s-${{ env.MID_REGISTRY }}-${{ env.REGISTRY }}-g")
+          docker manifest inspect "$promoted_name"
+          if [ $? -ne 0 ]; then
+            set -e
+            docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
+            docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
+            docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $(echo $promoted_name | sed "s-${{ env.MID_REGISTRY }}-${{ env.PUSH_REGISTRY }}-g")
+          fi
+          '
       - name: Setup ansible installation
         id: ansible_install_setup
         shell: bash
