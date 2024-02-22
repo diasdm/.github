@@ -6,10 +6,9 @@ on:
         required: true
         type: string
         default: 'false'
-      build_dir:
+      image_type_list:
         required: true
         type: string
-        default: './packer/qemu'
 
     secrets:
       auto_commit_user:
@@ -39,6 +38,10 @@ env:
 jobs:
   Build:
     runs-on: packer-runner
+    
+    strategy:
+      matrix:
+        image_type: ${{ fromJSON(inputs.image_type_list) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -47,18 +50,20 @@ jobs:
         run: |
           packer init .
           packer validate .
-        working-directory: "${{ inputs.build_dir }}"
-      
       - name: Packer Qemu seed
         run: |
           packer build -force packer_qemu.seed.pkr.hcl
-        working-directory: "${{ inputs.build_dir }}"
 
       - name: Packer build
         if: ${{ inputs.deploy == 'true' }}
+        shell: bash
         run: |
-          ./build.bash ubuntu-22.04/desktop.pkr.hcl ud2204packer-nvidia-v1.0.0.img
-        working-directory: "${{ inputs.build_dir }}"
+          IMAGES_FILES="$(find -L ${{ matrix.image_type }} -name "*.pkr.hcl" | awk '{ print length, $0 }' | sort -rn | cut -d" " -f2-)"
+          for image_file in $IMAGES_FILES; do
+            image_name=$(echo $image_file | sed "s-.pkr.hcl--g")
+            ./build.bash ${{ matrix.image_type }}/$image_file $image_name-v$(cat $GITHUB_WORKSPACE/version).img
+          done
+  
 
       - name: Stash build artifacts (Minio)
         # if: ${{ always() &&  inputs.with_simulation_tests }}
