@@ -57,7 +57,7 @@ jobs:
       - name: Packer build
         if: ${{ inputs.deploy == 'true' }}
         run: |
-          packer build -force ubuntu.pkr.hcl
+          ./build.bash ubuntu-22.04/desktop.pkr.hcl ud2204packer-nvidia-v1.0.0.img
         working-directory: "${{ inputs.build_dir }}"
 
       - name: Stash build artifacts (Minio)
