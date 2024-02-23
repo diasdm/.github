@@ -55,12 +55,12 @@ jobs:
         if: ${{ inputs.deploy == 'true' }}
         shell: bash
         run: |
-          IMAGES_FILES="$(find -L ${{ matrix.image_type }} -name "*.pkr.hcl" | awk '{ print length, $0 }' | sort -rn | cut -d" " -f2-)"
-          for image_file in $IMAGES_FILES; do
+          # IMAGES_FILES="$(find -L ${{ matrix.image_type }} -name "*.pkr.hcl" | awk '{ print length, $0 }' | sort -rn | cut -d" " -f2-)"
+          # for image_file in $IMAGES_FILES; do
             image_name=$(echo $image_file | sed "s|.pkr.hcl||g" | sed "s|${{ matrix.image_type }}/||g")
             echo "Running ../build.bash $image_name.pkr.hcl $image_name-v$(cat $GITHUB_WORKSPACE/version).img" 
             ./build.bash ${{ matrix.image_type }}/$image_name.pkr.hcl $image_name-v$(cat $GITHUB_WORKSPACE/version).img
-          done
+          # done
   
 
       - name: Stash build artifacts (Minio)
@@ -72,7 +72,7 @@ jobs:
           --endpoint-url ${{ env.MINIO_S3_URL }} \
           s3 \
           cp \
-          output/ \
+          ${{ matrix.image_type }}/output/ \
           s3://ci-artifacts/${{ github.repository }}/${{ github.run_id}}/${{ github.job }}/attempts/${{ github.run_attempt }} \
           --recursive
         working-directory: "${{ inputs.build_dir }}"
