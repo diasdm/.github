@@ -51,12 +51,12 @@ jobs:
           packer init .
           packer validate .
 
-      - name: Packer Qemu seed
-        if: ${{ inputs.deploy == 'true' }}
-        shell: bash
-        run: |
-          cd ${{ matrix.image_type }}
-          packer build -force packer_qemu.seed.pkr.hcl
+      # - name: Packer Qemu seed
+      #   if: ${{ inputs.deploy == 'true' }}
+      #   shell: bash
+      #   run: |
+      #     cd ${{ matrix.image_type }}
+      #     packer build -force packer_qemu.seed.pkr.hcl
 
       - name: Packer build
         if: ${{ inputs.deploy == 'true' }}
@@ -66,6 +66,7 @@ jobs:
           for image_file in $IMAGES_FILES; do
             image_name=$(echo $image_file | sed "s|.pkr.hcl||g" | sed "s|${{ matrix.image_type }}/||g")
             cd ${{ matrix.image_type }}
+            packer build -force packer_qemu.seed.pkr.hcl
             echo "Running ../build.bash $image_name.pkr.hcl $image_name-v$(cat $GITHUB_WORKSPACE/version).img" 
             ../build.bash $image_name.pkr.hcl $image_name-v$(cat $GITHUB_WORKSPACE/version).img
           done
