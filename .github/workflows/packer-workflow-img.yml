@@ -50,8 +50,12 @@ jobs:
         run: |
           packer init .
           packer validate .
+
       - name: Packer Qemu seed
+        if: ${{ inputs.deploy == 'true' }}
+        shell: bash
         run: |
+          cd ${{ matrix.image_type }}
           packer build -force packer_qemu.seed.pkr.hcl
 
       - name: Packer build
