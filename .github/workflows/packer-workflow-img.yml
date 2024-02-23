@@ -55,19 +55,15 @@ jobs:
         id: raise
         shell: bash
         run: |
-          ls -la
           cat version
           COMP_VERSION=$(cat version)
           main_version=${COMP_VERSION%-*}
           build_id="${COMP_VERSION#*-}"
-          echo $main_version
-          echo $build_id
           raised_buildid=$(($build_id+1))
           RAISED_COMP_VERSION="$main_version-$raised_buildid"
           echo $RAISED_COMP_VERSION>version
-          cat version
           echo $RAISED_COMP_VERSION
-          echo "raised_version=$RAISED_COMP_VERSION" >> $GITHUB_ENV
+          echo "raised_version=$RAISED_COMP_VERSION" >> $GITHUB_OUTPUT
 
       - name: Packer build
         if: ${{ inputs.deploy == 'true' }}
@@ -76,8 +72,9 @@ jobs:
           IMAGES_FILES="$(find -L ${{ matrix.image_type }} -name "*.pkr.hcl" | awk '{ print length, $0 }' | sort -rn | cut -d" " -f2-)"
           for image_file in $IMAGES_FILES; do
             image_name=$(echo $image_file | sed "s|.pkr.hcl||g" | sed "s|${{ matrix.image_type }}/||g")
-            echo "Running ../build.bash $image_name.pkr.hcl $image_name-v${{  steps.raise.outputs.raised_version }}.img" 
-            ./build.bash ${{ matrix.image_type }}/$image_name.pkr.hcl $image_name-v${{  steps.raise.outputs.raised_version }}.img
+            
+            echo "Running ../build.bash $image_name.pkr.hcl $image_name-v${{ steps.raise.outputs.raised_version }}.img" 
+            ./build.bash ${{ matrix.image_type }}/$image_name.pkr.hcl $image_name-v${{ steps.raise.outputs.raised_version }}.img
           done
   
 
@@ -115,8 +112,7 @@ jobs:
       - name: Prepare raise variables
         id: pre_raise_push
         run: |
-          echo ::set-output name=branch::${GITHUB_REF#refs/heads/}
-            
+          echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
       - name: Raise App version
         uses: CasperWA/push-protected@v2
         with:
@@ -129,7 +125,8 @@ jobs:
         shell: bash
         run: |
           commit_hash=$(git log --format="%H" -n 1)
-          echo ::set-output name=commit_id::$commit_hash
+          echo "commit_id=$commit_hash" >> $GITHUB_OUTPUT
+
             
       - name: Create Github Release
         uses: softprops/action-gh-release@v1
