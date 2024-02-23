@@ -65,6 +65,8 @@ jobs:
           raised_buildid=$(($build_id+1))
           RAISED_COMP_VERSION="$main_version-$raised_buildid"
           echo $RAISED_COMP_VERSION>version
+          cat version
+          echo $RAISED_COMP_VERSION
           echo "raised_version=$RAISED_COMP_VERSION" >> $GITHUB_ENV
 
       - name: Packer build
