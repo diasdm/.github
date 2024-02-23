@@ -56,9 +56,12 @@ jobs:
         shell: bash
         run: |
           ls -la
+          cat version
           COMP_VERSION=$(cat version)
           main_version=${COMP_VERSION%-*}
           build_id="${COMP_VERSION#*-}"
+          echo $main_version
+          echo $build_id
           raised_buildid=$(($build_id+1))
           RAISED_COMP_VERSION="$main_version-$raised_buildid"
           echo $RAISED_COMP_VERSION>version
