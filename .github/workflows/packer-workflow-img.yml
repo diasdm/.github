@@ -54,7 +54,7 @@ jobs:
       - name: Raise Version
         id: raise
         run: |
-          COMP_VERSION=cat version
+          COMP_VERSION=$(cat version)
           main_version=${COMP_VERSION%-*}
           build_id="${COMP_VERSION#*-}"
           raised_buildid=$(($build_id+1))
