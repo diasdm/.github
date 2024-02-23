@@ -53,7 +53,9 @@ jobs:
 
       - name: Raise Version
         id: raise
+        shell: bash
         run: |
+          ls -la
           COMP_VERSION=$(cat version)
           main_version=${COMP_VERSION%-*}
           build_id="${COMP_VERSION#*-}"
