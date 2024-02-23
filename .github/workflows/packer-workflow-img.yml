@@ -106,8 +106,8 @@ jobs:
           git config --global user.password ${{ secrets.auto_commit_pwd }}
           git restore version
           git pull
-          git add version
           echo "${{ steps.raise.outputs.raised_version }}">version
+          git add version
           git commit -m "[skip actions] Automatic Bump of image version to ${{ steps.raise.outputs.raised_version }}"
 
 
