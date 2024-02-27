@@ -48,8 +48,7 @@ jobs:
 
       - name: Packer Validate
         run: |
-          packer init .
-          packer validate .
+          make validate-${{ matrix.image_type }}
 
       - name: Raise Version
         id: raise
@@ -69,14 +68,8 @@ jobs:
         if: ${{ inputs.deploy == 'true' }}
         shell: bash
         run: |
-          IMAGES_FILES="$(find -L ${{ matrix.image_type }} -name "*.pkr.hcl" | awk '{ print length, $0 }' | sort -rn | cut -d" " -f2-)"
-          for image_file in $IMAGES_FILES; do
-            image_name=$(echo $image_file | sed "s|.pkr.hcl||g" | sed "s|${{ matrix.image_type }}/||g")
-            
-            echo "Running ../build.bash $image_name.pkr.hcl $image_name-v${{ steps.raise.outputs.raised_version }}.img" 
-            ./build.bash ${{ matrix.image_type }}/$image_name.pkr.hcl $image_name-v${{ steps.raise.outputs.raised_version }}.img
-          done
-  
+          echo "Running ../build.bash ${{ matrix.image_type }} with VERSION=${{ steps.raise.outputs.raised_version }}"
+          VERSION=${{ steps.raise.outputs.raised_version }} ./build.bash ${{ matrix.image_type }} 
 
       - name: Stash build artifacts (Minio)
         # if: ${{ always() &&  inputs.with_simulation_tests }}
@@ -87,7 +80,7 @@ jobs:
           --endpoint-url ${{ env.MINIO_S3_URL }} \
           s3 \
           cp \
-          ${{ matrix.image_type }}/output/ \
+          ./output/${{ matrix.image_type }} \
           s3://ci-artifacts/${{ github.repository }}/${{ github.run_id}}/${{ github.job }}/attempts/${{ github.run_attempt }} \
           --recursive
 
