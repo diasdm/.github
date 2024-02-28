@@ -33,7 +33,8 @@ env:
   SLACK_CHANNEL: ${{ inputs.overwrite_slack_channel }}
   # development slack channel
   #SLACK_CHANNEL: "C05K2KF1UP8"
-  MINIO_S3_URL: "https://s3.mov.ai"   
+  MINIO_S3_URL: "https://s3.mov.ai"
+  PACKER_GITHUB_API_TOKEN: ${{ inputs.packer_token_id }}
 
 jobs:
   Build:
@@ -49,8 +50,7 @@ jobs:
 
       - name: Packer Validate
         run: |
-          packer init .
-          packer validate .
+          make validate-${{ matrix.image_type }}
 
       - name: Raise Version
         id: raise
@@ -85,7 +85,7 @@ jobs:
           --endpoint-url ${{ env.MINIO_S3_URL }} \
           s3 \
           cp \
-          ${{ matrix.image_type }}/output/ \
+          ./output/${{ matrix.image_type }} \
           s3://ci-artifacts/${{ github.repository }}/${{ github.run_id}}/${{ github.job }}/attempts/${{ github.run_attempt }} \
           --recursive
 
