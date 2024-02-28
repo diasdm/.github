@@ -69,7 +69,6 @@ jobs:
           echo "raised_version=$RAISED_COMP_VERSION" >> $GITHUB_OUTPUT
 
       - name: Packer build
-        if: ${{ inputs.deploy == 'true' }}
         shell: bash
         run: |
           echo "Running ../build.bash ${{ matrix.image_type }}" 
