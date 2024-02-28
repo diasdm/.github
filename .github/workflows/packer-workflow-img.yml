@@ -38,7 +38,8 @@ env:
 jobs:
   Build:
     runs-on: packer-runner
-    
+    outputs:
+      raised_version: ${{ steps.raise.outputs.raised_version }}
     strategy:
       matrix:
         image_type: ${{ fromJSON(inputs.image_type_list) }}
@@ -69,13 +70,10 @@ jobs:
         if: ${{ inputs.deploy == 'true' }}
         shell: bash
         run: |
-          IMAGES_FILES="$(find -L ${{ matrix.image_type }} -name "*.pkr.hcl" | awk '{ print length, $0 }' | sort -rn | cut -d" " -f2-)"
-          for image_file in $IMAGES_FILES; do
-            image_name=$(echo $image_file | sed "s|.pkr.hcl||g" | sed "s|${{ matrix.image_type }}/||g")
-            
-            echo "Running ../build.bash $image_name.pkr.hcl $image_name-v${{ steps.raise.outputs.raised_version }}.img" 
-            ./build.bash ${{ matrix.image_type }}/$image_name.pkr.hcl $image_name-v${{ steps.raise.outputs.raised_version }}.img
-          done
+          echo "Running ../build.bash ${{ matrix.image_type }}" 
+          ./build.bash ${{ matrix.image_type }}
+        env:
+          PACKER_VERSION: ${{ steps.raise.outputs.raised_version }}
   
 
       - name: Stash build artifacts (Minio)
@@ -97,6 +95,14 @@ jobs:
           AWS_DEFAULT_REGION: "us-east-1"
           AWS_DEFAULT_OUTPUT: "none"  
 
+  Create-Release:
+    runs-on: ubuntu-latest
+    needs: Build
+    if: ${{ inputs.deploy == 'true' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Commit raise
         if: ${{ inputs.deploy == 'true' }}
         run: |
@@ -106,9 +112,9 @@ jobs:
           git config --global user.password ${{ secrets.auto_commit_pwd }}
           git restore version
           git pull
-          echo "${{ steps.raise.outputs.raised_version }}">version
+          echo "${{ needs.Build.outputs.raised_version }}">version
           git add version
-          git commit -m "[skip actions] Automatic Bump of image version to ${{ steps.raise.outputs.raised_version }}"
+          git commit -m "[skip actions] Automatic Bump of image version to ${{ needs.Build.outputs.raised_version }}"
 
 
       - name: Prepare raise variables
@@ -133,9 +139,9 @@ jobs:
       - name: Create Github Release
         uses: softprops/action-gh-release@v1
         with:
-          name: "Release of ${{ steps.raise.outputs.raised_version }}"
+          name: "Release of ${{ needs.Build.outputs.raised_version }}"
           body: "Please add release notes"
-          tag_name: ${{ steps.raise.outputs.raised_version }}
+          tag_name: ${{ needs.Build.outputs.raised_version }}
           target_commitish: ${{ steps.commit.outputs.commit_id }}
           token: ${{ secrets.auto_commit_pwd }}
           prerelease: true
