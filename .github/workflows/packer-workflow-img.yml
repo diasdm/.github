@@ -45,6 +45,8 @@ jobs:
       matrix:
         image_type: ${{ fromJSON(inputs.image_type_list) }}
     steps:
+      - name: Pre clean ups
+        uses: rtCamp/action-cleanup@master
       - name: Checkout
         uses: actions/checkout@v3
 
