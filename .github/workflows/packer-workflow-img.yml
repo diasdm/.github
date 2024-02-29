@@ -21,11 +21,7 @@ on:
         required: true
       auto_commit_pwd:
         required: true
-      packer_build_server:
-        required: true
       packer_token_id:
-        required: true
-      packer_token_secret:
         required: true
       minio_key_id:
         required: true
