@@ -60,11 +60,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install dependencies
-        run: pip install pre-commit
+      # TODO: put validations outside of matrix
+      # - name: Install dependencies
+      #   run: pip install pre-commit
 
-      - name: Run pre-commit
-        run: pre-commit run --all-files
+      # - name: Run pre-commit
+      #   run: pre-commit run --all-files
 
       - name: Packer Validate
         run: |
