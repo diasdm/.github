@@ -45,8 +45,25 @@ env:
   PROXMOX_NFS_SERVER_URL: "https://mary.mov.ai:8006/#v1:0:=storage%2Fbb-8%2Fnas-mary:4:5:=contentIso"
 
 jobs:
+  Validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Validate packer files
+        run: |
+          make validate
+
+      - name: Install dependencies
+        run: pip install pre-commit
+
+      - name: Run pre-commit
+        run: pre-commit run --all-files
+
   Build:
     runs-on: packer-runner
+    needs: Validate
     outputs:
       raised_version: ${{ steps.raise.outputs.raised_version }}
       artifact_url: ${{ steps.minio_upload.outputs.artifact_url }}
@@ -59,17 +76,6 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v3
-
-      # TODO: put validations outside of matrix
-      # - name: Install dependencies
-      #   run: pip install pre-commit
-
-      # - name: Run pre-commit
-      #   run: pre-commit run --all-files
-
-      - name: Packer Validate
-        run: |
-          make validate-${{ matrix.image_type }}
 
       - name: Raise Version
         id: raise
