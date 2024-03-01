@@ -40,6 +40,7 @@ on:
 env:
   MINIO_S3_URL: "https://s3.mov.ai"
   MINIO_PUBLIC_URL: "https://minio.mov.ai"
+  RUN_STAGING_DIR: "/home/devops/packer-ci/staging/${{ github.repository }}/${{ github.run_id}}/${{ github.job }}/attempts/${{ github.run_attempt }}/"
   PROXMOX_NFS_SERVER_PATH: "/media/nas-mary/template/iso/"
   PROXMOX_NFS_SERVER_URL: "https://mary.mov.ai:8006/#v1:0:=storage%2Fbb-8%2Fnas-mary:4:5:=contentIso"
   PACKER_GITHUB_API_TOKEN: ${{ secrets.packer_token_id }}
@@ -124,6 +125,10 @@ jobs:
           echo "::endgroup::"
 
           echo "artifact_url=$PUBLIC_URL" >> $GITHUB_OUTPUT
+
+          echo "::group::Artifact local copy to staging area $RUN_STAGING_DIR"
+          mkdir -p $RUN_STAGING_DIR
+          mv ./output/${{ matrix.image_type }} $RUN_STAGING_DIR
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.minio_key_id }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.minio_secret_key_id }}
@@ -191,7 +196,13 @@ jobs:
 
       - name: Deploy images to NFS server
         run: |
-          for file in $(find ./output -name "*.img"); do
+          nb_files=$(find $RUN_STAGING_DIR -name "*.img" | wc -l)
+          if [ $nb_files -eq 0 ]; then
+            echo "No images found to deploy"
+            exit 1
+          fi
+
+          for file in $(find $RUN_STAGING_DIR -name "*.img"); do
             echo "Copying $file to $PROXMOX_NFS_SERVER_PATH"
             if [ -f $file ]; then
               echo "File $file exists."
@@ -205,8 +216,9 @@ jobs:
         if: always()
         id: pre_slack
         run: |
+          PUBLIC_URL="$MINIO_PUBLIC_URL/browser/ci-artifacts/${{ github.repository }}/${{ github.run_id}}/${{ github.job }}/attempts/${{ github.run_attempt }}/
           MESSAGE=":arrow_forward: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), new version ${{ needs.Build.outputs.raised_version }}  of packer images available :sunny:\
-            Download link: "
+            Download link: $PUBLIC_URL"
 
           MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build of version ${{ needs.Build.outputs.raised_version }} is unstable :rain_cloud:\
             Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
@@ -231,6 +243,12 @@ jobs:
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN_ID }}
 
+      - name: Cleanup
+        if: always()
+        shell: bash
+        run: |
+          rm -rf $RUN_STAGING_DIR
+
   Write-Summary:
     runs-on: ubuntu-latest
     needs: [ Build, Create-Release, Deploy-Images ]
@@ -240,4 +258,6 @@ jobs:
         run: |
           summary_message=":white_check_mark: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), new version ${{ needs.Build.outputs.raised_version }}  of packer images available :sunny:\
             Download link: ${{ needs.Build.outputs.artifact_url }}"
-          echo "::set-output name=summary::$summary_message"
+
+          echo "summary=${summary_message}" >> $GITHUB_OUTPUT
+
