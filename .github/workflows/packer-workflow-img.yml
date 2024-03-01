@@ -314,9 +314,9 @@ jobs:
         id: summary
         run: |
           summary_message=":white_check_mark: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), new pre-version ${{ needs.Build.outputs.raised_version }}  of packer images available :sunny:\
-            Download link: ${{ needs.Build.outputs.artifact_url }}"
+            Download link: ${{ needs.Build.outputs.artifact_url }}\n"
 
-          echo "summary=${summary_message}" >> $GITHUB_OUTPUT
+          echo "summary=${summary_message} :rocket:" >> $GITHUB_STEP_SUMMARY
 
   Write-Release-Summary:
     runs-on: ubuntu-latest
@@ -327,7 +327,7 @@ jobs:
         id: summary
         run: |
           summary_message=":white_check_mark: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), new version ${{ needs.Release-Images.outputs.tag }}  of packer images available :sunny:\
-            Download link: ${{ needs.Release-Images.outputs.PUBLIC_URL }}"
+            Download link: ${{ needs.Release-Images.outputs.PUBLIC_URL }}\n"
 
-          echo "summary=${summary_message}" >> $GITHUB_OUTPUT
+          echo "summary=${summary_message}:rocket:" >> $GITHUB_STEP_SUMMARY
 
