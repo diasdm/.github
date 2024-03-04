@@ -116,7 +116,7 @@ jobs:
         if: ${{ inputs.run_tests }}
         run: |
           echo "Running tests for ${{ matrix.image_type }}"
-          make test_${{ matrix.image_type }}
+          ./build.bash test-${{ matrix.image_type }}
 
       - name: Upload artifacts (Minio)
         if: ${{ inputs.deploy == 'true' }}
