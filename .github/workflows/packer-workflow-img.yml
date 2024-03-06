@@ -12,7 +12,7 @@ on:
       slack_channel:
         required: false
         type: string
-        default: "C02U028NMB7"
+        default: "C05UYMX2U0K"
       run_tests:
         required: false
         type: boolean
@@ -228,14 +228,14 @@ jobs:
             exit 1
           fi
 
-          mkdir -p $PROXMOX_NFS_SERVER_PATH/${{ needs.Build.outputs.raised_version }}
+          sudo mkdir -p $PROXMOX_NFS_SERVER_PATH/${{ needs.Build.outputs.raised_version }}
           for file in $(find $RUN_STAGING_DIR -name "*.img"); do
             echo "Copying $file to $PROXMOX_NFS_SERVER_PATH/${{ needs.Build.outputs.raised_version }}"
             if [ -f $PROXMOX_NFS_SERVER_PATH/${{ needs.Build.outputs.raised_version }} ]; then
               echo "File $PROXMOX_NFS_SERVER_PATH/${{ needs.Build.outputs.raised_version }} exists."
               exit 1
             else
-              cp $file $PROXMOX_NFS_SERVER_PATH/${{ needs.Build.outputs.raised_version }}
+              sudo cp $file $PROXMOX_NFS_SERVER_PATH/${{ needs.Build.outputs.raised_version }}
             fi
           done
           echo "Images copied to NFS server to $PROXMOX_NFS_SERVER_URL"
@@ -244,7 +244,7 @@ jobs:
         if: always()
         id: pre_slack
         run: |
-          PUBLIC_URL="$MINIO_PUBLIC_URL/browser/ci-artifacts/${{ github.repository }}/${{ github.run_id}}/${{ github.job }}/attempts/${{ github.run_attempt }}/
+          PUBLIC_URL="$MINIO_PUBLIC_URL/browser/ci-artifacts/${{ github.repository }}/${{ github.run_id}}/${{ github.job }}/attempts/${{ github.run_attempt }}/"
           MESSAGE=":arrow_forward: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), new pre-version ${{ needs.Build.outputs.raised_version }}  of packer images available :sunny:\
             Download link: $PUBLIC_URL"
 
