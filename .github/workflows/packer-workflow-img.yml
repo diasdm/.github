@@ -56,6 +56,17 @@ env:
   DEFAULT_USER_PASSWORD: ${{ secrets.img_default_password }}
 
 jobs:
+
+  RefreshSource:
+    if: ${{ inputs.deploy == 'false' && inputs.release == 'false' }}
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: docker://chinthakagodawita/autoupdate-action:v1
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: '${{ secrets.auto_commit_pwd }}'
+          MERGE_MSG: "Branch was auto-updated."
+
   Validate:
     runs-on: ubuntu-latest
     if: ${{ inputs.release == 'false' }}
