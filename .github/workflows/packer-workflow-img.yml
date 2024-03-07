@@ -220,6 +220,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Test NFS server
+        run: |
+          if [ ! -d "$PROXMOX_NFS_SERVER_PATH" ]; then
+            echo "ERROR: NFS server path $PROXMOX_NFS_SERVER_PATH does not exist."
+            exit 1
+          fi
+
       - name: Deploy images to NFS server
         run: |
           nb_files=$(find $RUN_STAGING_DIR -name "*.img" | wc -l)
@@ -228,14 +235,17 @@ jobs:
             exit 1
           fi
 
-          sudo mkdir -p $PROXMOX_NFS_SERVER_PATH/${{ needs.Build.outputs.raised_version }}
+          sudo mkdir -p $PROXMOX_NFS_SERVER_PATH/
           for file in $(find $RUN_STAGING_DIR -name "*.img"); do
-            echo "Copying $file to $PROXMOX_NFS_SERVER_PATH/${{ needs.Build.outputs.raised_version }}"
-            if [ -f $PROXMOX_NFS_SERVER_PATH/${{ needs.Build.outputs.raised_version }} ]; then
-              echo "File $PROXMOX_NFS_SERVER_PATH/${{ needs.Build.outputs.raised_version }} exists."
+            basename=$(basename $file)
+            versioned_file="${{ needs.Build.outputs.raised_version }}-${basename%.*}.img"
+
+            if [ -f "$PROXMOX_NFS_SERVER_PATH/$versioned_file" ]; then
+              echo "ERROR: File $PROXMOX_NFS_SERVER_PATH/$versioned_file exists."
               exit 1
             else
-              sudo cp $file $PROXMOX_NFS_SERVER_PATH/${{ needs.Build.outputs.raised_version }}
+              echo "Copying $file to $PROXMOX_NFS_SERVER_PATH/$versioned_file"
+              sudo cp $file "$PROXMOX_NFS_SERVER_PATH/$PROXMOX_NFS_SERVER_PATH/$versioned_file"
             fi
           done
           echo "Images copied to NFS server to $PROXMOX_NFS_SERVER_URL"
@@ -287,19 +297,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Test NFS server
+        run: |
+          if [ ! -d "$PROXMOX_NFS_SERVER_PATH" ]; then
+            echo "ERROR: NFS server path $PROXMOX_NFS_SERVER_PATH does not exist."
+            exit 1
+          fi
+
       - name: Set tag output
         id: vars
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
       - name: Upload images from NFS to Minio bucket vm-templates
         run: |
-          NFS_PATH="${PROXMOX_NFS_SERVER_PATH}/${{ steps.vars.outputs.tag}}"
+          NFS_PATH="${PROXMOX_NFS_SERVER_PATH}/"
           PUBLIC_URL="$MINIO_PUBLIC_URL/browser/vm-templates/${{ steps.vars.outputs.tag}}/"
 
-          for files in $(find $NFS_PATH -name "*.img"); do
+          for files in $(find $NFS_PATH -name "${{ steps.vars.outputs.tag}}-*.img"); do
             echo "Uploading $files to minio"
             aws --endpoint-url ${{ env.MINIO_S3_URL }} s3 cp $files s3://vm-templates/${{ steps.vars.outputs.tag}}/
           done
+
+          # create symlinks to the latest version
+          pushd $NFS_PATH
+          for file in $(find . -name "${{ steps.vars.outputs.tag}}-*.img"); do
+            # remove the version from the file name
+            unversioned_filename=$(basename $file | sed "s/${{ steps.vars.outputs.tag}}-//")
+            ln -s $file "${unversioned_filename%.*}-latest.img"
+          done
+          popd
 
           echo "::group::Download link"
           echo "Artifact uploaded to: $PUBLIC_URL"
@@ -327,7 +353,7 @@ jobs:
           summary_message=":white_check_mark: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), new pre-version ${{ needs.Build.outputs.raised_version }}  of packer images available :sunny:\
             Download link: ${{ needs.Build.outputs.artifact_url }}\n"
 
-          echo "summary=${summary_message} :rocket:" >> $GITHUB_STEP_SUMMARY
+            echo -e ":construction_worker:\n${summary_message}" >> $GITHUB_STEP_SUMMARY
 
   Write-Release-Summary:
     runs-on: ubuntu-latest
@@ -340,5 +366,5 @@ jobs:
           summary_message=":white_check_mark: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), new version ${{ needs.Release-Images.outputs.tag }}  of packer images available :sunny:\
             Download link: ${{ needs.Release-Images.outputs.PUBLIC_URL }}\n"
 
-          echo "summary=${summary_message}:rocket:" >> $GITHUB_STEP_SUMMARY
+          echo -e ":rocket:\n${summary_message}" >> $GITHUB_STEP_SUMMARY
 
