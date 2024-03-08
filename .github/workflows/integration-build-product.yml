@@ -75,9 +75,9 @@ on:
         required: true
       proxmox_api_url:
         required: true
-      proxmox_api_token_id:
+      proxmox_ve_username:
         required: true
-      proxmox_api_token_secret:
+      proxmox_ve_password:
         required: true
       ssh_priv_key:
         required: true
