@@ -332,7 +332,11 @@ jobs:
           echo "::endgroup::"
 
           echo "PUBLIC_URL=$PUBLIC_URL" >> $GITHUB_OUTPUT
-
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.minio_key_id }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.minio_secret_key_id }}
+          AWS_DEFAULT_REGION: "us-east-1"
+          AWS_DEFAULT_OUTPUT: "none"
       - name: Slack message
         uses: slackapi/slack-github-action@v1.25.0
         with:
