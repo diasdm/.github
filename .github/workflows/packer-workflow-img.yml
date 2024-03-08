@@ -322,7 +322,7 @@ jobs:
             # remove the version from the file name
             echo "Creating symlink for $files"
             unversioned_filename=$(basename $files | sed "s/${{ steps.vars.outputs.tag}}-//")
-            sudo ln -s $files "${unversioned_filename%.*}-latest.img"
+            sudo ln -sf $files "${unversioned_filename%.*}-latest.img"
           done
           popd
 
