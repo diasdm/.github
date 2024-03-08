@@ -131,6 +131,17 @@ jobs:
         with:
           ref: ${{ inputs.nightly_run_branch }}
 
+      - name: Job Summary Header
+        shell: bash
+        run: |
+          if [ "${{ inputs.is_nightly_run }}" == "true" ] ; then
+            TITLE="Run Report of ${GITHUB_REPOSITORY} ${{inputs.nightly_run_branch}}"
+          else
+            TITLE="Mightly Report of ${GITHUB_REPOSITORY} ${{inputs.nightly_run_branch}}"
+          fi
+
+          echo -e "# ${TITLE}" >> $GITHUB_STEP_SUMMARY
+
       - name: Validate Manifest
         shell: bash
         run: |
@@ -1566,8 +1577,6 @@ jobs:
           slack-text: ${{ steps.pre_slack_result.outputs.msg_error }}
           slack-optional-thread_ts: ${{ needs.Build-Simulator.outputs.slack_thread_id }}
 
-
-
       - name: Stash QA artifacts (Minio)
         if: ${{ always() &&  inputs.with_simulation_tests }}
         shell: bash
@@ -1601,7 +1610,7 @@ jobs:
           slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ":information_source: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) Job artifacts url: ${{ steps.minio_publish.outputs.publish_url }}"
           slack-optional-thread_ts: ${{ needs.Build-Simulator.outputs.slack_thread_id }}
-          
+
       - name: Teardown remote vms (Proxmox)
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
         if: ${{ inputs.with_simulation_tests && inputs.debug_simulation_tests_keep_alive == false && always() }}
@@ -1626,6 +1635,19 @@ jobs:
           TF_VAR_fleet_manager_memory: 30000
           TF_VAR_fleet_manager_cores: 10
           TF_VAR_fleet_manager_disk_size: "110G"
+
+      - name: Job Summary Success
+        shell: bash
+        run: |
+          summary_message=":white_check_mark: Successfully passed\n Artifacts url: ${{ steps.minio_publish.outputs.publish_url }}"
+          echo -e "## ${{ github.job }} Summary\n${summary_message}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Job Summary Failure
+        if: failure()
+        shell: bash
+        run: |
+          summary_message=":x: Failed \n Artifacts url: ${{ steps.minio_publish.outputs.publish_url }}"
+          echo -e "## ${{ github.job }} Summary\n${summary_message}" >> $GITHUB_STEP_SUMMARY
 
   publish:
     needs: [Install-Robot, Install-Simulator-Robot, Validation-Simulator-Tests]
