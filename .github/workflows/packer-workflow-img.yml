@@ -255,10 +255,10 @@ jobs:
         id: pre_slack
         run: |
           PUBLIC_URL="$MINIO_PUBLIC_URL/browser/ci-artifacts/${{ github.repository }}/${{ github.run_id}}/Build/attempts/${{ github.run_attempt }}/"
-          MESSAGE=":arrow_forward: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), new pre-version ${{ needs.Build.outputs.raised_version }}  of packer images available :sunny:\
+          MESSAGE=":arrow_forward: New pre-version ${{ needs.Build.outputs.raised_version }}  of packer images available :sunny:\
             Download link: $PUBLIC_URL"
 
-          MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build of pre-version ${{ needs.Build.outputs.raised_version }} is unstable :rain_cloud:\
+          MESSAGE_ERR=":x: Build of pre-version ${{ needs.Build.outputs.raised_version }} is unstable :rain_cloud:\
             Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
@@ -341,7 +341,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.25.0
         with:
           channel-id: ${{ inputs.slack_channel }}
-          slack-message: ":white_check_mark: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), new version ${{ steps.vars.outputs.tag }}  of packer images available :sunny:\
+          slack-message: ":white_check_mark: New version ${{ steps.vars.outputs.tag }}  of packer images available :sunny:\
             Download link: ${{ steps.minio_upload.outputs.PUBLIC_URL }}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN_ID }}
