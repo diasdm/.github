@@ -146,6 +146,7 @@ jobs:
           python3 -m pip install pyopenssl --upgrade
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
           deactivate
+
       - name: Bootstraping simulator metadata
         shell: bash
         run: |
@@ -391,7 +392,6 @@ jobs:
           slack-text: ${{ steps.pre_slack_result.outputs.msg_error }}
           slack-optional-thread_ts: ${{ needs.Validate-boostrap-configs.outputs.slack_thread_id }}
 
-
       - name: Stash robot_jsons_${{ matrix.distro }}
         uses: actions/upload-artifact@v3
         with:
@@ -491,9 +491,8 @@ jobs:
           chmod +x ./QuickStart_$(cat quickstart_version).bash
           ./QuickStart_$(cat quickstart_version).bash --apps $(cat movai_service_version) $CONFIG_FILE_NAME
 
-          execution_status=$?
-          exit $execution_status
           rm movai_service_version
+          rm quickstart_version
 
       - name: Collect Install logs
         continue-on-error: true
@@ -636,7 +635,6 @@ jobs:
           slack-optional-thread_ts: ${{ needs.Build-Spawner.outputs.slack_thread_id }}
 
       - name: Stash project metadata
-
         if: always()
         uses: actions/upload-artifact@v3
         with:
@@ -797,7 +795,6 @@ jobs:
             --pull \
             --push .
 
-
       - name: Get current job id
         if: always()
         shell: bash
@@ -941,7 +938,6 @@ jobs:
 
           docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
           docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
-
 
       - name: Installation
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
@@ -1254,7 +1250,6 @@ jobs:
         env:
           SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
 
-
       - name: Remote - Agent info
         if: ${{ inputs.with_simulation_tests }}
         id: agent_info
@@ -1306,7 +1301,7 @@ jobs:
         shell: bash
         run: |
           ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
-            
+
             promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g" | sed "s-${{ env.MID_REGISTRY }}-${{ env.REGISTRY }}-g")
             docker manifest inspect "$promoted_name"
             if [ $? -ne 0 ]; then
@@ -1379,8 +1374,11 @@ jobs:
             python3 -m pip install pyopenssl --upgrade
             pip install -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple -r requirements.txt
             deactivate
+
             popd
 
+            # install test dependencies on host
+            sudo apt install -y --allow-downgrades python3-rosnode python3-rosparam python3-rostopic
           '
           rm -f /tmp/target_dir.txt /tmp/version.txt /tmp/repo_name.txt /tmp/test_set.txt /tmp/test_exec_dir.txt
           scp -r -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no ${{ steps.infra_outputs.outputs.ssh_connect_string }}:/tmp/*.txt /tmp/
@@ -1455,11 +1453,8 @@ jobs:
 
             cd ${{ env.REMOTE_WORKSPACE_PATH }}/${{ steps.simulator_tests_setup.outputs.target_dir }}
 
-            # install test dependencies on host
-            sudo apt install -y --allow-downgrades python3-rosnode python3-rosparam python3-rostopic
-            export PYTHONPATH="${PYTHONPATH}:/usr/lib/python3/dist-packages"
-
             # run tests
+            export PYTHONPATH="${PYTHONPATH}:/usr/lib/python3/dist-packages"
             . venv/bin/activate
 
             marker="ci"
@@ -1469,12 +1464,9 @@ jobs:
 
             pytest \
               ${{ steps.simulator_tests_setup.outputs.test_exec_dir }} \
-              -s \
-              -ra \
               -m $marker \
               --movai-user ${{ steps.install.outputs.movai_user }} \
-              --movai-pw ${{ steps.install.outputs.movai_pwd }} \
-              --tb=short
+              --movai-pw ${{ steps.install.outputs.movai_pwd }}
 
             deactivate
           '
@@ -1566,8 +1558,6 @@ jobs:
           slack-text: ${{ steps.pre_slack_result.outputs.msg_error }}
           slack-optional-thread_ts: ${{ needs.Build-Simulator.outputs.slack_thread_id }}
 
-
-
       - name: Stash QA artifacts (Minio)
         if: ${{ always() &&  inputs.with_simulation_tests }}
         shell: bash
@@ -1601,7 +1591,7 @@ jobs:
           slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-text: ":information_source: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) Job artifacts url: ${{ steps.minio_publish.outputs.publish_url }}"
           slack-optional-thread_ts: ${{ needs.Build-Simulator.outputs.slack_thread_id }}
-          
+
       - name: Teardown remote vms (Proxmox)
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
         if: ${{ inputs.with_simulation_tests && inputs.debug_simulation_tests_keep_alive == false && always() }}
