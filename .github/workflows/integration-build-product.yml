@@ -100,8 +100,8 @@ env:
   MID_REGISTRY: registry.cloud.mov.ai
   USERSPACE_FOLDER_PATH: userspace
   REMOTE_WORKSPACE_PATH: workspace
-  PROVISION_INFRA_REPO: "devops-tf-proxmox-fleet"
-  PROVISION_INFRA_VERSION: "0.1.0-7"
+  PROVISION_INFRA_REPO: "devops-tf-proxmox-bpg"
+  PROVISION_INFRA_VERSION: "0.0.0-1"
   # slack channel movai-projects
   SLACK_CHANNEL: ${{ inputs.overwrite_slack_channel }}
   # development slack channel
@@ -1160,6 +1160,7 @@ jobs:
           rm -rf $provision_infra_dir
           export PATH="$HOME/.local/bin:$PATH"
           integration-pipeline fetch_by_tag --repo $provision_infra_repo_name --version $provision_infra_version --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $provision_infra_dir
+          
           ls -la $provision_infra_dir
           echo "target_dir=${provision_infra_dir}/hosts/generic/" >> $GITHUB_OUTPUT
 
@@ -1191,24 +1192,49 @@ jobs:
         env:
           TF_VAR_number_agents: 0
           TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
-          TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
-          TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
-          TF_VAR_provision_ssh_pem: ${{ secrets.ssh_priv_key }}
-          TF_VAR_ip_list: '["dhcp"]'
-          TF_VAR_storage: "local-lvm"
-          TF_VAR_proxmox_host_list: '["mary"]'
-          TF_VAR_vm_gateway: "10.10.1.254"
-          TF_VAR_ip_mask: 23
-          TF_VAR_bios: "ovmf"
-          TF_VAR_pool: "IP-Temp-VMs"
-          TF_VAR_tags: "ip-simul-ci"
-          TF_VAR_fleet_hosts_user: "devops"
-          TF_VAR_template_name: "u22dci-gpu"
-          TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
-          TF_VAR_fleet_manager_memory: 51200
-          TF_VAR_fleet_manager_cores: 14
-          TF_VAR_fleet_manager_disk_size: "110G"
-          TF_VAR_fleet_manager_balloon: 0
+          # TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
+          # TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
+          # TF_VAR_provision_ssh_pem: ${{ secrets.ssh_priv_key }}
+          # TF_VAR_ip_list: '["dhcp"]'
+          # TF_VAR_storage: "local-lvm"
+          # TF_VAR_proxmox_host_list: '["mary"]'
+          # TF_VAR_vm_gateway: "10.10.1.254"
+          # TF_VAR_ip_mask: 23
+          # TF_VAR_bios: "ovmf"
+          # TF_VAR_pool: "IP-Temp-VMs"
+          # TF_VAR_tags: "ip-simul-ci"
+          # TF_VAR_fleet_hosts_user: "devops"
+          # TF_VAR_template_name: "u22dci-gpu"
+          # TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
+          # TF_VAR_fleet_manager_memory: 51200
+          # TF_VAR_fleet_manager_cores: 14
+          # TF_VAR_fleet_manager_disk_size: "110G"
+          # TF_VAR_fleet_manager_balloon: 0
+          TF_VAR_PROXMOX_VE_USERNAME: ${{ secrets.proxmox_ve_username }}
+          TF_VAR_PROXMOX_VE_PASSWORD: ${{ secrets.proxmox_ve_password }}
+          TF_VAR_ubuntu_name: "jammy"
+          TF_VAR_ubuntu_version: "22.04"
+          TF_VAR_proxmox_host: "mary"
+          TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
+          TF_VAR_vm_name: "test-bpg-tf"
+          TF_VAR_vm_memory: 8192
+          TF_VAR_vm_cores: 4
+          TF_VAR_vm_core_type: "host"
+          TF_VAR_vm_disk_size: 20
+          TF_VAR_vm_disk_interface: "scsi0"
+          TF_VAR_vm_type: "q35"
+          TF_VAR_vm_os_type: "l26"
+          TF_VAR_vm_network_bridge: "vmbr0"
+          TF_VAR_vm_network_ip_address: "dhcp"
+          TF_VAR_vm_disk_storage: "nas-mary"
+          TF_VAR_vm_img_id: "nas-mary:iso/0.0.1-13-desktop-jammy_local.img"
+          TF_VAR_vm_bios: "ovmf"
+          TF_VAR_cloud_init_storage: "local"
+          TF_VAR_hostpci_device: "hostpci0"
+          TF_VAR_hostpci_device_id: "0000:01:00.0"
+          TF_VAR_hostpci_device_pcie: "true"
+          TF_VAR_hostpci_device_xvga: "true"
+          TF_VAR_hostpci_device_rombar: "true"
 
       - name: Gather Terraform outputs
         if: ${{ inputs.with_simulation_tests }}
