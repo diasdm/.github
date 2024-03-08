@@ -254,7 +254,7 @@ jobs:
         if: always()
         id: pre_slack
         run: |
-          PUBLIC_URL="$MINIO_PUBLIC_URL/browser/ci-artifacts/${{ github.repository }}/${{ github.run_id}}/${{ github.job }}/attempts/${{ github.run_attempt }}/"
+          PUBLIC_URL="$MINIO_PUBLIC_URL/browser/ci-artifacts/${{ github.repository }}/${{ github.run_id}}/Build/attempts/${{ github.run_attempt }}/"
           MESSAGE=":arrow_forward: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), new pre-version ${{ needs.Build.outputs.raised_version }}  of packer images available :sunny:\
             Download link: $PUBLIC_URL"
 
@@ -313,13 +313,13 @@ jobs:
           NFS_PATH="${PROXMOX_NFS_SERVER_PATH}/"
           PUBLIC_URL="$MINIO_PUBLIC_URL/browser/vm-templates/${{ steps.vars.outputs.tag}}/"
 
-          for files in $(find $NFS_PATH -name "${{ steps.vars.outputs.tag}}-*.img"); do
+          pushd $NFS_PATH
+          for files in $(find . -name "${{ steps.vars.outputs.tag}}-*.img"); do
             echo "Uploading $files to minio"
             aws --endpoint-url ${{ env.MINIO_S3_URL }} s3 cp $files s3://vm-templates/${{ steps.vars.outputs.tag}}/
           done
 
           # create symlinks to the latest version
-          pushd $NFS_PATH
           for file in $(find . -name "${{ steps.vars.outputs.tag}}-*.img"); do
             # remove the version from the file name
             unversioned_filename=$(basename $file | sed "s/${{ steps.vars.outputs.tag}}-//")
@@ -351,9 +351,9 @@ jobs:
         id: summary
         run: |
           summary_message=":white_check_mark: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), new pre-version ${{ needs.Build.outputs.raised_version }}  of packer images available :sunny:\
-            Download link: ${{ needs.Build.outputs.artifact_url }}\n"
+          \nDownload link: ${{ needs.Build.outputs.artifact_url }}\n"
 
-            echo -e ":construction_worker:\n${summary_message}" >> $GITHUB_STEP_SUMMARY
+          echo -e ":construction_worker: ### Build Summary\n${summary_message}" >> $GITHUB_STEP_SUMMARY
 
   Write-Release-Summary:
     runs-on: ubuntu-latest
@@ -364,7 +364,7 @@ jobs:
         id: summary
         run: |
           summary_message=":white_check_mark: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), new version ${{ needs.Release-Images.outputs.tag }}  of packer images available :sunny:\
-            Download link: ${{ needs.Release-Images.outputs.PUBLIC_URL }}\n"
+          \nDownload link: ${{ needs.Release-Images.outputs.PUBLIC_URL }}\n"
 
-          echo -e ":rocket:\n${summary_message}" >> $GITHUB_STEP_SUMMARY
+          echo -e ":rocket: ### Release Summary \n${summary_message}" >> $GITHUB_STEP_SUMMARY
 
