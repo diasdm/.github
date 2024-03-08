@@ -316,14 +316,24 @@ jobs:
           pushd $NFS_PATH
           for files in $(find . -name "${{ steps.vars.outputs.tag}}-*.img"); do
             echo "Uploading $files to minio"
-            aws --endpoint-url ${{ env.MINIO_S3_URL }} s3 cp $files s3://vm-templates/${{ steps.vars.outputs.tag}}/
+
+            # Check if the file exists
+            response=$(aws --endpoint-url ${{ env.MINIO_S3_URL }} s3api head-object --bucket vm-templates --key ${{ steps.vars.outputs.tag}} 2>&1)
+
+            if [ $? -eq 0 ]; then
+                echo "Folder exists in S3.Skipping upload"
+            else
+                echo "File does not exist in S3."
+                aws --endpoint-url ${{ env.MINIO_S3_URL }} s3 cp $files s3://vm-templates/${{ steps.vars.outputs.tag}}/
+            fi
           done
 
           # create symlinks to the latest version
           for file in $(find . -name "${{ steps.vars.outputs.tag}}-*.img"); do
             # remove the version from the file name
+            echo "Creating symlink for $file"
             unversioned_filename=$(basename $file | sed "s/${{ steps.vars.outputs.tag}}-//")
-            ln -s $file "${unversioned_filename%.*}-latest.img"
+            sudo ln -s $file "${unversioned_filename%.*}-latest.img"
           done
           popd
 
