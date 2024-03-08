@@ -1191,7 +1191,7 @@ jobs:
 
         env:
           TF_VAR_number_agents: 0
-          TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
+          # TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
           # TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
           # TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
           # TF_VAR_provision_ssh_pem: ${{ secrets.ssh_priv_key }}
