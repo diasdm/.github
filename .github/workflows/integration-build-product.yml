@@ -84,9 +84,9 @@ on:
       pdv_auth_token:
         required: false
       minio_key_id:
-        required: false
+        required: true
       minio_secret_key_id:
-        required: false
+        required: true
 
 env:
   CI_INTEGRATION_SCRIPTS_VERSION: "2.2.0.27"
@@ -108,6 +108,7 @@ env:
   #SLACK_CHANNEL: "C05K2KF1UP8"
   PROJECT_DATA_VIEWER_API: "https://personal-7vf0v2cu.outsystemscloud.com/ProjectDataViewer5/rest/V1//CreateProject"
   MINIO_S3_URL: "https://s3.mov.ai"
+  MINIO_PUBLIC_URL: "https://minio.mov.ai"
 
 jobs:
   Validate-boostrap-configs:
@@ -1235,7 +1236,6 @@ jobs:
             cloud-init status --wait; rm -rf ./${{ env.REMOTE_WORKSPACE_PATH }}; mkdir -p ./${{ env.REMOTE_WORKSPACE_PATH }}
           '
 
-
       - name: Prepare Devops provisioning slack message
         if: always()
         id: pre_slack_infra
@@ -1567,27 +1567,24 @@ jobs:
           slack-optional-thread_ts: ${{ needs.Build-Simulator.outputs.slack_thread_id }}
 
 
-      - name: Stash QA artifacts
-        if: ${{ always() &&  inputs.with_simulation_tests }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: qa_artifacts_simulator_tests
-          path: qa_artifacts/*
-          retention-days: 5
 
       - name: Stash QA artifacts (Minio)
         if: ${{ always() &&  inputs.with_simulation_tests }}
-        continue-on-error: true
         shell: bash
+        id: minio_publish
         run: |
+          URI_OBJ_PATH=ci-artifacts/${{ github.repository }}/$(date '+%Y_%m_%d')/${{ github.run_id}}/${{ github.job }}/attempts/${{ github.run_attempt }}
           aws \
           --endpoint-url ${{ env.MINIO_S3_URL }} \
           s3 \
           cp \
           qa_artifacts/ \
-          s3://ci-artifacts/${{ github.repository }}/${{ github.run_id}}/${{ github.job }}/attempts/${{ github.run_attempt }} \
+          s3://$URI_OBJ_PATH \
           --recursive
           --content-type="text/plain"
+
+          PUBLISH_URL="${{ env.MINIO_PUBLIC_URL }}/browser/$URI_OBJ_PATH"
+          echo "publish_url=${$PUBLISH_URL}" >> $GITHUB_OUTPUT
 
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.minio_key_id }}
@@ -1595,7 +1592,16 @@ jobs:
           AWS_DEFAULT_REGION: "us-east-1"
           AWS_DEFAULT_OUTPUT: "none"
 
-
+      - name: Slack message Artifact info
+        uses: archive/github-actions-slack@master
+        if: failure()
+        with:
+          slack-function: send-message
+          slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
+          slack-channel: ${{ env.SLACK_CHANNEL }}
+          slack-text: ":information_source: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) Job artifacts url: ${{ steps.minio_publish.outputs.publish_url }}"
+          slack-optional-thread_ts: ${{ needs.Build-Simulator.outputs.slack_thread_id }}
+          
       - name: Teardown remote vms (Proxmox)
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
         if: ${{ inputs.with_simulation_tests && inputs.debug_simulation_tests_keep_alive == false && always() }}
