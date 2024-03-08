@@ -1162,7 +1162,7 @@ jobs:
           integration-pipeline fetch_by_tag --repo $provision_infra_repo_name --version $provision_infra_version --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $provision_infra_dir
           
           ls -la $provision_infra_dir
-          echo "target_dir=${provision_infra_dir}/hosts/generic/" >> $GITHUB_OUTPUT
+          echo "target_dir=${provision_infra_dir}/" >> $GITHUB_OUTPUT
 
       - name: Define Instance names
         if: ${{ inputs.with_simulation_tests }}
