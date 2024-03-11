@@ -101,7 +101,7 @@ env:
   USERSPACE_FOLDER_PATH: userspace
   REMOTE_WORKSPACE_PATH: workspace
   PROVISION_INFRA_REPO: "devops-tf-proxmox-bpg"
-  PROVISION_INFRA_VERSION: "0.0.0-4"
+  PROVISION_INFRA_VERSION: "0.0.0-5"
   # slack channel movai-projects
   #SLACK_CHANNEL: ${{ inputs.overwrite_slack_channel }}
   # development slack channel
@@ -1246,18 +1246,18 @@ jobs:
           echo "host_user=$(echo $user | sed "s;\";;g")" >> $GITHUB_OUTPUT
           echo "ssh_connect_string=$(echo $user | sed "s;\";;g")@$(echo $ip | sed "s;\";;g")" >> $GITHUB_OUTPUT
 
-      - name: Configure SSH
-        if: ${{ inputs.with_simulation_tests }}
-        id: remote_ssh_setup
-        shell: bash
-        run: |
-          ssh-keygen -f ~/.ssh/known_hosts -R ${{ steps.infra_outputs.outputs.host_ip }} || true
-          ssh-keyscan -H ${{ steps.infra_outputs.outputs.host_ip }} >> ~/.ssh/known_hosts || true
+      # - name: Configure SSH
+      #   if: ${{ inputs.with_simulation_tests }}
+      #   id: remote_ssh_setup
+      #   shell: bash
+      #   run: |
+      #     ssh-keygen -f ~/.ssh/known_hosts -R ${{ steps.infra_outputs.outputs.host_ip }} || true
+      #     ssh-keyscan -H ${{ steps.infra_outputs.outputs.host_ip }} >> ~/.ssh/known_hosts || true
 
-          ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
-            set -e
-            cloud-init status --wait; rm -rf ./${{ env.REMOTE_WORKSPACE_PATH }}; mkdir -p ./${{ env.REMOTE_WORKSPACE_PATH }}
-          '
+      #     ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
+      #       set -e
+      #       cloud-init status --wait; rm -rf ./${{ env.REMOTE_WORKSPACE_PATH }}; mkdir -p ./${{ env.REMOTE_WORKSPACE_PATH }}
+      #     '
 
 
       - name: Prepare Devops provisioning slack message
