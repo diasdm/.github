@@ -1628,22 +1628,42 @@ jobs:
         env:
           TF_VAR_number_agents: 0
           TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
-          TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
-          TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
+          TF_VAR_proxmox_ve_username: ${{ secrets.proxmox_ve_username }}
+          TF_VAR_proxmox_ve_password: ${{ secrets.proxmox_ve_password }}
           TF_VAR_provision_ssh_pem: ${{ secrets.ssh_priv_key }}
-          TF_VAR_ip_list: '["dhcp"]'
-          TF_VAR_proxmox_host_list: '["mary"]'
-          TF_VAR_vm_gateway: "10.10.1.254"
-          TF_VAR_ip_mask: 23
-          TF_VAR_bios: "ovmf"
-          TF_VAR_pool: "IP-Temp-VMs"
-          TF_VAR_tags: "ip-simul-ci"
-          TF_VAR_fleet_hosts_user: "devops"
-          TF_VAR_template_name: "u22dci-gpu"
-          TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
-          TF_VAR_fleet_manager_memory: 30000
-          TF_VAR_fleet_manager_cores: 10
-          TF_VAR_fleet_manager_disk_size: "110G"
+          # TF_VAR_ip_list: '["dhcp"]'
+          # TF_VAR_proxmox_host_list: '["mary"]'
+          # TF_VAR_vm_gateway: "10.10.1.254"
+          # TF_VAR_ip_mask: 23
+          # TF_VAR_bios: "ovmf"
+          # TF_VAR_pool: "IP-Temp-VMs"
+          # TF_VAR_tags: "ip-simul-ci"
+          # TF_VAR_fleet_hosts_user: "devops"
+          # TF_VAR_template_name: "u22dci-gpu"
+          # TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
+          # TF_VAR_fleet_manager_memory: 30000
+          # TF_VAR_fleet_manager_cores: 10
+          # TF_VAR_fleet_manager_disk_size: "110G"
+          # TF_VAR_proxmox_host: "mary"
+          TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
+          TF_VAR_vm_name: "test-bpg-tf"
+          TF_VAR_vm_memory: 8192
+          TF_VAR_vm_cores: 4
+          TF_VAR_vm_core_type: "host"
+          TF_VAR_vm_disk_size: 20
+          TF_VAR_vm_disk_interface: "scsi0"
+          TF_VAR_vm_type: "q35"
+          TF_VAR_vm_os_type: "l26"
+          TF_VAR_vm_network_bridge: "vmbr0"
+          TF_VAR_vm_network_ip_address: "dhcp"
+          TF_VAR_vm_disk_storage: "nas-mary"
+          TF_VAR_vm_img_id: "nas-mary:iso/0.0.1-13-desktop-jammy_local.img"
+          TF_VAR_vm_bios: "ovmf"
+          TF_VAR_cloud_init_storage: "local"
+          TF_VAR_hostpci_device: "hostpci0"
+          TF_VAR_hostpci_device_id: "0000:01:00.0"
+          TF_VAR_hostpci_device_pcie: "true"
+          TF_VAR_hostpci_device_xvga: "true"
 
   publish:
     needs: [Install-Robot, Install-Simulator-Robot, Validation-Simulator-Tests]
