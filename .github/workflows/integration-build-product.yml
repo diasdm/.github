@@ -101,7 +101,7 @@ env:
   USERSPACE_FOLDER_PATH: userspace
   REMOTE_WORKSPACE_PATH: workspace
   PROVISION_INFRA_REPO: "devops-tf-proxmox-bpg"
-  PROVISION_INFRA_VERSION: "0.0.0-3"
+  PROVISION_INFRA_VERSION: "0.0.0-4"
   # slack channel movai-projects
   #SLACK_CHANNEL: ${{ inputs.overwrite_slack_channel }}
   # development slack channel
@@ -1182,8 +1182,8 @@ jobs:
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
         shell: bash
         run: |
-          PROXMOX_VE_USERNAME=${{ secrets.proxmox_ve_username }}
-          PROXMOX_VE_PASSWORD=${{ secrets.proxmox_ve_password }}
+          export PROXMOX_VE_USERNAME=${{ secrets.proxmox_ve_username }}
+          export PROXMOX_VE_PASSWORD=${{ secrets.proxmox_ve_password }}
           terraform init -backend-config="key=mary-standalone-${{ steps.infra_names.outputs.simul_prefix }}.tfstate"
           terraform plan
           terraform apply -auto-approve
