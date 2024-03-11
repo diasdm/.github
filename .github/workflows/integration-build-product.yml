@@ -1595,7 +1595,7 @@ jobs:
 
       - name: Slack message Artifact info
         uses: archive/github-actions-slack@master
-        if: failure()
+        if: ${{ always() &&  inputs.with_simulation_tests }}
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
