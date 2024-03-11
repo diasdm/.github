@@ -1182,6 +1182,8 @@ jobs:
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
         shell: bash
         run: |
+          PROXMOX_VE_USERNAME=${{ secrets.proxmox_ve_username }}
+          PROXMOX_VE_PASSWORD=${{ secrets.proxmox_ve_password }}
           terraform init -backend-config="key=mary-standalone-${{ steps.infra_names.outputs.simul_prefix }}.tfstate"
           terraform plan
           terraform apply -auto-approve
