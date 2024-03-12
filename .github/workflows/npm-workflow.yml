@@ -69,11 +69,13 @@ jobs:
       with:
         node-version: '${{ inputs.npm_version }}'
         registry-url: 'https://npm.pkg.github.com/mov-ai'
-
-    - name: Setup .npmrc and install pnpm
+    - name: Install pnpm
       if: ${{ inputs.pm == 'pnpm' }}
       run: |
-        npm install -g pnpm
+        npm install -g
+
+    - name: Setup .npmrc
+      run: |
         echo "//npm.pkg.github.com/:_authToken=${{ secrets.npm_token }}" > .npmrc
       env:
         npm_token: ${{ secrets.npm_token }}
