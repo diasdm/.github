@@ -72,7 +72,7 @@ jobs:
     - name: Install pnpm
       if: ${{ inputs.pm == 'pnpm' }}
       run: |
-        npm install -g
+        npm install -g pnpm
 
     - name: Setup .npmrc
       run: |
