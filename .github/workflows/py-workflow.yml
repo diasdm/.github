@@ -229,6 +229,45 @@ jobs:
         password: ${{ secrets.nexus_publisher_password }}
         repository_url: https://artifacts.aws.cloud.mov.ai/repository/pypi-experimental/
 
+    - name: Build docs
+      run: |
+        VERSION=${GITHUB_REF##*/} tox -e docs
+
+    - name: Checkout gh-pages
+      if: ${{ inputs.deploy == 'true' }}
+      uses: actions/checkout@v3
+      with:
+        ref: gh-pages
+        path: gh-pages
+
+    - name: Push docs
+      if: ${{ inputs.deploy == 'true' }}
+      run: |
+        cd gh-pages
+
+        # create .nojekyll
+        touch .nojekyll
+
+        # delete old folder if existed
+        rm -rf ${GITHUB_REF##*/}
+
+        # copy new docs and root index.html
+        cp -r ../docs/build/* .
+
+        # update versions.json
+        ls -mQd */ | sed 's/\///g' | sed 's/^/[/' | sed 's/$/]/' > versions.json
+
+        # set user
+        git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+        git config --global user.name "${{ github.actor }}"
+
+        # commit docs
+        git add .
+        git commit -am "Updating docs for commit ${GITHUB_SHA} in ${GITHUB_REF}"
+
+        # overwrite the contents of the gh-pages branch on our github.com repo
+        git push --force --set-upstream origin gh-pages
+
     - name: Publish package to TestPyPI Integration
       if: ${{ inputs.deploy == 'true' }}
       uses: pypa/gh-action-pypi-publish@release/v1
