@@ -141,6 +141,8 @@ jobs:
           -Dsonar.scm.provider=git
           -Dsonar.qualitygate.wait=true
           -Dsonar.qualitygate.timeout=300
+          -Dsonar.coverage.exclusions=tests/**
+          -Dsonar.cpd.exclusions=tests/**
           -Dsonar.python.version=3
           -Dsonar.python.flake8.reportPaths=flake8-report.txt
           -Dsonar.python.pylint.reportPaths=pylint-report.txt
@@ -420,11 +422,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-  
+
       - name: Set tag output
         id: vars
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-  
+
       - name: Fetch python artifact from github release
         run: |
           mkdir dist
@@ -434,14 +436,14 @@ jobs:
           gh release download ${{ steps.vars.outputs.tag}} -p *.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
-    
+
       - name: Publish package to prod PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: ${{ secrets.nexus_publisher_user }}
           password: ${{ secrets.nexus_publisher_password }}
           repository_url: https://artifacts.cloud.mov.ai/repository/${{ inputs.prod_publish_pypi }}/
-      
+
 
   Release-Deb:
     needs: [Release-Pypi]
