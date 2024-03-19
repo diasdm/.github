@@ -378,7 +378,7 @@ jobs:
           # create test execution
           if [ "${{ steps.ui_tests_setup.outputs.jira_report }}" == "True" ] ; then
             . venv/bin/activate
-            xray create ./results.json --version "${plat_version}" --label UI_Automation
+            xray create ./results.json --version "EE ${plat_version}" --label UI_Automation
             deactivate
           fi
 
