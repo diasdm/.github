@@ -101,7 +101,7 @@ env:
   USERSPACE_FOLDER_PATH: userspace
   REMOTE_WORKSPACE_PATH: workspace
   PROVISION_INFRA_REPO: "devops-tf-proxmox-bpg"
-  PROVISION_INFRA_VERSION: "0.0.0-7"
+  PROVISION_INFRA_VERSION: "0.0.0-8"
   # slack channel movai-projects
   #SLACK_CHANNEL: ${{ inputs.overwrite_slack_channel }}
   # development slack channel
@@ -692,10 +692,10 @@ jobs:
           terraform init -backend-config="key=mary-standalone-${{ steps.infra_names.outputs.simul_prefix }}.tfstate"
           terraform plan
           terraform apply -auto-approve
-          terraform refresh
           ip=$(terraform output manager_ip_address)
           if [ -z "$ip" ]; then
             echo "Error: IP address not found."
+            terraform 
             exit 1
           else
             echo "IP address found: $ip"
@@ -707,7 +707,7 @@ jobs:
         env:
           TF_VAR_number_agents: 0
           TF_VAR_provision_ssh_pem: ${{ secrets.ssh_priv_key }}
-          TF_VAR_ip_list: '["dhcp"]'
+          TF_VAR_ip_main: "dhcp"
           TF_VAR_storage: "local-lvm"
           TF_VAR_proxmox_host_list: '["mary"]'
           #TF_VAR_vm_gateway: "10.10.1.254"
@@ -725,7 +725,7 @@ jobs:
           TF_VAR_proxmox_ve_password: ${{ secrets.proxmox_ve_password }}
           TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
           TF_VAR_vm_core_type: "host"
-          TF_VAR_vm_disk_size: 20
+          TF_VAR_vm_disk_size: 110
           TF_VAR_vm_disk_interface: "scsi0"
           TF_VAR_vm_type: "q35"
           TF_VAR_vm_os_type: "l26"
@@ -739,7 +739,7 @@ jobs:
           TF_VAR_hostpci_device_id: '["0000:01:00.0"]'
           TF_VAR_hostpci_device_pcie: "true"
           TF_VAR_hostpci_device_xvga: "true"
-          TF_VAR_sleep: "70"
+          TF_VAR_sleep: "30"
           # TF_VAR_hostpci_device_rombar: "true"
 
       - name: Gather Terraform outputs
@@ -1139,7 +1139,7 @@ jobs:
           TF_VAR_proxmox_ve_username: ${{ secrets.proxmox_ve_username }}
           TF_VAR_proxmox_ve_password: ${{ secrets.proxmox_ve_password }}
           TF_VAR_provision_ssh_pem: ${{ secrets.ssh_priv_key }}
-          TF_VAR_ip_list: '["dhcp"]'
+          TF_VAR_ip_main: "dhcp"
           TF_VAR_proxmox_host_list: '["mary"]'
           #TF_VAR_vm_gateway: "10.10.1.254"
           # TF_VAR_ip_mask: 23
@@ -1151,8 +1151,8 @@ jobs:
           TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
           TF_VAR_fleet_manager_memory: 30000
           TF_VAR_fleet_manager_cores: 10
-          TF_VAR_fleet_manager_disk_size: "110G"
-          TF_VAR_sleep: "50"
+          TF_VAR_fleet_manager_disk_size: "110"
+          TF_VAR_sleep: "20"
           TF_VAR_vm_core_type: "host"
           TF_VAR_vm_disk_interface: "scsi0"
           TF_VAR_vm_type: "q35"
@@ -1162,7 +1162,8 @@ jobs:
           TF_VAR_vm_img_id: "nas-mary:iso/0.0.1-13-desktop-jammy_local.img"
           TF_VAR_vm_bios: "ovmf"
           TF_VAR_cloud_init_storage: "local"
-          TF_VAR_hostpci_device: "hostpci0"
-          TF_VAR_hostpci_device_id: "0000:01:00.0"
+          TF_VAR_hostpci_device: '["hostpci0"]'
+          TF_VAR_hostpci_device_id: '["0000:01:00.0"]'
           TF_VAR_hostpci_device_pcie: "true"
           TF_VAR_hostpci_device_xvga: "true"
+
