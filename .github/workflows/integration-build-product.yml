@@ -732,7 +732,7 @@ jobs:
           TF_VAR_hostpci_device_id: '["0000:01:00.0"]'
           TF_VAR_hostpci_device_pcie: "true"
           TF_VAR_hostpci_device_xvga: "true"
-          TF_VAR_sleep: "30"
+          TF_VAR_sleep: "40"
           # TF_VAR_hostpci_device_rombar: "true"
 
       - name: Gather Terraform outputs
