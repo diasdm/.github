@@ -1138,7 +1138,7 @@ jobs:
           # TF_VAR_ip_mask: 23
           TF_VAR_bios: "ovmf"
           TF_VAR_pool: "IP-Temp-VMs"
-          TF_VAR_tags: "ip-simul-ci"
+          TF_VAR_tags: '["ip-simul-ci"]'
           TF_VAR_fleet_hosts_user: "devops"
           # TF_VAR_template_name: "u22dci-gpu"
           TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
