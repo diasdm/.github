@@ -692,14 +692,7 @@ jobs:
           terraform init -backend-config="key=mary-standalone-${{ steps.infra_names.outputs.simul_prefix }}.tfstate"
           terraform plan
           terraform apply -auto-approve
-          ip=$(terraform output manager_ip_address)
-          if [ -z "$ip" ]; then
-            echo "Error: IP address not found."
-            terraform 
-            exit 1
-          else
-            echo "IP address found: $ip"
-          fi
+          terraform refresh
 
           echo "${{ secrets.ssh_priv_key }}" > ~/.ssh/ci_priv_key.pem
           sudo chmod 600 ~/.ssh/ci_priv_key.pem
