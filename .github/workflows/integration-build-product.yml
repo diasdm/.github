@@ -1199,12 +1199,12 @@ jobs:
           #TF_VAR_ip_mask: 23
           TF_VAR_bios: "ovmf"
           TF_VAR_pool: "IP-Temp-VMs"
-          TF_VAR_tags: "ip-simul-ci"
+          TF_VAR_tags: '["ip-simul-ci"]'
           TF_VAR_fleet_hosts_user: "devops"
           TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
           TF_VAR_fleet_manager_memory: 51200
           TF_VAR_fleet_manager_cores: 14
-          TF_VAR_fleet_manager_disk_size: "110G"
+          TF_VAR_fleet_manager_disk_size: "110"
           TF_VAR_fleet_manager_balloon: 0
           TF_VAR_proxmox_ve_username: ${{ secrets.proxmox_ve_username }}
           TF_VAR_proxmox_ve_password: ${{ secrets.proxmox_ve_password }}
@@ -1220,10 +1220,11 @@ jobs:
           TF_VAR_vm_img_id: "nas-mary:iso/0.0.1-13-desktop-jammy_local.img"
           TF_VAR_vm_bios: "ovmf"
           TF_VAR_cloud_init_storage: "local"
-          TF_VAR_hostpci_device: "hostpci0"
-          TF_VAR_hostpci_device_id: "0000:01:00.0"
+          TF_VAR_hostpci_device: '["hostpci0"]'
+          TF_VAR_hostpci_device_id: '["0000:01:00.0"]'
           TF_VAR_hostpci_device_pcie: "true"
           TF_VAR_hostpci_device_xvga: "true"
+          TF_VAR_sleep: "50"
           # TF_VAR_hostpci_device_rombar: "true"
 
       - name: Gather Terraform outputs
