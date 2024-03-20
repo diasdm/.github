@@ -949,7 +949,6 @@ jobs:
           export SIMULATION_ID="CI"
           rm -rf $USERSPACE_FOLDER_PATH
           mkdir -P $USERSPACE_FOLDER_PATH/.git/
-          sudo chmod 777 $USERSPACE_FOLDER_PATH
           sudo chmod -R 777 /opt/movai
 
           wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat quickstart_version).bash
