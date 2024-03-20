@@ -947,8 +947,8 @@ jobs:
           export USERSPACE_FOLDER_PATH="/opt/movai/robots/userspace"
           export PUBLIC_IP=$(hostname -I | awk "{print $1}")
           export SIMULATION_ID="CI"
-          rm -rf $USERSPACE_FOLDER_PATH
-          mkdir -p $USERSPACE_FOLDER_PATH/.git/
+          sudo rm -rf $USERSPACE_FOLDER_PATH
+          sudo mkdir -p $USERSPACE_FOLDER_PATH/.git/
           sudo chmod -R 777 /opt/movai
 
           wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat quickstart_version).bash
