@@ -948,7 +948,7 @@ jobs:
           export PUBLIC_IP=$(hostname -I | awk "{print $1}")
           export SIMULATION_ID="CI"
           rm -rf $USERSPACE_FOLDER_PATH
-          mkdir -P $USERSPACE_FOLDER_PATH/.git/
+          mkdir -p $USERSPACE_FOLDER_PATH/.git/
           sudo chmod -R 777 /opt/movai
 
           wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat quickstart_version).bash
