@@ -1573,7 +1573,7 @@ jobs:
 
           . venv/bin/activate
 
-          echo "Skip tests since they were never planned to run it this manner"
+          echo "Skip tests since they were never planned to run in this manner"
 
           deactivate
 
