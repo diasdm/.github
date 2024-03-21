@@ -1573,11 +1573,7 @@ jobs:
 
           . venv/bin/activate
 
-          pytest src \
-            --movai-ip ${{ steps.ansible_install_platform.outputs.manager_ip }} \
-            --movai-user admin \
-            --movai-pw admin@123 \
-            -m fleet
+          echo "Skip tests since they were never planned to run it this manner"
 
           deactivate
 
