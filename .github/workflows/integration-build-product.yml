@@ -1711,12 +1711,6 @@ jobs:
         with:
           name: project_metadata
           path: .
-      - name: unstash Sim project metadata
-        if: ${{ inputs.is_nightly_run == false }}
-        uses: actions/download-artifact@v3
-        with:
-          name: project_sim_metadata
-          path: .
           
       - name: unstash deploy_simulator_artifacts
         if: ${{ inputs.with_simulation == 'true' && inputs.is_nightly_run == false }}
