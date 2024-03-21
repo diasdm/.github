@@ -1015,6 +1015,42 @@ jobs:
 
           echo "image_name=$push_name" >> $GITHUB_OUTPUT
 
+      - name: Collect Installed components
+        if: always()
+        shell: bash
+        run: |
+          container_id=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
+          docker exec -t "$container_id" bash -c '
+            set -e
+            ls -la /tmp
+            {
+                echo 'Annotation:*'
+                echo 'Callback:*'
+                echo 'Configuration:*'
+                echo 'Flow:*'
+                echo 'GraphicScene:*'
+                echo 'Layout:*'
+                echo 'Node:*'
+                echo 'Package:*'
+            } >> /tmp/manifest.txt
+            mkdir /tmp/proj_metadata
+            python3 -m tools.backup -p /tmp/proj_metadata/ -m /tmp/manifest.txt -a export -i
+
+          ' || true
+
+            mkdir -p metadata_artifact tmp_meta
+            docker cp $container_id:/tmp/proj_metadata/ ./
+            tar cvzf ./metadata_artifact/sim_metadata.tar.gz ./proj_metadata
+
+      - name: stash Sim project metadata
+
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: project_sim_metadata
+          path: metadata_artifact/*
+          retention-days: 3
+              
       - name: Get current job id
         if: always()
         shell: bash
@@ -1675,7 +1711,7 @@ jobs:
         with:
           name: project_metadata
           path: .
-
+          
       - name: unstash deploy_simulator_artifacts
         if: ${{ inputs.with_simulation == 'true' && inputs.is_nightly_run == false }}
         uses: actions/download-artifact@v3
@@ -1782,7 +1818,7 @@ jobs:
           cat product-manifest.yaml
           cp product-manifest.yaml deployment_artifacts
 
-          cp metadata.tar.gz deployment_artifacts
+          cp *.tar.gz deployment_artifacts
 
           product_version=$(cat product.version)
           # danger zone. Everything will be deleted.
