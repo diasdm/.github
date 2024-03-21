@@ -1042,7 +1042,7 @@ jobs:
             docker cp $container_id:/tmp/proj_metadata/ ./
             tar cvzf ./metadata_artifact/sim_metadata.tar.gz ./proj_metadata
 
-      - name: Stash project metadata
+      - name: stash Sim project metadata
 
         if: always()
         uses: actions/upload-artifact@v3
