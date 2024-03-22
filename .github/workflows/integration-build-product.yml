@@ -975,6 +975,7 @@ jobs:
           SIMULATION_ID: "CI"
 
       - name: Collect Install logs
+        if: always()
         continue-on-error: true
         run: |
           # cleanup
