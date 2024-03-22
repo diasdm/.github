@@ -1023,6 +1023,38 @@ jobs:
 
           echo "image_name=$push_name" >> $GITHUB_OUTPUT
 
+      - name: Collect Installed components
+        if: always()
+        shell: bash
+        run: |
+          container_id=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
+          docker exec -t "$container_id" bash -c '
+            set -e
+            ls -la /tmp
+            {
+                echo 'Annotation:*'
+                echo 'Callback:*'
+                echo 'Configuration:*'
+                echo 'Flow:*'
+                echo 'GraphicScene:*'
+                echo 'Layout:*'
+                echo 'Node:*'
+                echo 'Package:*'
+            } >> /tmp/manifest.txt
+            mkdir /tmp/proj_metadata
+            python3 -m tools.backup -p /tmp/proj_metadata/ -m /tmp/manifest.txt -a export -i
+          ' || true
+            mkdir -p metadata_artifact tmp_meta
+            docker cp $container_id:/tmp/proj_metadata/ ./
+            tar cvzf ./metadata_artifact/sim_metadata.tar.gz ./proj_metadata
+      - name: stash Sim project metadata
+
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: project_sim_metadata
+          path: metadata_artifact/*
+          retention-days: 3
       - name: Get current job id
         if: always()
         shell: bash
@@ -1812,6 +1844,8 @@ jobs:
           git restore product.version
           git restore product-manifest.yaml
           git pull
+          # get previous version so we can generate the release report
+          echo "previous_version=$(cat product.version)" >> $GITHUB_OUTPUT
           echo "$product_version" > product.version
 
           git add product.version
@@ -1842,7 +1876,8 @@ jobs:
         run: |
           commit_hash=$(git log --format="%H" -n 1)
           product_version=$(cat product.version)
-          gh release create -p --generate-notes --target "$commit_hash" -t "${{ inputs.product_name }} $product_version" $product_version
+          gh release create -p --generate-notes --notes-start-tag ${{ steps.bump.outputs.previous_version }} --target "$commit_hash" -t "${{ inputs.product_name }} $product_version" $product_version
+
           # add all files in the deployment_artifacts folder
           find deployment_artifacts -type f -exec gh release upload $product_version {} \;
         env:
