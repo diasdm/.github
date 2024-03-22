@@ -183,6 +183,12 @@ jobs:
       env:
         npm_token: ${{ secrets.npm_token }}
 
+    - name: Find Package details
+      id: vars
+      run: |
+        PACKAGE_VERSION=$(cat package.json | grep version | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]')
+        echo "pkg_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+
     - name: Raise App version
       id: raise
       run: |
@@ -196,7 +202,6 @@ jobs:
     - name: Prepare raise variables
       id: pre_raise
       run: |
-        #echo ::set-output name=branch::${GITHUB_REF#refs/heads/}
         echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
 
     - name: Raise App version
@@ -206,31 +211,20 @@ jobs:
         branch: ${{ steps.pre_raise.outputs.branch }}
         unprotect_reviews: true
 
-    - name: Commit info
-      id: commit
-      shell: bash
-      run: |
-        commit_hash=$(git log --format="%H" -n 1)
-        #echo ::set-output name=commit_id::$commit_hash
-        echo "commit_id=$commit_hash" >> $GITHUB_OUTPUT
-
     - name: Find Package details
-      id: vars
+      id: vars-after-raise
       run: |
         PACKAGE_VERSION=$(cat package.json | grep version | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]')
         PACKAGE_NAME=$(cat package.json | grep name |head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]')
 
-        #echo ::set-output name=npm_pkg_name::$PACKAGE_NAME
-        #echo ::set-output name=npm_pkg_version::$PACKAGE_VERSION
         echo "npm_pkg_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
         echo "npm_pkg_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
 
     - name: Create Github Release
-      uses: softprops/action-gh-release@v1
-      with:
-        name: "Release of ${{ steps.vars.outputs.npm_pkg_version }}"
-        tag_name: ${{ steps.vars.outputs.npm_pkg_version }}
-        target_commitish: ${{ steps.commit.outputs.commit_id }}
-        token: ${{ secrets.gh_token }}
-        prerelease: true
-        generate_release_notes: true
+      shell: bash
+      run: |
+        commit_hash=$(git log --format="%H" -n 1)
+        product_version=${{ steps.vars-after-raise.outputs.npm_pkg_version }}
+        gh release create -p --generate-notes --notes-start-tag ${{ steps.vars.outputs.pkg_version }} --target $commit_hash -t "Release of $product_version" $product_version
+      env:
+        GITHUB_TOKEN: ${{ secrets.gh_token }}
