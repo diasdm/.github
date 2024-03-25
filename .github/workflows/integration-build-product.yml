@@ -1273,7 +1273,7 @@ jobs:
 
 
       - name: Prepare Devops provisioning slack message
-        if: always()
+        if: ${{ inputs.with_simulation_tests && always() }} 
         id: pre_slack_infra
         run: |
           MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is being impacted by an infrastructural issue. \
@@ -1282,7 +1282,7 @@ jobs:
           echo "msg_error=${MESSAGE_ERR}" >> $GITHUB_OUTPUT
 
       - name: Slack message failure
-        if: failure()
+        if: ${{ inputs.with_simulation_tests && failure() }}
         uses: slackapi/slack-github-action@v1.23.0
         with:
           channel-id: "G0102LEV1CL"
