@@ -1024,7 +1024,7 @@ jobs:
           echo "image_name=$push_name" >> $GITHUB_OUTPUT
 
       - name: Collect Installed components
-        if: always()
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
           container_id=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
@@ -1048,8 +1048,7 @@ jobs:
             docker cp $container_id:/tmp/proj_metadata/ ./
             tar cvzf ./metadata_artifact/sim_metadata.tar.gz ./proj_metadata
       - name: stash Sim project metadata
-
-        if: always()
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/upload-artifact@v3
         with:
           name: project_sim_metadata
