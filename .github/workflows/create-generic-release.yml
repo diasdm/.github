@@ -65,4 +65,4 @@ jobs:
         product_version=${{ steps.vars-after-raise.outputs.pkg_version }}
         gh release create -p --generate-notes --notes-start-tag ${{ steps.vars.outputs.pkg_version }} --target $commit_hash -t "Release of ${{ steps.vars-after-raise.outputs.pkg_version }}" $product_version
       env:
-        GITHUB_TOKEN: ${{ secrets.gh_token }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
