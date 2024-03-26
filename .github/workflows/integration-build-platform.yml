@@ -290,7 +290,7 @@ jobs:
           var_args+=" -var='proxmox_ve_password=${{ secrets.proxmox_ve_password }}'"
           
           echo "Var args: $var_args"
-          
+          echo "File args: $var_file_arg"
           terraform init -backend-config="key=hel-fleet-${{ steps.infra_names.outputs.manager_prefix }}.tfstate"
           terraform apply -auto-approve $var_file_arg $var_args
           terraform refresh $var_file_arg $var_args
