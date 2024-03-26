@@ -43,9 +43,9 @@ on:
         required: true
       ssh_pem_fleet_aws_vm:
         required: true
-      proxmox_api_token_id:
+      proxmox_ve_username:
         required: true
-      proxmox_api_token_secret:
+      proxmox_ve_password:
         required: true
       jira_username:
         required: true
@@ -227,12 +227,26 @@ jobs:
           echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
           sudo apt update && sudo apt install terraform -y
 
+      - name: Setup infra environment configs
+        id: infra_env_configs_setup
+        shell: bash
+        run: |
+          env_configs_dir=infra_env_configs
+          env_configs_version=0.0.0-1
+          env_configs_repo_name=devops-tf-env-conf
+
+          rm -rf $env_configs_dir
+          export PATH="$HOME/.local/bin:$PATH"
+          integration-pipeline fetch_by_tag --repo $env_configs_repo_name --version $env_configs_version --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $env_configs_dir
+          ls -la $env_configs_dir
+          echo "target_dir=${env_configs_dir}" >> $GITHUB_OUTPUT
+            
       - name: Setup terraform proxmox provisioner
         id: provision_infra_setup
         shell: bash
         run: |
           provision_infra_dir=provision_scripts
-          provision_infra_version=0.0.0-10
+          provision_infra_version=0.0.2-0
           provision_infra_repo_name=devops-tf-proxmox-bpg
 
           rm -rf $provision_infra_dir
@@ -259,31 +273,24 @@ jobs:
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
         shell: bash
         run: |
-          terraform init -backend-config="key=hel-fleet-${{ steps.infra_names.outputs.manager_prefix }}.tfstate"
-          terraform plan
-          terraform apply -auto-approve
-          terraform refresh
-        env:
-          TF_VAR_number_agents: ${{ inputs.fleet_number_members }}
-          TF_VAR_proxmox_api_url: "https://hel.mov.ai:8006/api2/json"
-          TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
-          TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
-          TF_VAR_provision_ssh_pem: ${{ secrets.ssh_pem_fleet_aws_vm }}
-          TF_VAR_ip_list: ${{ inputs.fleet_ips }}
-          TF_VAR_proxmox_host: "hel"
-          TF_VAR_vm_gateway: "172.22.0.1"
-          TF_VAR_ip_mask: 24
-          TF_VAR_bios: "seabios"
-          TF_VAR_pool: "IP-Temp-VMs"
-          TF_VAR_tags: "ip-fleet"
+          multiply_node=$(printf '"hel",%.0s' {1..${{ inputs.fleet_number_members }}})
+          node_list_str=${multiply_node::-1}
 
-          TF_VAR_fleet_hosts_user: "devops"
-          TF_VAR_template_name: "ubuntu-2004-cloudinit-template2"
-          TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.manager_prefix }}
-          TF_VAR_fleet_manager_memory: 8192
-          TF_VAR_template_name_no_gpu: "ubuntu-2004-cloudinit-template2"
-          TF_VAR_fleet_worker_name_prefix: ${{ steps.infra_names.outputs.worker_prefix }}
-          TF_VAR_fleet_worker_memory: 8192
+          var_file_arg = '-var-file="../${{ steps.infra_env_configs_setup.outputs.target_dir }}/hel/hel_fleet_test.tfvars'
+
+          var_args='-var='proxmox_host_list=[$node_list_str]'' \
+            -var='fleet_peer_nr=${{ inputs.fleet_number_members }}' \
+            -var='fleet_manager_name=\"${{ steps.infra_names.outputs.manager_prefix }}\"' \
+            -var='fleet_peer_name_prefix=\"${{ steps.infra_names.outputs.worker_prefix }}\"' \
+            -var='ip_list=${{ inputs.fleet_ips }}
+            -var='proxmox_ve_username'=${{ secrets.proxmox_ve_username }}' \
+            -var='proxmox_ve_password'=${{ secrets.proxmox_ve_password }}'
+          
+          echo "Var args: $var_args"
+          
+          terraform init -backend-config="key=hel-fleet-${{ steps.infra_names.outputs.manager_prefix }}.tfstate"
+          terraform apply -auto-approve $var_file_arg $var_args
+          terraform refresh $var_file_arg $var_args
 
       - name: Prepare Devops provisioning slack message
         if: always()
@@ -548,12 +555,21 @@ jobs:
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
         if: ${{ ( !inputs.debug_fleet_keep_alive && success() ) || cancelled() || ( !inputs.debug_fleet_keep_alive && failure() ) }}
         shell: bash
-        run: terraform destroy -auto-approve
-        env:
-          TF_VAR_number_agents: ${{ inputs.fleet_number_members }}
-          TF_VAR_proxmox_api_url: "https://hel.mov.ai:8006/api2/json"
-          TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
-          TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
-          TF_VAR_provision_ssh_pem: ${{ secrets.ssh_pem_fleet_aws_vm }}
-          TF_VAR_ip_list: ${{ inputs.fleet_ips }}
+        run: |
+          multiply_node=$(printf '"hel",%.0s' {1..${{ inputs.fleet_number_members }}})
+          node_list_str=${multiply_node::-1}
+
+          var_file_arg = '-var-file="../${{ steps.infra_env_configs_setup.outputs.target_dir }}/hel/hel_fleet_test.tfvars'
+
+          var_args='-var='proxmox_host_list=[$node_list_str]'' \
+            -var='fleet_peer_nr=${{ inputs.fleet_number_members }}' \
+            -var='fleet_manager_name=\"${{ steps.infra_names.outputs.manager_prefix }}\"' \
+            -var='fleet_peer_name_prefix=\"${{ steps.infra_names.outputs.worker_prefix }}\"' \
+            -var='ip_list=${{ inputs.fleet_ips }}
+            -var='proxmox_ve_username'=${{ secrets.proxmox_ve_username }}' \
+            -var='proxmox_ve_password'=${{ secrets.proxmox_ve_password }}'
+          
+          echo "Var args: $var_args"
+          terraform destroy -auto-approve $var_file_arg $var_args
+
 
