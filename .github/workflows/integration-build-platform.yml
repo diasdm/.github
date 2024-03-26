@@ -281,13 +281,13 @@ jobs:
 
           var_file_arg='-var-file=../${{ steps.infra_env_configs_setup.outputs.target_dir }}/hel/hel_fleet_test.tfvars'
 
-          var_args="-var=proxmox_host_list=[$node_list_str]" \
-          var_args+=" -var=fleet_peer_nr=${{ inputs.fleet_number_members }}"
-          var_args+=" -var=fleet_manager_name=${{ steps.infra_names.outputs.manager_prefix }}"
-          var_args+=" -var=fleet_peer_name_prefix=${{ steps.infra_names.outputs.worker_prefix }}"
-          var_args+=" -var=ip_list=${{ inputs.fleet_ips }}"
-          var_args+=" -var=proxmox_ve_username=${{ secrets.proxmox_ve_username }}"
-          var_args+=" -var=proxmox_ve_password=${{ secrets.proxmox_ve_password }}"
+          var_args="-var='proxmox_host_list=[$node_list_str]'" \
+          var_args+=" -var='fleet_peer_nr=${{ inputs.fleet_number_members }}'"
+          var_args+=" -var='fleet_manager_name=${{ steps.infra_names.outputs.manager_prefix }}'"
+          var_args+=" -var='fleet_peer_name_prefix=${{ steps.infra_names.outputs.worker_prefix }}'"
+          var_args+=" -var='ip_list=${{ inputs.fleet_ips }}'"
+          var_args+=" -var='proxmox_ve_username=${{ secrets.proxmox_ve_username }}'"
+          var_args+=" -var='proxmox_ve_password=${{ secrets.proxmox_ve_password }}'"
           
           echo "Var args: $var_args"
           echo "File args: $var_file_arg"
