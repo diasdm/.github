@@ -281,7 +281,7 @@ jobs:
 
           var_file_arg='-var-file=../${{ steps.infra_env_configs_setup.outputs.target_dir }}/hel/hel_fleet_test.tfvars'
 
-          var_args="-var='proxmox_host_list=[$node_list_str]'" \
+          var_args="-var='proxmox_host_list=[$node_list_str]'"
           var_args+=" -var='fleet_peer_nr=${{ inputs.fleet_number_members }}'"
           var_args+=" -var='fleet_manager_name=${{ steps.infra_names.outputs.manager_prefix }}'"
           var_args+=" -var='fleet_peer_name_prefix=${{ steps.infra_names.outputs.worker_prefix }}'"
