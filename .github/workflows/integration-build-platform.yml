@@ -275,10 +275,10 @@ jobs:
         run: |
           total_resources=${{ inputs.fleet_number_members }}
           ((total_resources+=1))
-          multiply_node=$(printf '"hel",%.0s' {1..total_resources})
+          multiply_node=$(printf '"hel",%.0s' {1..$total_resources})
           node_list_str=${multiply_node::-1}
 
-          var_file_arg='-var-file="../${{ steps.infra_env_configs_setup.outputs.target_dir }}/hel/hel_fleet_test.tfvars'
+          var_file_arg='-var-file="../${{ steps.infra_env_configs_setup.outputs.target_dir }}/hel/hel_fleet_test.tfvars"'
 
           var_args="-var='proxmox_host_list=[$node_list_str]'" \
           var_args+=" -var='fleet_peer_nr=${{ inputs.fleet_number_members }}'"
@@ -560,10 +560,10 @@ jobs:
         run: |
           total_resources=${{ inputs.fleet_number_members }}
           ((total_resources+=1))
-          multiply_node=$(printf '"hel",%.0s' {1..total_resources})
+          multiply_node=$(printf '"hel",%.0s' {1..$total_resources})
           node_list_str=${multiply_node::-1}
 
-          var_file_arg='-var-file="../${{ steps.infra_env_configs_setup.outputs.target_dir }}/hel/hel_fleet_test.tfvars'
+          var_file_arg='-var-file="../${{ steps.infra_env_configs_setup.outputs.target_dir }}/hel/hel_fleet_test.tfvars"'
 
           var_args="-var='proxmox_host_list=[$node_list_str]'" \
           var_args+=" -var='fleet_peer_nr=${{ inputs.fleet_number_members }}'"
