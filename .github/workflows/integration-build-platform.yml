@@ -372,6 +372,7 @@ jobs:
             ssh devops@${ip} -i ~/.ssh/aws_slave.pem -o StrictHostKeyChecking=no '
               set -e
               cloud-init status --wait
+            '
           done
 
           # ensure all file descriptors are set to blocking
