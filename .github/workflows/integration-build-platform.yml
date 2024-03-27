@@ -232,7 +232,7 @@ jobs:
         shell: bash
         run: |
           env_configs_dir=infra_env_configs
-          env_configs_version=0.0.0-2
+          env_configs_version=0.0.0-3
           env_configs_repo_name=devops-tf-env-conf
 
           rm -rf $env_configs_dir
@@ -560,7 +560,7 @@ jobs:
         if: ${{ ( !inputs.debug_fleet_keep_alive && success() ) || cancelled() || ( !inputs.debug_fleet_keep_alive && failure() ) }}
         shell: bash
         run: |
-
+          
           var_file_arg='-var-file=../${{ steps.infra_env_configs_setup.outputs.target_dir }}/hel/hel_fleet_test.tfvars'
           terraform destroy -auto-approve $var_file_arg -var-file=input.tfvars
 
