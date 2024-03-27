@@ -362,6 +362,10 @@ jobs:
           sudo chmod 600 ~/.ssh/known_hosts
           IFS=',' read -r -a stripped_ips_arr <<< $stripped_ips
 
+          manager_ip=${stripped_ips_arr[0]}
+          echo $manager_ip
+          echo "manager_ip=${manager_ip}" >> $GITHUB_OUTPUT
+
           for ip in "${stripped_ips_arr[@]}"
           do
             if [[ $ip == *"/"* ]]; then
