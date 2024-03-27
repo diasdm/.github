@@ -280,20 +280,19 @@ jobs:
           node_list_str=${multiply_node::-1}
           set -x
           var_file_arg='-var-file=../${{ steps.infra_env_configs_setup.outputs.target_dir }}/hel/hel_fleet_test.tfvars'
+          echo "proxmox_host_list=[$node_list_str]">>input.tfvars
+          echo "fleet_peer_nr=${{ inputs.fleet_number_members }}">>input.tfvars
+          echo "fleet_manager_name=${{ steps.infra_names.outputs.manager_prefix }}">>input.tfvars
+          echo "fleet_peer_name_prefix=${{ steps.infra_names.outputs.worker_prefix }}">>input.tfvars
+          echo "ip_list=${{ inputs.fleet_ips }}">>input.tfvars
+          echo "proxmox_ve_username=${{ secrets.proxmox_ve_username }}">>input.tfvars
+          echo "proxmox_ve_password=${{ secrets.proxmox_ve_password }}">>input.tfvars
 
-          var_args="-var='proxmox_host_list=[$node_list_str]'"
-          var_args+=" -var='fleet_peer_nr=${{ inputs.fleet_number_members }}'"
-          var_args+=" -var='fleet_manager_name=${{ steps.infra_names.outputs.manager_prefix }}'"
-          var_args+=" -var='fleet_peer_name_prefix=${{ steps.infra_names.outputs.worker_prefix }}'"
-          var_args+=" -var='ip_list=${{ inputs.fleet_ips }}'"
-          var_args+=" -var='proxmox_ve_username=${{ secrets.proxmox_ve_username }}'"
-          var_args+=" -var='proxmox_ve_password=${{ secrets.proxmox_ve_password }}'"
-          
-          echo "Var args: $var_args"
           echo "File args: $var_file_arg"
+          echo "Input File args: $(cat input.tfvars)"
           terraform init -backend-config="key=hel-fleet-${{ steps.infra_names.outputs.manager_prefix }}.tfstate"
-          terraform apply -auto-approve $var_file_arg $var_args
-          terraform refresh $var_file_arg $var_args
+          terraform apply -auto-approve $var_file_arg -var-file=input.tfvars
+          terraform refresh $var_file_arg -var-file=input.tfvars
 
       - name: Prepare Devops provisioning slack message
         if: always()
@@ -559,23 +558,8 @@ jobs:
         if: ${{ ( !inputs.debug_fleet_keep_alive && success() ) || cancelled() || ( !inputs.debug_fleet_keep_alive && failure() ) }}
         shell: bash
         run: |
-          total_resources=${{ inputs.fleet_number_members }}
-          ((total_resources+=1))
-          multiply_node=$(printf '"hel",%.0s' {1..$total_resources})
-          node_list_str=${multiply_node::-1}
 
-          var_file_arg='-var-file=../${{ steps.infra_env_configs_setup.outputs.target_dir }}/hel/hel_fleet_test.tfvars"'
-
-          var_args="-var='proxmox_host_list=[$node_list_str]'" \
-          var_args+=" -var='fleet_peer_nr=${{ inputs.fleet_number_members }}'"
-          var_args+=" -var='fleet_manager_name=${{ steps.infra_names.outputs.manager_prefix }}'"
-          var_args+=" -var='fleet_peer_name_prefix=${{ steps.infra_names.outputs.worker_prefix }}'"
-          var_args+=" -var='ip_list=${{ inputs.fleet_ips }}'"
-          var_args+=" -var='proxmox_ve_username=${{ secrets.proxmox_ve_username }}'"
-          var_args+=" -var='proxmox_ve_password=${{ secrets.proxmox_ve_password }}'"
-          
-          echo "Var args: $var_args"
-          
-          terraform destroy -auto-approve $var_file_arg $var_args
+          var_file_arg='-var-file=../${{ steps.infra_env_configs_setup.outputs.target_dir }}/hel/hel_fleet_test.tfvars'
+          terraform destroy -auto-approve $var_file_arg -var-file=input.tfvars
 
 
