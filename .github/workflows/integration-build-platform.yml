@@ -246,7 +246,7 @@ jobs:
         shell: bash
         run: |
           provision_infra_dir=provision_scripts
-          provision_infra_version=0.0.2-4
+          provision_infra_version=0.0.2-5
           provision_infra_repo_name=devops-tf-proxmox-bpg
 
           rm -rf $provision_infra_dir
@@ -318,6 +318,7 @@ jobs:
         shell: bash
         run: |
           cp ${{ steps.provision_infra_setup.outputs.target_dir }}/provisioned_inventory.yml staging/provisioned_inventory.yml
+          cat staging/provisioned_inventory.yml
           export PATH="$HOME/.local/bin:$PATH"
           integration-pipeline get_yml_value --file staging/provisioned_inventory.yml --key fleet.children.managers.hosts.manager.ansible_host --output_file ./staging/manager_private_ip.txt
 
