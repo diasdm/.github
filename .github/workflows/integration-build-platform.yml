@@ -317,9 +317,9 @@ jobs:
       - name: Apply ansible inventory
         shell: bash
         run: |
-          cp ${{ steps.provision_infra_setup.outputs.target_dir }}/hosts staging/hosts
+          cp ${{ steps.provision_infra_setup.outputs.target_dir }}/provisioned_inventory.yml staging/provisioned_inventory.yml
           export PATH="$HOME/.local/bin:$PATH"
-          integration-pipeline get_yml_value --file staging/hosts --key fleet.children.managers.hosts.manager.ansible_host --output_file ./staging/manager_private_ip.txt
+          integration-pipeline get_yml_value --file staging/provisioned_inventory.yml --key fleet.children.managers.hosts.manager.ansible_host --output_file ./staging/manager_private_ip.txt
 
       - name: Setup ansible installation
         id: ansible_install_setup
@@ -394,7 +394,7 @@ jobs:
           done
 
           ansible-playbook install.yml \
-            -i ../staging/hosts \
+            -i ../staging/provisioned_inventory.yml \
             --key-file ~/.ssh/aws_slave.pem \
             --extra-vars=@"$(pwd)/.."/product-manifest.yaml \
             -e fleet_domain_dns="" \
@@ -529,13 +529,13 @@ jobs:
           source ansible-venv/bin/activate
           # install fleet_tests artifacts
           for fleet_host in "manager" "member0" "member1"; do
-            ansible $fleet_host -i ../staging/hosts --key-file ~/.ssh/aws_slave.pem -m shell -a 'journalctl -u movai-service --since "1hour ago"' > fleet_qa_artifacts/install/$fleet_host.log || true
+            ansible $fleet_host -i ../staging/provisioned_inventory.yml --key-file ~/.ssh/aws_slave.pem -m shell -a 'journalctl -u movai-service --since "1hour ago"' > fleet_qa_artifacts/install/$fleet_host.log || true
 
             echo "From $fleet_host:"
-            ansible $fleet_host -i ../staging/hosts --key-file ~/.ssh/aws_slave.pem -m shell -a 'docker ps -a' > fleet_qa_artifacts/install/$fleet_host-docker_ps.log || true
+            ansible $fleet_host -i ../staging/provisioned_inventory.yml --key-file ~/.ssh/aws_slave.pem -m shell -a 'docker ps -a' > fleet_qa_artifacts/install/$fleet_host-docker_ps.log || true
             echo "$(tail -n +2 fleet_qa_artifacts/install/$fleet_host-docker_ps.log )"
 
-            ansible $fleet_host -i ../staging/hosts --key-file ~/.ssh/aws_slave.pem -m shell -a 'journalctl -u docker --boot --lines=all' > fleet_qa_artifacts/install/$fleet_host-all-docker.log || true
+            ansible $fleet_host -i ../staging/provisioned_inventory.yml --key-file ~/.ssh/aws_slave.pem -m shell -a 'journalctl -u docker --boot --lines=all' > fleet_qa_artifacts/install/$fleet_host-all-docker.log || true
           done
 
           deactivate
