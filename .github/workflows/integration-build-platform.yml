@@ -373,10 +373,10 @@ jobs:
             fi
             ssh-keygen -f ~/.ssh/known_hosts -R $ip
             ssh-keyscan -H $ip >> ~/.ssh/known_hosts
-            ssh devops@${ip} -i ~/.ssh/aws_slave.pem -o StrictHostKeyChecking=no '
-              set -e
-              cloud-init status --wait
-            '
+            #ssh devops@${ip} -i ~/.ssh/aws_slave.pem -o StrictHostKeyChecking=no '
+            #  set -e
+            #  cloud-init status --wait
+            #'
           done
           ansible-playbook install.yml \
             -i ../staging/provisioned_inventory.yml \
