@@ -284,6 +284,7 @@ jobs:
           echo "proxmox_host_list=[$node_list_str]">>input.tfvars
           echo "fleet_peer_nr=${{ inputs.fleet_number_members }}">>input.tfvars
           echo 'fleet_manager_name="${{ steps.infra_names.outputs.manager_prefix }}"'>>input.tfvars
+          echo 'fleet_password="n/a"'>>input.tfvars
           echo 'fleet_peer_name_prefix="${{ steps.infra_names.outputs.worker_prefix }}"'>>input.tfvars
           echo 'ip_list=${{ inputs.fleet_ips }}'>>input.tfvars
           echo 'proxmox_ve_username="${{ secrets.proxmox_ve_username }}"'>>input.tfvars
