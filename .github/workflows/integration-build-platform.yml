@@ -378,6 +378,13 @@ jobs:
             #  cloud-init status --wait
             #'
           done
+
+          # Ensure cloud init is done on all the hosts
+          for fleet_host in "manager" "member0" "member1"; do
+            ansible $fleet_host -i ../staging/provisioned_inventory.yml --key-file ~/.ssh/aws_slave.pem -m shell -a 'cloud-init status --wait'
+          done
+
+          # Start the installation
           ansible-playbook install.yml \
             -i ../staging/provisioned_inventory.yml \
             --key-file ~/.ssh/aws_slave.pem \
