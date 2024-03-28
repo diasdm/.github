@@ -278,7 +278,7 @@ jobs:
         run: |
           multiply_node=$(printf '"hel",%.0s' {1..${{ steps.infra_names.outputs.total_resources }}})
           node_list_str=${multiply_node::-1}
-          set -x
+
           var_file_arg='-var-file=../${{ steps.infra_env_configs_setup.outputs.target_dir }}/hel/hel_fleet_test.tfvars'
 
           echo "proxmox_host_list=[$node_list_str]">>input.tfvars
@@ -378,7 +378,6 @@ jobs:
               cloud-init status --wait
             '
           done
-          python3 -c 'import fcntl, sys; fcntl.fcntl(sys.stdin.fileno(), fcntl.F_SETFL, 0); fcntl.fcntl(sys.stdout.fileno(), fcntl.F_SETFL, 0); fcntl.fcntl(sys.stderr.fileno(), fcntl.F_SETFL, 0)'
           ansible-playbook install.yml \
             -i ../staging/provisioned_inventory.yml \
             --key-file ~/.ssh/aws_slave.pem \
