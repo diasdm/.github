@@ -43,9 +43,9 @@ on:
         required: true
       ssh_pem_fleet_aws_vm:
         required: true
-      proxmox_api_token_id:
+      proxmox_ve_username:
         required: true
-      proxmox_api_token_secret:
+      proxmox_ve_password:
         required: true
       jira_username:
         required: true
