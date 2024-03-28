@@ -1400,6 +1400,8 @@ jobs:
           local_worker_prefix="ip-$branch-worker"
           echo "$local_manager_prefix"
           echo "$local_worker_prefix"
+          total_resources=${{ inputs.fleet_number_members }}
+          ((total_resources+=1))
 
           echo "manager_prefix=${local_manager_prefix}" >> $GITHUB_OUTPUT
           echo "worker_prefix=${local_worker_prefix}" >> $GITHUB_OUTPUT
