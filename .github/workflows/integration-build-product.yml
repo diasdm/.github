@@ -1507,9 +1507,6 @@ jobs:
             pytest \
               ${{ steps.simulator_tests_setup.outputs.test_exec_dir }} \
               -m $marker \
-              -s \
-              -ra \
-              --tb=short \
               --movai-user ${{ steps.install.outputs.movai_user }} \
               --movai-pw ${{ steps.install.outputs.movai_pwd }}
 
