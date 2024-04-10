@@ -6,9 +6,9 @@ on:
         required: true
         type: string
         default: 'false'
-      # image_type_list:
-      #   required: true
-      #   type: string
+      image_type_list:
+        required: true
+        type: string
       slack_channel:
         required: false
         type: string
