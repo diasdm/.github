@@ -31,10 +31,6 @@ on:
         required: true
       packer_token_id:
         required: true
-      minio_key_id:
-        required: true
-      minio_secret_key_id:
-        required: true
       gh_user:
         required: true
       gh_token:
@@ -45,8 +41,6 @@ on:
         required: true
 
 env:
-  MINIO_S3_URL: "https://s3.mov.ai"
-  MINIO_PUBLIC_URL: "https://minio.mov.ai"
   RUN_STAGING_DIR: "/home/devops/packer-ci/staging/${{ github.repository }}/${{ github.run_id}}/"
   PROXMOX_NFS_SERVER_PATH: "/media/nas-mary/template/iso"
   PROXMOX_NFS_SERVER_URL: "https://hel.mov.ai:8006/#v1:0:=storage%2Fbb-8%2Fnas-mary:4:5:=contentIso"
@@ -228,9 +222,7 @@ jobs:
         if: always()
         id: pre_slack
         run: |
-          PUBLIC_URL="$MINIO_PUBLIC_URL/browser/ci-artifacts/${{ github.repository }}/${{ github.run_id}}/Build/attempts/${{ github.run_attempt }}/"
-          MESSAGE=":arrow_forward: New pre-version ${{ needs.Build.outputs.raised_version }}  of packer images available :sunny:\
-            Download link: $PUBLIC_URL"
+          MESSAGE=":arrow_forward: New pre-version ${{ needs.Build.outputs.raised_version }}  of packer images available :sunny:\"
 
           MESSAGE_ERR=":x: Build of pre-version ${{ needs.Build.outputs.raised_version }} is unstable :rain_cloud:\
             Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
@@ -282,35 +274,6 @@ jobs:
         id: vars
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
-      - name: Upload images from NFS to Minio bucket vm-templates
-        id: minio_upload
-        run: |
-          NFS_PATH="${PROXMOX_NFS_SERVER_PATH}/"
-          PUBLIC_URL="$MINIO_PUBLIC_URL/browser/vm-templates/${{ steps.vars.outputs.tag}}/"
-
-          pushd $NFS_PATH
-          for files in $(find . -name "${{ steps.vars.outputs.tag}}-*.img"); do
-            echo "Uploading $files to minio"
-            aws --endpoint-url ${{ env.MINIO_S3_URL }} s3 cp $files s3://vm-templates/${{ steps.vars.outputs.tag}}/ --no-progress
-
-            # remove the version from the file name
-            echo "Creating symlink for $files"
-            unversioned_filename=$(basename $files | sed "s/${{ steps.vars.outputs.tag}}-//")
-            sudo ln -sf $files "${unversioned_filename%.*}-latest.img"
-          done
-          popd
-
-          echo "::group::Download link"
-          echo "Artifact uploaded to: $PUBLIC_URL"
-          echo "::endgroup::"
-
-          echo "PUBLIC_URL=$PUBLIC_URL" >> $GITHUB_OUTPUT
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.minio_key_id }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.minio_secret_key_id }}
-          AWS_DEFAULT_REGION: "us-east-1"
-          AWS_DEFAULT_OUTPUT: "none"
-
       - name: Slack message
         uses: slackapi/slack-github-action@v1.25.0
         with:
@@ -340,7 +303,7 @@ jobs:
       - name: Write Summary
         id: summary
         run: |
-          summary_message=":rocket: new version ${{ needs.Release-Images.outputs.tag }}  of packer images available here: ${{ needs.Release-Images.outputs.PUBLIC_URL }}\n"
+          summary_message=":rocket: new version ${{ needs.Release-Images.outputs.tag }}  of packer images available\n"
 
           echo -e "### Release Summary \n${summary_message}" >> $GITHUB_STEP_SUMMARY
 
