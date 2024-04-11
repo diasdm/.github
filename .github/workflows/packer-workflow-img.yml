@@ -1,4 +1,4 @@
-name: Build Packer github runner img
+name: Build Packer images
 on:
   workflow_call:
     inputs:
