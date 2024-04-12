@@ -93,6 +93,15 @@ on:
         required: false
       snyk_token:
         required: false
+      gh_user:
+        required: false
+      gh_token:
+        required: false
+      aws_key_id:
+        required: true
+      aws_secret_key_id:
+        required: true
+    
 
 jobs:
 
@@ -185,7 +194,7 @@ jobs:
       - name: Compute docker build arguments
         id: get_build_args
         run: |
-          BUILD_ARGS_STR_LIST="${{ inputs.build_args }}"
+          BUILD_ARGS_STR_LIST='GITHUB_USR=${{ secrets.RAISE_BOT_COMMIT_USER }}, GITHUB_PWD=${{ secrets.RAISE_BOT_COMMIT_PASSWORD }}, AWS_KEY=${{ secrets.AWS_ACCESS_KEY }}, AWS_SECRET=${{ secrets.AWS_SECRET_ACCESS_KEY }}'
           echo $BUILD_ARGS_STR_LIST
           if [ -n "$BUILD_ARGS_STR_LIST" ]; then
             #echo "::set-output name=build_args_str_list::$BUILD_ARGS_STR_LIST"
