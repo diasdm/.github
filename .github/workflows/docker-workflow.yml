@@ -194,9 +194,9 @@ jobs:
       - name: Compute docker build arguments
         id: get_build_args
         run: |
-          BUILD_ARGS_STR_LIST='GITHUB_USR=${{ secrets.gh_user }}',
-          'GITHUB_PWD=${{ secrets.gh_token }}',
-          'AWS_KEY=${{ secrets.aws_key_id }}',
+          BUILD_ARGS_STR_LIST='GITHUB_USR=${{ secrets.gh_user }},
+          'GITHUB_PWD=${{ secrets.gh_token }},
+          'AWS_KEY=${{ secrets.aws_key_id }},
           'AWS_SECRET=${{ secrets.aws_secret_key_id }}'
           echo $BUILD_ARGS_STR_LIST
           if [ -n "$BUILD_ARGS_STR_LIST" ]; then
