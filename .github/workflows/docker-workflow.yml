@@ -186,9 +186,11 @@ jobs:
         id: get_build_args
         run: |
           BUILD_ARGS_STR_LIST="${{ inputs.build_args }}"
+          echo $BUILD_ARGS_STR_LIST
           if [ -n "$BUILD_ARGS_STR_LIST" ]; then
             #echo "::set-output name=build_args_str_list::$BUILD_ARGS_STR_LIST"
             echo "build_args_str_list=$BUILD_ARGS_STR_LIST" >> $GITHUB_OUTPUT
+            echo $build_args_str_list
             echo -e "Docker build arguments:\n$BUILD_ARGS_STR_LIST"
           fi
 
