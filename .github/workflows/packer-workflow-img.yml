@@ -129,7 +129,7 @@ jobs:
           echo "Running tests for ${{ matrix.image_type }}"
           ./build.bash test-${{ matrix.image_type }}
       
-      - name: Upload artifacts (Minio)
+      - name: Upload artifacts (NFS)
         if: ${{ inputs.deploy == 'true' }}
         shell: bash
         id: nfs_upload
