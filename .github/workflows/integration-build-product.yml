@@ -117,8 +117,28 @@ env:
   PROJECT_DATA_VIEWER_API: "https://personal-7vf0v2cu.outsystemscloud.com/ProjectDataViewer5/rest/V1//CreateProject"
   MINIO_S3_URL: "https://s3.mov.ai"
   MINIO_PUBLIC_URL: "https://minio.mov.ai"
+  TIMEOUT: 720
 
 jobs:
+  Compute-timeout:
+    runs-on: ubuntu-latest
+    outputs:
+      timeout: ${{ steps.Compute-timeout.outputs.timeout }}
+    steps:
+      - name: "Compute Timeout"
+        id: Compute-timeout
+        run: |
+          if [ ${{ inputs.duration }} != "UNDEFINED" ]; then
+            duration_minutes=$((${{ inputs.duration }} * 60))
+          else
+            duration_minutes=0
+          fi
+          if [[ $duration_minutes -gt $((${{ env.TIMEOUT }})) ]]; then
+            echo "timeout=$((duration_minutes * 110 / 100))" >> $GITHUB_OUTPUT
+          else
+            echo "timeout=${{ env.TIMEOUT }}" >> $GITHUB_OUTPUT
+          fi
+
   Validate-boostrap-configs:
     runs-on: integration-pipeline
     container:
@@ -1137,9 +1157,9 @@ jobs:
           docker image prune --all -f
 
   Validation-Simulator-Tests:
-    needs: [Build-Spawner, Build-Simulator]
+    needs: [Compute-timeout, Build-Spawner, Build-Simulator]
     runs-on: ${{ needs.Build-Simulator.outputs.simulator_tests_agent_name }}
-    timeout-minutes: 720
+    timeout-minutes: ${{ fromJSON(needs.Compute-timeout.outputs.timeout) }}
     steps:
       - uses: rtCamp/action-cleanup@master
         if: ${{ inputs.with_simulation_tests }}
@@ -1490,7 +1510,7 @@ jobs:
 
       - name: Remote - Simulation Tests
         if: ${{ inputs.with_simulation_tests }}
-        timeout-minutes: 720
+        timeout-minutes: ${{ fromJSON(needs.Compute-timeout.outputs.timeout) }}
         shell: bash
         run: |
           ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
