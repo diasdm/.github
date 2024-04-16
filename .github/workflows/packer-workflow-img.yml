@@ -66,7 +66,7 @@ jobs:
     if: ${{ inputs.release == 'false' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install pre-reqs
         run: |
@@ -91,7 +91,6 @@ jobs:
     needs: Validate
     outputs:
       raised_version: ${{ steps.raise.outputs.raised_version }}
-      artifact_url: ${{ steps.minio_upload.outputs.artifact_url }}
     strategy:
       matrix:
         image_type: ${{ fromJSON(inputs.image_type_list) }}
@@ -100,7 +99,7 @@ jobs:
         uses: rtCamp/action-cleanup@master
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Raise Version
         id: raise
@@ -128,7 +127,7 @@ jobs:
         run: |
           echo "Running tests for ${{ matrix.image_type }}"
           ./build.bash test-${{ matrix.image_type }}
-      
+
       - name: Upload artifacts (NFS)
         if: ${{ inputs.deploy == 'true' }}
         shell: bash
@@ -144,7 +143,7 @@ jobs:
     if: ${{ inputs.deploy == 'true' && inputs.release == 'false' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Commit raise
         if: ${{ inputs.deploy == 'true' }}
@@ -195,7 +194,7 @@ jobs:
     if: ${{ inputs.deploy == 'true' && inputs.release == 'false' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Test NFS server
         run: |
@@ -268,10 +267,9 @@ jobs:
     if: ${{ inputs.release == 'true' }}
     outputs:
       tag: ${{ steps.vars.outputs.tag }}
-      PUBLIC_URL: ${{ steps.minio_upload.outputs.PUBLIC_URL }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Test NFS server
         run: |
@@ -288,8 +286,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.25.0
         with:
           channel-id: ${{ inputs.slack_channel }}
-          slack-message: ":white_check_mark: New version ${{ steps.vars.outputs.tag }}  of packer images available :sunny:\
-            Download link: ${{ steps.minio_upload.outputs.PUBLIC_URL }}"
+          slack-message: ":white_check_mark: New version ${{ steps.vars.outputs.tag }} of packer images available :sunny:"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN_ID }}
 
@@ -301,7 +298,7 @@ jobs:
       - name: Write Summary
         id: summary
         run: |
-          summary_message=":construction_worker: new pre-version ${{ needs.Build.outputs.raised_version }}  of packer images available here: ${{ needs.Build.outputs.artifact_url }}\n"
+          summary_message=":construction_worker: new pre-version ${{ needs.Build.outputs.raised_version }} of packer images available here: $PROXMOX_NFS_SERVER_URL"\n"
 
           echo -e "### Build Summary\n${summary_message}" >> $GITHUB_STEP_SUMMARY
 
