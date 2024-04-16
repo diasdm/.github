@@ -28,6 +28,14 @@ on:
         required: false
         type: string
         default: "UNDEFINED"
+      cluster:
+        required: false
+        default: "mary"
+        type: string
+      duration:
+        required: false
+        type: string
+        default: "UNDEFINED"
       propagate_project:
         required: false
         type: boolean
@@ -135,7 +143,7 @@ jobs:
         shell: bash
         run: |
           if [ "${{ inputs.is_nightly_run }}" == "true" ] ; then
-            TITLE="Nightly Report of ${GITHUB_REPOSITORY} ${{inputs.nightly_run_branch}}"
+            TITLE="Long Run Report of ${GITHUB_REPOSITORY} ${{inputs.nightly_run_branch}}"
           else
             TITLE="Run Report of ${GITHUB_REPOSITORY} ${GITHUB_REF#refs/heads/}"
           fi
@@ -222,10 +230,10 @@ jobs:
         id: pre_slack
         shell: bash
         run: |
-          MESSAGE="CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version)(Attempt: #${{ github.run_attempt }}) is starting to be validated :construction: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          MESSAGE="CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version)(Attempt: #${{ github.run_attempt }}) is starting to be validated on ${{ inputs.cluster }} :construction: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
           if [ "${{ inputs.is_nightly_run }}" == "true" ] ; then
-            MESSAGE="NIGHTLY: ${GITHUB_REPOSITORY} ${{inputs.nightly_run_branch}}, (Attempt: #${{ github.run_attempt }}) is starting to be validated :construction: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            MESSAGE="LONG RUN: ${GITHUB_REPOSITORY} ${{inputs.nightly_run_branch}}, (Attempt: #${{ github.run_attempt }}) is starting to be validated on ${{ inputs.cluster }} :construction: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           fi
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
 
@@ -861,7 +869,7 @@ jobs:
         run: |
           if [ "${{ inputs.with_simulation_tests }}" = "true" ];
           then
-            echo "simul_tests_infra=simul-mary-queuer" >> $GITHUB_OUTPUT
+            echo "simul_tests_infra=simul-${{ inputs.cluster }}-queuer" >> $GITHUB_OUTPUT
           else
             echo "simul_tests_infra=integration-pipeline" >> $GITHUB_OUTPUT
           fi
@@ -1221,7 +1229,7 @@ jobs:
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
         shell: bash
         run: |
-          terraform init -backend-config="key=mary-standalone-${{ steps.infra_names.outputs.simul_prefix }}.tfstate"
+          terraform init -backend-config="key=${{ inputs.cluster }}-standalone-${{ steps.infra_names.outputs.simul_prefix }}.tfstate"
           terraform plan
           terraform apply -auto-approve
 
@@ -1236,14 +1244,14 @@ jobs:
           TF_VAR_provision_ssh_pem: ${{ secrets.ssh_priv_key }}
           TF_VAR_ip_list: '["dhcp"]'
           TF_VAR_storage: "local-lvm"
-          TF_VAR_proxmox_host_list: '["mary"]'
+          TF_VAR_proxmox_host_list: '["${{ inputs.cluster }}"]'
           TF_VAR_vm_gateway: "10.10.1.254"
           TF_VAR_ip_mask: 23
           TF_VAR_bios: "ovmf"
           TF_VAR_pool: "IP-Temp-VMs"
           TF_VAR_tags: "ip-simul-ci"
           TF_VAR_fleet_hosts_user: "devops"
-          TF_VAR_template_name: "u22dci-gpu"
+          TF_VAR_template_name: "u22dci-gpu-3"
           TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
           TF_VAR_fleet_manager_memory: 51200
           TF_VAR_fleet_manager_cores: 14
@@ -1505,11 +1513,17 @@ jobs:
               marker="nightly"
             fi
 
+            duration_option=""
+            if [ "${{ inputs.duration }}" != "UNDEFINED" ] ; then
+              duration_option="--duration ${{ inputs.duration }}"
+            fi
+
             pytest \
               ${{ steps.simulator_tests_setup.outputs.test_exec_dir }} \
               -m $marker \
               --movai-user ${{ steps.install.outputs.movai_user }} \
-              --movai-pw ${{ steps.install.outputs.movai_pwd }}
+              --movai-pw ${{ steps.install.outputs.movai_pwd }} \
+              $duration_option
 
             deactivate
           '
@@ -1647,14 +1661,14 @@ jobs:
           TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
           TF_VAR_provision_ssh_pem: ${{ secrets.ssh_priv_key }}
           TF_VAR_ip_list: '["dhcp"]'
-          TF_VAR_proxmox_host_list: '["mary"]'
+          TF_VAR_proxmox_host_list: '["${{ inputs.cluster }}"]'
           TF_VAR_vm_gateway: "10.10.1.254"
           TF_VAR_ip_mask: 23
           TF_VAR_bios: "ovmf"
           TF_VAR_pool: "IP-Temp-VMs"
           TF_VAR_tags: "ip-simul-ci"
           TF_VAR_fleet_hosts_user: "devops"
-          TF_VAR_template_name: "u22dci-gpu"
+          TF_VAR_template_name: "u22dci-gpu-3"
           TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
           TF_VAR_fleet_manager_memory: 30000
           TF_VAR_fleet_manager_cores: 10
@@ -1958,7 +1972,7 @@ jobs:
           MESSAGE=":white_check_mark: CI: ${GITHUB_REPOSITORY} (${GITHUB_REF#refs/heads/}), build: $(cat product.version) (Attempt: #${{ github.run_attempt }}) is stable :sunny: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
           if [ "${{ inputs.is_nightly_run }}" == "true" ] ; then
-            MESSAGE=":white_check_mark: NIGHTLY: ${GITHUB_REPOSITORY} ${{inputs.nightly_run_branch}}, (Attempt: #${{ github.run_attempt }}) is stable :sunny: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            MESSAGE=":white_check_mark: LONG RUN: ${GITHUB_REPOSITORY} ${{inputs.nightly_run_branch}}, (Attempt: #${{ github.run_attempt }}) is stable :sunny: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           fi
           echo "msg=$MESSAGE" >> $GITHUB_OUTPUT
 
@@ -1996,7 +2010,7 @@ jobs:
           MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) (Attempt: #${{ github.run_attempt }}) is unstable (or canceled) :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
           if [ "${{ inputs.is_nightly_run }}" == "true" ] ; then
-            MESSAGE_ERR=":x: NIGHTLY: ${GITHUB_REPOSITORY} ${{inputs.nightly_run_branch}}, (Attempt: #${{ github.run_attempt }}) is unstable (or canceled) :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            MESSAGE_ERR=":x: LONG RUN: ${GITHUB_REPOSITORY} ${{inputs.nightly_run_branch}}, (Attempt: #${{ github.run_attempt }}) is unstable (or canceled) :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           fi
           echo "msg_error=${MESSAGE_ERR}" >> $GITHUB_OUTPUT
 
