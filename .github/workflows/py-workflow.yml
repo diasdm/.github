@@ -20,7 +20,7 @@ on:
         type: string
         default: 'false'
         description: When 'true' black is run stopping the pipeline if any files are not properly formatted
-      publish_docs:
+      with_docs:
         required: false
         type: boolean
         default: false
@@ -235,19 +235,19 @@ jobs:
         repository_url: https://artifacts.aws.cloud.mov.ai/repository/pypi-experimental/
 
     - name: Build docs
-      if: ${{ inputs.publish_docs }}
+      if: ${{ inputs.with_docs }}
       run: |
         VERSION=${GITHUB_REF##*/} tox -e docs
 
     - name: Checkout gh-pages
-      if: ${{ inputs.deploy == 'true' && inputs.publish_docs }}
+      if: ${{ inputs.deploy == 'true' && inputs.with_docs }}
       uses: actions/checkout@v3
       with:
         ref: gh-pages
         path: gh-pages
 
     - name: Push docs
-      if: ${{ inputs.deploy == 'true' && inputs.publish_docs }}
+      if: ${{ inputs.deploy == 'true' && inputs.with_docs }}
       run: |
         cd gh-pages
 
