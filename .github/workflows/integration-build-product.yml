@@ -286,7 +286,14 @@ jobs:
     steps:
       - uses: rtCamp/action-cleanup@master
       - name: Checkout
+        if: ${{ inputs.is_nightly_run == false }}
         uses: actions/checkout@v4
+
+      - name: Nightly Checkout
+        if: ${{ inputs.is_nightly_run }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.nightly_run_branch }}
 
       - name: Agent info
         run: |
@@ -456,7 +463,14 @@ jobs:
       - uses: rtCamp/action-cleanup@master
 
       - name: Checkout
+        if: ${{ inputs.is_nightly_run == false }}
         uses: actions/checkout@v4
+
+      - name: Nightly Checkout
+        if: ${{ inputs.is_nightly_run }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.nightly_run_branch }}
 
       - name: Agent info
         run: |
@@ -721,8 +735,14 @@ jobs:
         if: ${{ inputs.with_simulation == 'true' }}
 
       - name: Checkout
+        if: ${{ inputs.with_simulation == 'true' && inputs.is_nightly_run == false }}
         uses: actions/checkout@v4
-        if: ${{ inputs.with_simulation == 'true' }}
+
+      - name: Nightly Checkout
+        if: ${{ inputs.with_simulation == 'true' && inputs.is_nightly_run }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.nightly_run_branch }}
 
       - name: Agent info
         if: ${{ inputs.with_simulation == 'true' }}
@@ -908,8 +928,14 @@ jobs:
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
 
       - name: Checkout
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' && inputs.is_nightly_run == false }}
         uses: actions/checkout@v4
+
+      - name: Nightly Checkout
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' && inputs.is_nightly_run }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.nightly_run_branch }}
 
       - name: Agent info
         if: ${{ inputs.with_simulation == 'true' }}
@@ -1164,8 +1190,15 @@ jobs:
       - uses: rtCamp/action-cleanup@master
         if: ${{ inputs.with_simulation_tests }}
       - name: Checkout
-        if: ${{ inputs.with_simulation_tests }}
+        if: ${{ inputs.with_simulation_tests && inputs.is_nightly_run == false }}
         uses: actions/checkout@v4
+
+      - name: Nightly Checkout
+        if: ${{ inputs.with_simulation_tests && inputs.is_nightly_run }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.nightly_run_branch }}
+
 
       - name: Agent info
         run: |
