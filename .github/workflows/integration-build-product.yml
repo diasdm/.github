@@ -1282,18 +1282,26 @@ jobs:
         run: |
           branch=$(echo ${GITHUB_REF#refs/heads/} | sed "s;\.;-;g" )
 
-          local_manager_prefix="ip-${{ inputs.product_name }}-$branch-standalone"
+          run_type="ci"
+          if [ "${{ inputs.is_nightly_run }}" == "true" ] ; then
+            run_type="lr"
+          fi
 
+          local_manager_prefix="ip-$run_type-${{ inputs.product_name }}-$branch"
+          
+          tf_state="${{ inputs.cluster }}-sim-$local_manager_prefix"
+          echo "$tf_state"
           echo "$local_manager_prefix"
 
           echo "simul_prefix=${local_manager_prefix}" >> $GITHUB_OUTPUT
+          echo "tfstate_name=${tf_state}" >> $GITHUB_OUTPUT
 
       - name: Provision remote vms (Proxmox)
         if: ${{ inputs.with_simulation_tests }}
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
         shell: bash
         run: |
-          terraform init -backend-config="key=${{ inputs.cluster }}-${{ inputs.product_name }}-standalone-${{ steps.infra_names.outputs.simul_prefix }}.tfstate"
+          terraform init -backend-config="key=${{ steps.infra_names.outputs.tfstate_name }}.tfstate"
           terraform plan
           terraform apply -auto-approve
 
