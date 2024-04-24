@@ -164,6 +164,7 @@ jobs:
       - name: Checkout commit hash
         id: Checkout
         run: |
+          git config --global --add safe.directory $(pwd)
           git rev-parse HEAD > commit_hash
           echo "commit_hash=$(cat commit_hash)" >> $GITHUB_OUTPUT
 
