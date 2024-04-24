@@ -1563,6 +1563,7 @@ jobs:
 
       - name: Remote - Simulation Tests
         if: ${{ inputs.with_simulation_tests }}
+        id: simulation_tests
         timeout-minutes: ${{ fromJSON(needs.Compute-timeout.outputs.timeout) }}
         shell: bash
         run: |
@@ -1586,20 +1587,40 @@ jobs:
               marker="nightly"
             fi
 
-            duration_option=""
+            extra_options=""
+            save_outputs=false
             if [ "${{ inputs.duration }}" != "UNDEFINED" ] ; then
-              duration_option="--duration ${{ inputs.duration }}"
+              extra_options="--duration ${{ inputs.duration }}"
             fi
+            if [[ "$(echo -e "${{ steps.simulator_tests_setup.outputs.version }}\n2.0.0-24" | sort -V | head -n1)" == "2.0.0-24" ]]; then
+              save_outputs=true
+              extra_options="$extra_options --out-values test-output.json"
+            fi
+            echo "save_outputs=$save_outputs" >> $GITHUB_OUTPUT
 
             pytest \
               ${{ steps.simulator_tests_setup.outputs.test_exec_dir }} \
               -m $marker \
               --movai-user ${{ steps.install.outputs.movai_user }} \
               --movai-pw ${{ steps.install.outputs.movai_pwd }} \
-              $duration_option
+              $extra_options
 
             deactivate
           '
+
+      - name: Remote - Save simulation test outputs
+        if: ${{ always() && inputs.with_simulation_tests && steps.simulation_tests.outputs.save_outputs == 'true' }}
+        shell: bash
+        run: |
+          scp -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no ${{ steps.infra_outputs.outputs.ssh_connect_string }}:${{ env.REMOTE_WORKSPACE_PATH }}/${{ steps.simulator_tests_setup.outputs.target_dir }}/test-output.json .
+
+      - name: Stash simulation test outputs 
+        if: ${{ always() && inputs.with_simulation_tests && steps.simulation_tests.outputs.save_outputs == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-outputs
+          path: test-output.json
+          retention-days: 5
 
       - name: Remote - Save docker container logs
         if: ${{ always() &&  inputs.with_simulation_tests }}
