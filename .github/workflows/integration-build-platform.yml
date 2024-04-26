@@ -290,7 +290,7 @@ jobs:
         run: |
           timeout 30 movai-cli remove --all || true
 
-          rm -rf artifacts || mkdir -p artifacts
+          rm -rf artifacts ; mkdir -p artifacts
           cp *.json artifacts/
 
           . .ci-venv/bin/activate
