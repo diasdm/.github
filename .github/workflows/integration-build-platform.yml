@@ -197,7 +197,7 @@ jobs:
         run: |
           python3 -m venv .ci-venv --clear --system-site-packages
           . .ci-venv/bin/activate
-          pip install -r requirements.txt
+          [ -f ci-requirements.txt ] && pip install -r ci-requirements.txt
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
           python3 -m pip install movai-package-deployer==$PACKAGE_DEPLOYER_VERSION --ignore-installed
 
@@ -476,7 +476,7 @@ jobs:
         run: |
           python3 -m venv .ci-venv --clear --system-site-packages
           . .ci-venv/bin/activate
-          pip install -r requirements.txt
+          [ -f ci-requirements.txt ] && pip install -r ci-requirements.txt
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
           python3 -m pip install movai-package-deployer==$PACKAGE_DEPLOYER_VERSION --ignore-installed
 
@@ -774,7 +774,7 @@ jobs:
         run: |
           python3 -m venv .ci-venv --clear --system-site-packages
           . .ci-venv/bin/activate
-          pip install -r requirements.txt
+          [ -f ci-requirements.txt ] && pip install -r ci-requirements.txt
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
           python3 -m pip install movai-package-deployer==$PACKAGE_DEPLOYER_VERSION --ignore-installed
 
@@ -980,7 +980,7 @@ jobs:
         run: |
           python3 -m venv .ci-venv --clear --system-site-packages
           . .ci-venv/bin/activate
-          pip install -r requirements.txt
+          [ -f ci-requirements.txt ] && pip install -r ci-requirements.txt
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
           python3 -m pip install movai-package-deployer==$PACKAGE_DEPLOYER_VERSION --ignore-installed
 
@@ -1216,7 +1216,7 @@ jobs:
         run: |
           python3 -m venv .ci-venv --clear --system-site-packages
           . .ci-venv/bin/activate
-          pip install -r requirements.txt
+          [ -f ci-requirements.txt ] && pip install -r ci-requirements.txt
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
 
       - name: unstash robot_configs
@@ -1563,7 +1563,7 @@ jobs:
         run: |
           python3 -m venv .ci-venv --clear --system-site-packages
           . .ci-venv/bin/activate
-          pip install -r requirements.txt
+          [ -f ci-requirements.txt ] && pip install -r ci-requirements.txt
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
 
       - name: unstash sim_configs
@@ -2032,7 +2032,7 @@ jobs:
         run: |
           python3 -m venv .ci-venv --clear --system-site-packages
           . .ci-venv/bin/activate
-          pip install -r requirements.txt
+          [ -f ci-requirements.txt ] && pip install -r ci-requirements.txt
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
           python3 -m pip install movai-package-deployer==$PACKAGE_DEPLOYER_VERSION --ignore-installed
 
