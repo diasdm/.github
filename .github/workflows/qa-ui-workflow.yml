@@ -104,7 +104,7 @@ jobs:
         shell: bash
         run: |
           . venv/bin/activate
-          pre-commit run --show-diff-on-failure --color=always --all-files
+          python3 -m pre-commit run --show-diff-on-failure --color=always --all-files
 
       - name: Setup QA install tests
         uses: actions/checkout@v4
