@@ -1778,7 +1778,7 @@ jobs:
           # setup tests venv in a step that is always executed
           python3 -m venv "${tests_dir}"/test-venv --clear --system-site-packages
           . "${tests_dir}"/test-venv/bin/activate
-          pip install -r requirements.txt
+          python3 -m pip install -r "${tests_dir}"/requirements.txt
           deactivate
 
       - name: Installation
