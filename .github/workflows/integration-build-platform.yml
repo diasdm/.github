@@ -195,7 +195,7 @@ jobs:
       - name: Setup CI Scripts in .ci-venv
         shell: bash
         run: |
-          python3 -m venv .ci-venv --clear --system-site-packages
+          python3 -m venv .ci-venv --clear
           . .ci-venv/bin/activate
           [ -f ci-requirements.txt ] && pip install -r ci-requirements.txt
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
@@ -337,7 +337,7 @@ jobs:
         run: |
           . test-venv/bin/activate
 
-          pytest \
+          python3 -m pytest \
             -ra \
             --hub_url http://selenoid-ui.hel.mov.ai \
             --base_url https://${{ steps.agent_info.outputs.ip }}/ \
@@ -474,7 +474,7 @@ jobs:
       - name: Setup CI Scripts in .ci-venv
         shell: bash
         run: |
-          python3 -m venv .ci-venv --clear --system-site-packages
+          python3 -m venv .ci-venv --clear
           . .ci-venv/bin/activate
           [ -f ci-requirements.txt ] && pip install -r ci-requirements.txt
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
@@ -571,13 +571,13 @@ jobs:
           rm -rf results/*
 
           if [ "${{ steps.install_tests_setup.outputs.jira_report }}" == "True" ] ; then
-            pytest tests/ \
+          python3 -m pytest tests/ \
               -ra \
               -k '${{ steps.install_tests_setup.outputs.test_set }}' \
               --installPath="." --jsonConfigFilePath="../basic-standalone-noetic.json.ci" \
               --jira_report
           else
-            pytest tests/ \
+          python3 -m pytest tests/ \
               -ra \
               -k '${{ steps.install_tests_setup.outputs.test_set }}' \
               --installPath="." --jsonConfigFilePath="../basic-standalone-noetic.json.ci"
@@ -772,7 +772,7 @@ jobs:
       - name: Setup CI Scripts in .ci-venv
         shell: bash
         run: |
-          python3 -m venv .ci-venv --clear --system-site-packages
+          python3 -m venv .ci-venv --clear
           . .ci-venv/bin/activate
           [ -f ci-requirements.txt ] && pip install -r ci-requirements.txt
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
@@ -855,7 +855,7 @@ jobs:
         run: |
           . test-venv/bin/activate
 
-          pytest src \
+          python3 -m pytest src \
             --movai-ip ${{ steps.agent_info.outputs.ip }} \
             --movai-user ${{ steps.install.outputs.movai_user }} \
             --movai-pw ${{ steps.install.outputs.movai_pwd }} \
@@ -978,7 +978,7 @@ jobs:
       - name: Setup CI Scripts in .ci-venv
         shell: bash
         run: |
-          python3 -m venv .ci-venv --clear --system-site-packages
+          python3 -m venv .ci-venv --clear
           . .ci-venv/bin/activate
           [ -f ci-requirements.txt ] && pip install -r ci-requirements.txt
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
@@ -1082,7 +1082,7 @@ jobs:
           # run tests
           . test-venv/bin/activate
 
-          pytest \
+          python3 -m pytest \
             -s \
             -ra \
             --movai-user ${{ steps.install.outputs.movai_user }} \
@@ -1214,7 +1214,7 @@ jobs:
       - name: Setup CI Scripts in .ci-venv
         shell: bash
         run: |
-          python3 -m venv .ci-venv --clear --system-site-packages
+          python3 -m venv .ci-venv --clear
           . .ci-venv/bin/activate
           [ -f ci-requirements.txt ] && pip install -r ci-requirements.txt
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
@@ -1379,7 +1379,13 @@ jobs:
           done
 
           # Ensure cloud init is done on all the hosts
-          for fleet_host in "manager" "member0" "member1"; do
+          # create list of members from the number of passed in fleet_number_members
+          members=("manager")
+          for i in $(seq 0 $(( ${{ inputs.fleet_number_members}} - 1 )); do
+            members+=("member$i")
+          done
+
+          for fleet_host in members; do
             ansible $fleet_host -i ../staging/provisioned_inventory.yml --key-file ~/.ssh/aws_slave.pem -m shell -a 'cloud-init status --wait'
           done
 
@@ -1561,7 +1567,7 @@ jobs:
       - name: Setup CI Scripts in .ci-venv
         shell: bash
         run: |
-          python3 -m venv .ci-venv --clear --system-site-packages
+          python3 -m venv .ci-venv --clear
           . .ci-venv/bin/activate
           [ -f ci-requirements.txt ] && pip install -r ci-requirements.txt
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
@@ -1829,7 +1835,7 @@ jobs:
           # run tests
           . test-venv/bin/activate
 
-          pytest \
+          python3 -m pytest \
             -s \
             -ra \
             --movai-user ${{ steps.install.outputs.movai_user }} \
@@ -2030,7 +2036,7 @@ jobs:
       - name: Setup CI Scripts in .ci-venv
         shell: bash
         run: |
-          python3 -m venv .ci-venv --clear --system-site-packages
+          python3 -m venv .ci-venv --clear
           . .ci-venv/bin/activate
           [ -f ci-requirements.txt ] && pip install -r ci-requirements.txt
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
