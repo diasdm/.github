@@ -111,7 +111,7 @@ jobs:
         if: steps.check_files.outputs.files_exists == 'true'
         shell: bash
         run: |
-          pip install pre-commit
+          python3 -m pip install pre-commit
           pre-commit run --show-diff-on-failure --color=always --all-files
 
       - name: Setup QA install tests
