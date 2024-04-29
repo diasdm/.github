@@ -94,7 +94,7 @@ jobs:
         run: |
           yamllint product-manifest.yaml
 
-      - name: Install CI Scripts
+      - name: Install CI Scripts in container
         shell: bash
         run: |
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
@@ -1752,7 +1752,9 @@ jobs:
           qa_key: flow_tests
         run: |
           rm -f /tmp/target_dir.txt /tmp/version.txt /tmp/repo_name.txt /tmp/test_set.txt
+          python3 -m venv .ci-venv --clear
           . .ci-venv/bin/activate
+          [ -f ci-requirements.txt ] && pip install -r ci-requirements.txt
           export PATH="$HOME/.local/bin:$PATH"
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.target_dir --output_file /tmp/target_dir.txt
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_components.qa.$qa_key.version --output_file /tmp/version.txt
