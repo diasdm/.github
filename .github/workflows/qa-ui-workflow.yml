@@ -77,8 +77,11 @@ jobs:
           sudo apt-get update
           while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
           sudo apt-get upgrade -y
-          # needed for pre-commit execution
-          sudo apt install python-is-python3
+          # python-is-python3 is needed for pre-commit execution
+          # ros_comm are needed for tests
+          # tcpdump pcap2har are needed for tests capturing network traffic
+          sudo apt install -y --allow-downgrades python-is-python3 python3-rosnode python3-rosparam python3-rostopic tcpdump pcap2har
+          sudo setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump
 
       - name: Check if pre-commit config exists
         id: check_files
@@ -93,11 +96,6 @@ jobs:
           . venv/bin/activate
           pip install -r requirements.txt
           pip install pre-commit
-          deactivate
-
-          # install test dependencies on host
-          sudo apt install -y --allow-downgrades python3-rosnode python3-rosparam python3-rostopic tcpdump pcap2har
-          sudo setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump
 
       - name: Run pre-commit
         if: steps.check_files.outputs.files_exists == 'true'
