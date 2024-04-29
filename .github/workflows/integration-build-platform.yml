@@ -1366,8 +1366,7 @@ jobs:
           IFS=',' read -r -a stripped_ips_arr <<< $stripped_ips
 
           manager_ip=${stripped_ips_arr[0]}
-          echo $manager_ip
-          echo "manager_ip=${manager_ip}" >> $GITHUB_OUTPUT
+          echo "manager_ip=${manager_ip}" | tee >> $GITHUB_OUTPUT
 
           for ip in "${stripped_ips_arr[@]}"
           do
@@ -1379,13 +1378,12 @@ jobs:
           done
 
           # Ensure cloud init is done on all the hosts
-          # create list of members from the number of passed in fleet_number_members
           members=("manager")
-          for i in $(seq 0 $(( ${{ inputs.fleet_number_members}} - 1 )); do
+          for i in $(seq 0 $(( ${{ inputs.fleet_number_members}} - 1 ))); do
             members+=("member$i")
           done
 
-          for fleet_host in members; do
+          for fleet_host in ${members[@]}; do
             ansible $fleet_host -i ../staging/provisioned_inventory.yml --key-file ~/.ssh/aws_slave.pem -m shell -a 'cloud-init status --wait'
           done
 
