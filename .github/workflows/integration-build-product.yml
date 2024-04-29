@@ -187,7 +187,7 @@ jobs:
       - name: Install CI Scripts in container
         shell: bash
         run: |
-          python3 -m venv ci_scripts
+          python3 -m venv ci_scripts --clear
           source ci_scripts/bin/activate
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
           deactivate
@@ -1473,11 +1473,8 @@ jobs:
 
             # setup venv in a step that is always executed
             pushd "${tests_dir}"
-            rm -rf venv
-            python3 -m venv venv
+            python3 -m venv venv --clear
             . venv/bin/activate
-            python3 -m pip install pip --upgrade
-            python3 -m pip install pyopenssl --upgrade
             pip install -i https://artifacts.cloud.mov.ai/repository/pypi-integration/simple --extra-index-url https://pypi.org/simple -r requirements.txt
             deactivate
 
@@ -1824,7 +1821,7 @@ jobs:
         if: ${{ inputs.is_nightly_run == false }}
         shell: bash
         run: |
-          python3 -m venv .ci-venv --clear
+          python3 -m venv .ci-venv --clear --system-site-packages # needed for apt dependencies
           . .ci-venv/bin/activate
           [ -f ci-requirements.txt ] && pip install -r ci-requirements.txt
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
