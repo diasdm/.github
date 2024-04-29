@@ -1,4 +1,4 @@
-name: Build Packer images
+name: Build Product Composite
 on:
   workflow_call:
     inputs:
