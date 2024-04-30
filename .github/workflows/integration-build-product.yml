@@ -1116,7 +1116,7 @@ jobs:
             tar cvzf ./metadata_artifact/sim_metadata.tar.gz ./proj_metadata
       - name: stash Sim project metadata
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: project_sim_metadata
           path: metadata_artifact/*
@@ -1289,7 +1289,7 @@ jobs:
           fi
 
           local_manager_prefix="ip-$run_type-${{ inputs.product_name }}-$branch"
-          
+
           tf_state="${{ inputs.cluster }}-sim-$local_manager_prefix"
           echo "$tf_state"
           echo "$local_manager_prefix"
@@ -1619,7 +1619,7 @@ jobs:
         run: |
           scp -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no ${{ steps.infra_outputs.outputs.ssh_connect_string }}:${{ env.REMOTE_WORKSPACE_PATH }}/${{ steps.simulator_tests_setup.outputs.target_dir }}/test-output.json .
 
-      - name: Stash simulation test outputs 
+      - name: Stash simulation test outputs
         if: ${{ always() && inputs.with_simulation_tests && steps.simulation_tests.outputs.save_outputs == 'true' }}
         uses: actions/upload-artifact@v4
         with:
