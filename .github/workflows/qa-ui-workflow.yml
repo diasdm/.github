@@ -192,9 +192,11 @@ jobs:
           # for sanity
           docker ps -a
 
-          for container in backend spawner messager-server; do
-             CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^${container}-.*")
-             docker logs "${CONTAINER_ID}" &> "${container}.log" || true
+          # save all container logs and inspect
+          CONTAINERS=$(docker ps -a --format '{{.Names}}')
+          for container in ${CONTAINERS}; do
+              docker logs "${container}" &> "${container}.log" || true
+              docker inspect "${container}" &> "${container}-inspect.log"
           done || true
 
           # movai-service
