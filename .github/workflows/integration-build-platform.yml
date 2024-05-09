@@ -1195,7 +1195,7 @@ jobs:
 
   Fleet-Validations:
     needs: [Validate-boostrap-configs]
-    runs-on: ip-hel-queuer
+    runs-on: integration-pipeline
     steps:
       - name: Cleanup Workspace
         uses: rtCamp/action-cleanup@master
