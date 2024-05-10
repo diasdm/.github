@@ -165,7 +165,7 @@ jobs:
           name: raised_meta
           path: platform_configs/*
           retention-days: 5
-          
+
   Fleet-Validations:
     needs: [Validate-boostrap-configs]
     runs-on: ip-hel-queuer
@@ -505,6 +505,7 @@ jobs:
         if: ${{ ( !inputs.debug_fleet_keep_alive && success() ) || cancelled() || ( !inputs.debug_fleet_keep_alive && failure() ) }}
         shell: bash
         run: |
+          set +e
           attempts=3
           count=0
           while [ $count -lt $attempts ]; do
@@ -513,11 +514,13 @@ jobs:
             exit_status=$?
             if [ $exit_status -eq 0 ]; then
               break
+              set -e
             elif [ $exit_status -eq 1 ]; then
               ((count++))
               echo "Retrying Terraform destroy (attempt $count)..."
             else
                   echo "Terraform destroy failed with exit status ${exit_status:-unknown}. Exiting..."
+                  set -e
                   exit ${exit_status:-1}
             fi
           done
