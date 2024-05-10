@@ -165,16 +165,7 @@ jobs:
           name: raised_meta
           path: platform_configs/*
           retention-days: 5
-
-   Validations-Finish:
-    needs: [Validation-UI-Tests, Validation-Install-Tests, Validation-API-Tests, Validation-Flow-Tests]
-    runs-on: ubuntu-20.04
-    outputs:
-      slack_thread_id: ${{ needs.Validation-UI-Tests.outputs.slack_thread_id }}
-    steps:
-      - name: Pass through
-        run: echo "Pass"
-
+          
   Fleet-Validations:
     needs: [Validate-boostrap-configs]
     runs-on: ip-hel-queuer
