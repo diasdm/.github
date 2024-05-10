@@ -17,6 +17,10 @@ on:
       fleet_number_members:
         required: true
         type: number
+      pull_request:
+        required: false
+        type: boolean
+        default: false
 
     secrets:
       auto_commit_user:
@@ -1196,6 +1200,7 @@ jobs:
   Fleet-Validations:
     needs: [Validate-boostrap-configs]
     runs-on: ip-hel-queuer
+    if: inputs.pull_request == false
     steps:
       - name: Cleanup Workspace
         uses: rtCamp/action-cleanup@master
@@ -1552,6 +1557,7 @@ jobs:
   Build-Simulator:
     needs: [Validate-boostrap-configs]
     runs-on: integration-pipeline
+    if: inputs.pull_request == false
     env:
       DISTRO: noetic
     outputs:
@@ -1714,6 +1720,7 @@ jobs:
   Simulator-Validations:
     needs: [Build-Simulator]
     runs-on: integration-pipeline
+    if: inputs.pull_request == false
     steps:
       - uses: rtCamp/action-cleanup@master
 
@@ -2000,6 +2007,7 @@ jobs:
   publish:
     needs: [Validations-Finish, Fleet-Validations, Simulator-Validations]
     runs-on: integration-pipeline
+    if: inputs.pull_request == false
     outputs:
       slack_thread_id: ${{ needs.Validations-Finish.outputs.slack_thread_id }}
     steps:
@@ -2193,8 +2201,6 @@ jobs:
           slack-channel: ${{ env.SLACK_CHANNEL }}
           slack-update-message-text: ${{ steps.pre_slack.outputs.msg }}
           slack-update-message-ts: ${{ needs.Validations-Finish.outputs.slack_thread_id }}
-
-
 
   Run-Status:
     runs-on: ubuntu-20.04
