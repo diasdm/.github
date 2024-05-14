@@ -334,7 +334,6 @@ jobs:
         shell: bash
         run: |
           . test-venv/bin/activate
-
           python3 -m pytest \
             -ra \
             --hub_url http://selenoid-ui.hel.mov.ai \
