@@ -68,9 +68,11 @@ jobs:
           files: ".pre-commit-config.yaml"
 
       - name: Install dependencies
+        if: steps.check_files.outputs.files_exists == 'true'
         run: pip install pre-commit
 
       - name: Run pre-commit
+        if: steps.check_files.outputs.files_exists == 'true'
         run: pre-commit run --show-diff-on-failure --color=always --all-files
 
   Run-tests:
@@ -108,8 +110,7 @@ jobs:
           path: qa_install_tests
           token: ${{ secrets.gh_token }}
 
-      - name: Install tests
-        id: install
+      - name: Install tests setup
         working-directory: qa_install_tests
         shell: bash
         run: |
@@ -117,28 +118,39 @@ jobs:
           . test-venv/bin/activate
           pip install -r requirements.txt
 
+      - name: Install tests
+        id: install
+        working-directory: qa_install_tests
+        shell: bash
+        run: |
+          . test-venv/bin/activate
+
           # tests execution
           python3 -m pytest tests/ \
             -k 'AMR_installation_validator' \
             --installPath="." \
             --jsonConfigFilePath="config/platform_example_script.json"
 
-          # remove virtual environment
-          deactivate
-          rm -rf test-venv
-
           user=$(cat results/credentials.txt | awk -F: '{print $1}')
           pwd=$(cat results/credentials.txt | awk -F: '{print $2}')
           echo "movai_user=$user" >> $GITHUB_OUTPUT
           echo "movai_pwd=$pwd" >> $GITHUB_OUTPUT
 
-      - name: UI tests
-        id: ui
+      - name: Install tests cleanup
+        if: always()
+        working-directory: qa_install_tests
+        shell: bash
+        run: |
+          rm -rf test-venv
+
+      - name: UI tests setup
         shell: bash
         run: |
           python3 -m venv test-venv --clear --system-site-packages
           . test-venv/bin/activate
           pip install -r requirements.txt
+
+          . test-venv/bin/activate
 
           # install test dependencies on spawner
           if [ -f apt-requirements.txt ]; then
@@ -153,6 +165,12 @@ jobs:
             "
           fi
 
+      - name: UI tests
+        id: ui
+        shell: bash
+        run: |
+          . test-venv/bin/activate
+
           # tests execution
           python3 -m pytest \
             --ignore qa_install_tests \
@@ -161,8 +179,10 @@ jobs:
             --movai-user ${{ steps.install.outputs.movai_user }} \
             --movai-pw ${{ steps.install.outputs.movai_pwd }}
 
-          # remove virtual environment
-          deactivate
+      - name: UI tests cleanup
+        if: always()
+        shell: bash
+        run: |
           rm -rf test-venv
 
       - name: Save docker container logs
@@ -172,9 +192,11 @@ jobs:
           # for sanity
           docker ps -a
 
-          for container in backend spawner messager-server; do
-             CONTAINER_ID=$(docker ps -a --format '{{.Names}}' --filter "name=^${container}-.*")
-             docker logs "${CONTAINER_ID}" &> "${container}.log" || true
+          # save all container logs and inspect
+          CONTAINERS=$(docker ps -a --format '{{.Names}}')
+          for container in ${CONTAINERS}; do
+              docker logs "${container}" &> "${container}.log" || true
+              docker inspect "${container}" &> "${container}-inspect.log"
           done || true
 
           # movai-service
