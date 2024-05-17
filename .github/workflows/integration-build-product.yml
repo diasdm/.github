@@ -973,6 +973,7 @@ jobs:
           rm movai_service_version
         env:
           SIMULATION_ID: "CI"
+          DISPLAY: ":0"
 
       - name: Collect Install logs
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
