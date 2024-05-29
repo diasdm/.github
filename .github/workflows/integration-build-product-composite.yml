@@ -902,6 +902,11 @@ jobs:
           deactivate
           wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat quickstart_version).bash
           chmod +x ./QuickStart_$(cat quickstart_version).bash
+
+          env
+
+          cat $CONFIG_FILE_NAME
+
           ./QuickStart_$(cat quickstart_version).bash --apps $(cat movai_service_version) $CONFIG_FILE_NAME
 
           execution_status=$?
