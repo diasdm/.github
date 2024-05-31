@@ -1136,7 +1136,7 @@ jobs:
         if: failure()
         uses: slackapi/slack-github-action@v1.23.0
         with:
-          channel-id: "G0102LEV1CL"
+          channel-id: "C05K2KF1UP8"
           slack-message: ${{ steps.pre_slack_infra.outputs.msg_error }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
@@ -1485,7 +1485,7 @@ jobs:
         if: failure()
         uses: slackapi/slack-github-action@v1.23.0
         with:
-          channel-id: "G0102LEV1CL"
+          channel-id: "C05K2KF1UP8"
           slack-message: ${{ steps.pre_slack_infra.outputs.msg_error }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
