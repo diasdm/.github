@@ -903,11 +903,6 @@ jobs:
           deactivate
           wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat quickstart_version).bash
           chmod +x ./QuickStart_$(cat quickstart_version).bash
-
-          env
-
-          cat $CONFIG_FILE_NAME
-
           ./QuickStart_$(cat quickstart_version).bash --apps $(cat movai_service_version) $CONFIG_FILE_NAME
 
           execution_status=$?
@@ -1136,7 +1131,7 @@ jobs:
         if: failure()
         uses: slackapi/slack-github-action@v1.23.0
         with:
-          channel-id: "C05K2KF1UP8"
+          channel-id: "G0102LEV1CL"
           slack-message: ${{ steps.pre_slack_infra.outputs.msg_error }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
@@ -1485,7 +1480,7 @@ jobs:
         if: failure()
         uses: slackapi/slack-github-action@v1.23.0
         with:
-          channel-id: "C05K2KF1UP8"
+          channel-id: "G0102LEV1CL"
           slack-message: ${{ steps.pre_slack_infra.outputs.msg_error }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.slack_token_id }}
