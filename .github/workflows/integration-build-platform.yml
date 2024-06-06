@@ -1291,7 +1291,7 @@ jobs:
           echo "File args: $var_file_arg"
           echo "Input File args: $(cat input.tfvars)"
           terraform init -backend-config="key=hel-fleet-${{ steps.infra_names.outputs.manager_prefix }}.tfstate"
-          terraform apply -auto-approve $var_file_arg -var-file=input.tfvars
+          terraform apply -auto-approve $var_file_arg -var-file=input.tfvars -parallelism=2
           terraform refresh $var_file_arg -var-file=input.tfvars
 
       - name: Prepare Devops provisioning slack message
