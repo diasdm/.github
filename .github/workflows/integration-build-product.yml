@@ -1348,11 +1348,11 @@ jobs:
         if: ${{ inputs.with_simulation_tests }}
         id: agent_info
         run: |
-          ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
+          ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no "
             set -e
-            ip=$(hostname -I | awk '{print $1}')
+            ip=$(hostname -I | cut -d " " -f1)
             echo $ip
-          '
+          "
 
       - name: Remote - Login to ${{ env.MID_REGISTRY }} Registry
         if: ${{ inputs.with_simulation_tests }}
