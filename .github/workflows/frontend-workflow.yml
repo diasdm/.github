@@ -91,7 +91,7 @@ jobs:
 
 
     - name: Bump package.json metadata Version
-      uses: deef0000dragon1/json-edit-action/@v1
+      uses: deefdragon/json-edit-action/@v1
       env:
         KEY: movai.Version
         VALUE: ${{steps.vars.outputs.npm_pkg_version}}
@@ -137,7 +137,7 @@ jobs:
       id: sonar_links
 
     - name: Bump manifest.json metadata Version
-      uses: deef0000dragon1/json-edit-action/@v1
+      uses: deefdragon/json-edit-action/@v1
       env:
         KEY: version
         VALUE: ${{steps.vars.outputs.npm_pkg_version}}
