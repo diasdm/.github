@@ -606,9 +606,11 @@ jobs:
                 echo 'Package:*'
             } >> /tmp/manifest.txt
             mkdir /tmp/proj_metadata
+            echo "Scans finished. Starting backup of metadata"
             python3 -m tools.backup -p /tmp/proj_metadata/ -m /tmp/manifest.txt -a export -i
-
+            echo "backup of metadata finished"
           ' || true
+            echo "export finished"
             docker cp $container_id:/tmp/deployable.dploy artifacts/${{ inputs.product_name }}-${{ matrix.distro }}-deployable.dploy
             docker cp $container_id:/tmp/undeployable.dploy artifacts/${{ inputs.product_name }}-${{ matrix.distro }}-3rdParty.dploy
             docker cp $container_id:/tmp/apt_packages.json artifacts/${{ inputs.product_name }}-${{ matrix.distro }}-apt_packages.json
