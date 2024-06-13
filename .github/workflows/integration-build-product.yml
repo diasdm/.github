@@ -81,11 +81,9 @@ on:
         required: true
       slack_token_id:
         required: true
-      proxmox_api_url:
+      proxmox_ve_username:
         required: true
-      proxmox_api_token_id:
-        required: true
-      proxmox_api_token_secret:
+      proxmox_ve_password:
         required: true
       ssh_priv_key:
         required: true
@@ -94,6 +92,8 @@ on:
       minio_key_id:
         required: true
       minio_secret_key_id:
+        required: true
+      provision_infra_pwd:
         required: true
 
 env:
@@ -108,8 +108,8 @@ env:
   MID_REGISTRY: registry.cloud.mov.ai
   USERSPACE_FOLDER_PATH: userspace
   REMOTE_WORKSPACE_PATH: workspace
-  PROVISION_INFRA_REPO: "devops-tf-proxmox-fleet"
-  PROVISION_INFRA_VERSION: "0.1.0-7"
+  PROVISION_INFRA_REPO: "devops-tf-proxmox-bpg"
+  PROVISION_INFRA_VERSION: "2.0.0-2"
   # slack channel movai-projects
   SLACK_CHANNEL: ${{ inputs.overwrite_slack_channel }}
   # development slack channel
@@ -1233,6 +1233,21 @@ jobs:
           name: robot_jsons_noetic
           path: .
 
+      - name: Setup infra environment configs
+        id: infra_env_configs_setup
+        shell: bash
+        run: |
+          env_configs_dir=infra_env_configs
+          env_configs_version=0.0.1-3
+          env_configs_repo_name=devops-tf-env-conf
+
+          rm -rf $env_configs_dir
+          . .ci-venv/bin/activate
+          integration-pipeline fetch_by_tag --repo $env_configs_repo_name --version $env_configs_version --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $env_configs_dir
+          ls -la $env_configs_dir
+          echo "target_dir=${env_configs_dir}" >> $GITHUB_OUTPUT
+          deactivate
+
       - name: Setup terraform proxmox provisioner
         if: ${{ inputs.with_simulation_tests }}
         id: provision_infra_setup
@@ -1241,8 +1256,8 @@ jobs:
           provision_infra_dir=provision_scripts
           provision_infra_version=${{ env.PROVISION_INFRA_VERSION }}
           provision_infra_repo_name=${{ env.PROVISION_INFRA_REPO }}
-          rm -rf $provision_infra_dir
 
+          rm -rf $provision_infra_dir
           . .ci-venv/bin/activate
           integration-pipeline fetch_by_tag --repo $provision_infra_repo_name --version $provision_infra_version --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --target_dir $provision_infra_dir
           deactivate
@@ -1267,39 +1282,35 @@ jobs:
           echo "simul_prefix=${local_manager_prefix}" | tee >> $GITHUB_OUTPUT
           echo "tfstate_name=${tf_state}" | tee >> $GITHUB_OUTPUT
 
+
       - name: Provision remote vms (Proxmox)
-        if: ${{ inputs.with_simulation_tests }}
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
         shell: bash
         run: |
-          terraform init -backend-config="key=${{ steps.infra_names.outputs.tfstate_name }}.tfstate"
-          terraform plan
-          terraform apply -auto-approve
+          multiply_node=$(printf '"marvin",%.0s' {1..1})
+          node_list_str=${multiply_node::-1}
+
+          var_file_arg='-var-file=../${{ steps.infra_env_configs_setup.outputs.target_dir }}/marvin/${{ inputs.cluster }}_simul_bpg.tfvars'
+
+          echo "proxmox_host_list=[$node_list_str]">>input.tfvars
+          echo "fleet_peer_nr=0">>input.tfvars
+          echo 'fleet_password="${{ secrets.provision_infra_pwd }}"'>>input.tfvars
+          echo 'fleet_manager_name="${{ steps.infra_names.outputs.simul_prefix }}"'>>input.tfvars
+          echo 'ip_list=["dhcp"]'>>input.tfvars
+          echo 'tags=["ip-simul-ci"]'>>input.tfvars
+          echo 'pool="IP-Temp-VMs"'>>input.tfvars
+          echo 'proxmox_ve_username="${{ secrets.proxmox_ve_username }}"'>>input.tfvars
+          echo 'proxmox_ve_password="${{ secrets.proxmox_ve_password }}"'>>input.tfvars
+          echo "\n">>input
+
+          echo "File args: $var_file_arg"
+          echo "Input File args: $(cat input.tfvars)"
+          terraform init -backend-config="key=${{ inputs.cluster }}-ci-simul--${{ steps.infra_names.outputs.manager_prefix }}.tfstate"
+          terraform apply -auto-approve $var_file_arg -var-file=input.tfvars
+          terraform refresh $var_file_arg -var-file=input.tfvars
 
           echo "${{ secrets.ssh_priv_key }}" > ~/.ssh/ci_priv_key.pem
           sudo chmod 600 ~/.ssh/ci_priv_key.pem
-
-        env:
-          TF_VAR_number_agents: 0
-          TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
-          TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
-          TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
-          TF_VAR_provision_ssh_pem: ${{ secrets.ssh_priv_key }}
-          TF_VAR_ip_list: '["dhcp"]'
-          TF_VAR_storage: "local-lvm"
-          TF_VAR_proxmox_host_list: '["${{ inputs.cluster }}"]'
-          TF_VAR_vm_gateway: "10.10.1.254"
-          TF_VAR_ip_mask: 23
-          TF_VAR_bios: "ovmf"
-          TF_VAR_pool: "IP-Temp-VMs"
-          TF_VAR_tags: "ip-simul-ci"
-          TF_VAR_fleet_hosts_user: "devops"
-          TF_VAR_template_name: "u22dci-gpu-3"
-          TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
-          TF_VAR_fleet_manager_memory: 51200
-          TF_VAR_fleet_manager_cores: 14
-          TF_VAR_fleet_manager_disk_size: "110G"
-          TF_VAR_fleet_manager_balloon: 0
 
       - name: Gather Terraform outputs
         if: ${{ inputs.with_simulation_tests }}
@@ -1503,7 +1514,8 @@ jobs:
           integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key services_version --output_file movai_service_version
           integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key quickstart_version --output_file quickstart_version
 
-          export USERSPACE_FOLDER_PATH="$(pwd)/userspace"
+          export USERSPACE_FOLDER_PATH="/opt/userspace"
+          sudo mkdir -p $USERSPACE_FOLDER_PATH/.git;sudo chown 1000:1000 $USERSPACE_FOLDER_PATH/ -Rf
           export PUBLIC_IP=$(hostname -I | awk '{print $1}')
           export SIMULATION_ID="CI"
           rm -rf userspace
@@ -1707,26 +1719,23 @@ jobs:
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
         if: ${{ inputs.with_simulation_tests && inputs.debug_simulation_tests_keep_alive == false && always() }}
         shell: bash
-        run: terraform destroy -auto-approve
-        env:
-          TF_VAR_number_agents: 0
-          TF_VAR_proxmox_api_url: ${{ secrets.proxmox_api_url }}
-          TF_VAR_proxmox_api_token_id: ${{ secrets.proxmox_api_token_id }}
-          TF_VAR_proxmox_api_token_secret: ${{ secrets.proxmox_api_token_secret }}
-          TF_VAR_provision_ssh_pem: ${{ secrets.ssh_priv_key }}
-          TF_VAR_ip_list: '["dhcp"]'
-          TF_VAR_proxmox_host_list: '["${{ inputs.cluster }}"]'
-          TF_VAR_vm_gateway: "10.10.1.254"
-          TF_VAR_ip_mask: 23
-          TF_VAR_bios: "ovmf"
-          TF_VAR_pool: "IP-Temp-VMs"
-          TF_VAR_tags: "ip-simul-ci"
-          TF_VAR_fleet_hosts_user: "devops"
-          TF_VAR_template_name: "u22dci-gpu-3"
-          TF_VAR_fleet_manager_name: ${{ steps.infra_names.outputs.simul_prefix }}
-          TF_VAR_fleet_manager_memory: 30000
-          TF_VAR_fleet_manager_cores: 10
-          TF_VAR_fleet_manager_disk_size: "110G"
+        run: |
+          attempts=3
+          count=0
+          while [ $count -lt $attempts ]; do
+            var_file_arg='-var-file=../${{ steps.infra_env_configs_setup.outputs.target_dir }}/marvin/${{ inputs.cluster }}_simul_bpg.tfvars'
+            terraform destroy -auto-approve $var_file_arg -var-file=input.tfvars
+            exit_status=$?
+            if [ $exit_status -eq 0 ]; then
+              break
+            elif [ $exit_status -eq 1 ]; then
+              ((count++))
+              echo "Retrying Terraform destroy (attempt $count)..."
+            else
+                  echo "Terraform destroy failed with exit status ${exit_status:-unknown}. Exiting..."
+                  exit ${exit_status:-1}
+            fi
+          done
 
       - name: Job Summary Success
         shell: bash
