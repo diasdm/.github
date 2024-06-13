@@ -1305,7 +1305,7 @@ jobs:
 
           echo "File args: $var_file_arg"
           echo "Input File args: $(cat input.tfvars)"
-          terraform init -backend-config="key=${{ inputs.cluster }}-ci-simul--${{ steps.infra_names.outputs.manager_prefix }}.tfstate"
+          terraform init -backend-config="key=${{ inputs.cluster }}-ci-simul-${{ steps.infra_names.outputs.simul_prefix }}.tfstate"
           terraform apply -auto-approve $var_file_arg -var-file=input.tfvars
           terraform refresh $var_file_arg -var-file=input.tfvars
 
