@@ -1289,7 +1289,7 @@ jobs:
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
         shell: bash
         run: |
-          multiply_node=$(printf '"marvin",%.0s' {1..1})
+          multiply_node=$(printf '"${{ inputs.cluster }}",%.0s' {1..1})
           node_list_str=${multiply_node::-1}
 
           var_file_arg='-var-file=../${{ steps.infra_env_configs_setup.outputs.target_dir }}/marvin/${{ inputs.cluster }}_simul_bpg.tfvars'
