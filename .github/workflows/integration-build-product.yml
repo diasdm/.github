@@ -1286,6 +1286,7 @@ jobs:
 
 
       - name: Provision remote vms (Proxmox)
+        if: ${{ inputs.with_simulation_tests }}
         working-directory: ${{ steps.provision_infra_setup.outputs.target_dir }}
         shell: bash
         run: |
