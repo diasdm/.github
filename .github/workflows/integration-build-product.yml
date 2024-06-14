@@ -1240,7 +1240,7 @@ jobs:
         shell: bash
         run: |
           env_configs_dir=infra_env_configs
-          env_configs_version=0.0.1-7
+          env_configs_version=0.1.0-1
           env_configs_repo_name=devops-tf-env-conf
 
           rm -rf $env_configs_dir
@@ -1688,6 +1688,9 @@ jobs:
         shell: bash
         id: minio_publish
         run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
           URI_OBJ_PATH=ci-artifacts/${{ github.repository }}/$(date '+%Y_%m_%d')/${{ github.run_id}}/${{ github.job }}/attempts/${{ github.run_attempt }}
           aws \
           --endpoint-url ${{ env.MINIO_S3_URL }} \
