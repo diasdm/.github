@@ -81,7 +81,7 @@ jobs:
       - uses: docker://chinthakagodawita/autoupdate-action:v1
         continue-on-error: true
         env:
-          GITHUB_TOKEN: '${{ secrets.auto_commit_pwd }}'
+          GITHUB_TOKEN: '${{ secrets.auto_commit_password }}'
           MERGE_MSG: "Branch was auto-updated."
 
   StaticAnalysis:
