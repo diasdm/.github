@@ -74,21 +74,21 @@ jobs:
     - name: Prepare Python env
       run: |
         python3 -m venv .venv
-        source .venv/bin/activate
+        . .venv/bin/activate
         python3 -m pip install pip --upgrade
         python3 -m pip install -r build-requirements.txt
         deactivate
 
     - name: Install python package
       run: |
-        source .venv/bin/activate
+        . .venv/bin/activate
         python3 -m pip install -e .
         deactivate
 
     - name: Run Black
       if: ${{ inputs.run_black == 'true' }}
       run: |
-        source .venv/bin/activate
+        . .venv/bin/activate
         python3 -m black \
           --line-length 100 \
           --diff \
@@ -99,7 +99,7 @@ jobs:
     - name: Python Linters
       # run linters isolated so no issues are masked from SonarCloud
       run: |
-        source .venv/bin/activate
+        . .venv/bin/activate
         python3 -m flake8 \
           --isolated \
           --exclude dist,.*\.egg-info,.git,__pycache__,.tox,venv \
@@ -128,7 +128,7 @@ jobs:
             tox
         else
             # run tests
-            source .venv/bin/activate
+            . .venv/bin/activate
             python3 -m pytest tests/
             deactivate
         fi
@@ -168,7 +168,7 @@ jobs:
     - name: Raise version
       if: ${{ inputs.deploy == 'true' }}
       run: |
-        source .venv/bin/activate
+        . .venv/bin/activate
         bump2version build setup.py --no-tag --no-commit
         deactivate
 
@@ -227,7 +227,7 @@ jobs:
 
     - name: build
       run: |
-        source .venv/bin/activate
+        . .venv/bin/activate
         python3 -m build
         deactivate
 
