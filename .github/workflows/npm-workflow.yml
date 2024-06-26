@@ -10,10 +10,16 @@ on:
         required: false
         type: string
         default: 'true'
+      use_nvmrc:
+        required: false
+        type: string
+        default: 'false'
+        description: 'Use .nvmrc file to determine node version'
       npm_version:
         required: false
         type: string
         default: '>=16.18.0'
+        description: 'Node version to use'
       legacy:
         required: false
         type: boolean
@@ -22,6 +28,11 @@ on:
         required: false
         type: string
         default: "npm"
+      pnpm_version:
+        required: false
+        type: string
+        default: "9.4.0"
+        description: 'pnpm version to use'
 
     secrets:
       auto_commit_user:
@@ -43,7 +54,6 @@ on:
 
 jobs:
   Build:
-
     runs-on: ubuntu-20.04
     container:
       image: registry.aws.cloud.mov.ai/qa/npm-buildserver:v1.0.0
@@ -54,7 +64,6 @@ jobs:
     env:
       NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
 
-
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -64,22 +73,27 @@ jobs:
         submodules: recursive
         token: ${{ secrets.npm_token }}
 
-    - name: Setup Github as proxy Registry
+    - name: Install node and setup Github as proxy Registry (use npm_version)
       uses: actions/setup-node@v4
+      if: ${{ inputs.use_nvmrc == 'false' }}
       with:
         node-version: '${{ inputs.npm_version }}'
         registry-url: 'https://npm.pkg.github.com/mov-ai'
-    - name: Install pnpm
+
+    - name: Install node and setup Github as proxy Registry (use .nvmrc)
+      uses: actions/setup-node@v4
+      if: ${{ inputs.use_nvmrc == 'true' }}
+      with:
+        node-version-file: '.nvmrc'
+        registry-url: 'https://npm.pkg.github.com/mov-ai'
+
+    - name: Install pnpm and setup .npmrc
       if: ${{ inputs.pm == 'pnpm' }}
       run: |
-        npm install -g pnpm
-
-    - name: Setup .npmrc
-      run: |
+        npm install -g pnpm@${{ inputs.pnpm_version }}
         echo "//npm.pkg.github.com/:_authToken=${{ secrets.npm_token }}" > .npmrc
       env:
         npm_token: ${{ secrets.npm_token }}
-
 
     - name: Raise App version
       run: |
@@ -169,16 +183,24 @@ jobs:
         submodules: recursive
         token: ${{ secrets.npm_token }}
 
-    - name: Setup Github as proxy Registry
+    - name: Install node and setup Github as proxy Registry (use npm_version)
       uses: actions/setup-node@v4
+      if: ${{ inputs.use_nvmrc == 'false' }}
       with:
         node-version: '${{ inputs.npm_version }}'
         registry-url: 'https://npm.pkg.github.com/mov-ai'
 
-    - name: Setup .npmrc and install pnpm
+    - name: Install node and setup Github as proxy Registry (use .nvmrc)
+      uses: actions/setup-node@v4
+      if: ${{ inputs.use_nvmrc == 'true' }}
+      with:
+        node-version-file: '.nvmrc'
+        registry-url: 'https://npm.pkg.github.com/mov-ai'
+
+    - name: Install pnpm and setup .npmrc
       if: ${{ inputs.pm == 'pnpm' }}
       run: |
-        npm install -g pnpm
+        npm install -g pnpm@${{ inputs.pnpm_version }}
         echo "//npm.pkg.github.com/:_authToken=${{ secrets.npm_token }}" > .npmrc
       env:
         npm_token: ${{ secrets.npm_token }}
