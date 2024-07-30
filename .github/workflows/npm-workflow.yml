@@ -144,6 +144,7 @@ jobs:
           -Dsonar.scm.provider=git
           -Dsonar.qualitygate.wait=true
           -Dsonar.qualitygate.timeout=300
+          -Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info
 
     - name: Link to SonarCloud dashboard
       shell: bash
