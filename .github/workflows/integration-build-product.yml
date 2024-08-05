@@ -197,7 +197,12 @@ jobs:
         run: |
           git config --global --add safe.directory $(pwd)
           git fetch
-          git checkout origin/${GITHUB_REF#refs/heads/} -- product.version
+          if [ "${{ inputs.is_nightly_run }}" == "true" ] ; then
+            BRANCH_NAME=${{inputs.nightly_run_branch}}
+          else
+            BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          fi
+          git checkout origin/${BRANCH_NAME} -- product.version
           cat product.version
           rm -rf simulator_artifacts ci_artifacts
 
@@ -225,7 +230,7 @@ jobs:
           integration-pipeline generate_meta_simulator_artifacts \
                 --manifest_platform_base_key product_dependencies \
                 --product_name ${{ inputs.product_name }} \
-                --branch ${GITHUB_REF#refs/heads/} \
+                --branch ${BRANCH_NAME} \
                 --update_simulator \
                 --docker_registry $REGISTRY
 
@@ -1271,7 +1276,12 @@ jobs:
         id: infra_names
         shell: bash
         run: |
-          branch=$(echo ${GITHUB_REF#refs/heads/} | sed "s;\.;-;g" )
+          if [ "${{ inputs.is_nightly_run }}" == "true" ] ; then
+            BRANCH_NAME=${{inputs.nightly_run_branch}}
+          else
+            BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          fi
+          branch=$(echo ${BRANCH_NAME} | sed "s;\.;-;g" )
 
           run_type="ci"
           if [ "${{ inputs.is_nightly_run }}" == "true" ] ; then
