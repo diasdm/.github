@@ -163,11 +163,6 @@ jobs:
 
           execution_status=$?
           exit $execution_status
-          rm movai_service_version
-          '
-          echo "movai_user=ci" >> $GITHUB_OUTPUT
-          echo "movai_pwd=4Iva6UHAQq9DGITj" >> $GITHUB_OUTPUT
-
 
       - name: Remote - Save docker container logs
         if: ${{ always() }}
