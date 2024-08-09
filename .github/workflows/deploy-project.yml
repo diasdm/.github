@@ -170,6 +170,13 @@ jobs:
           movai-cli user ${{ inputs.robot_name }} "$MOVAI_USER" "$MOVAI_PWD"
           EOF
 
+      - name: Remote - Forced Cleanup workspace
+        if: failure()
+        shell: bash
+        run: |
+          ssh ${{ steps.conn.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
+            echo -e "${{ secrets.host_pwd }}" | sudo rm -rf ${{ env.REMOTE_WORKSPACE_PATH }}
+          '
       - name: Remote - Save docker container logs
         if: false
         shell: bash
