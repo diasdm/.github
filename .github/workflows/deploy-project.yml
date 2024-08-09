@@ -151,18 +151,15 @@ jobs:
           service_version=$(cat "/tmp/components.json"  | sed "s/'/\"/g" | jq .[0].version)
 
           export USERSPACE_FOLDER_PATH=${{ inputs.userspace_folder_path }}
-          #sudo mkdir -p $USERSPACE_FOLDER_PATH/.git;sudo chown 1000:1000 $USERSPACE_FOLDER_PATH/ -Rf
+          sudo mkdir -p ${{ inputs.userspace_folder_path }}/.git;sudo chown 1000:1000 ${{ inputs.userspace_folder_path }}/ -Rf
           export PUBLIC_IP=$(hostname -I | awk '{print $1}')
 
           wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat /tmp/quickstart_version.txt).bash
-          chmod +x ./QuickStart_$(cat quickstart_version).bash
-          ./QuickStart_$(cat quickstart_version).bash --apps $service_version $CONFIG_FILE_NAME
+          chmod +x ./QuickStart_$(cat /tmp/quickstart_version.txt).bash
+          ./QuickStart_$(cat /tmp/quickstart_version.txt).bash --apps $service_version $CONFIG_FILE_NAME
           MOVAI_USER="movai"
           MOVAI_PWD="movai123"
           movai-cli user ${{ inputs.robot_name }} "$MOVAI_USER" "$MOVAI_PWD"
-
-          execution_status=$?
-          exit $execution_status
 
       - name: Remote - Save docker container logs
         if: ${{ always() }}
