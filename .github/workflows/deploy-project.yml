@@ -17,6 +17,9 @@ on:
       userspace_folder_path:
         required: true
         type: string
+      environment:
+        required: true
+        type: string
 
     secrets:
       auto_commit_pwd:
@@ -54,6 +57,7 @@ env:
 
 jobs:
   Deploy-to-Robot:
+    environment: ${{ inputs.environment }}
     runs-on: pt-agent
     steps:
       - uses: rtCamp/action-cleanup@master
