@@ -164,7 +164,7 @@ jobs:
           wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat /tmp/quickstart_version.txt).bash
           chmod +x ./QuickStart_$(cat /tmp/quickstart_version.txt).bash
           echo "./QuickStart_$(cat /tmp/quickstart_version.txt).bash --apps $service_version $CONFIG_FILE_NAME"
-          echo -e "${{ secrets.host_pwd }}" | sudo ./QuickStart_$(cat /tmp/quickstart_version.txt).bash --apps $service_version $CONFIG_FILE_NAME
+          echo -e "${{ secrets.host_pwd }}" | sudo -S ./QuickStart_$(cat /tmp/quickstart_version.txt).bash --apps $service_version $CONFIG_FILE_NAME
           MOVAI_USER="movai"
           MOVAI_PWD="movai123"
           movai-cli user ${{ inputs.robot_name }} "$MOVAI_USER" "$MOVAI_PWD"
