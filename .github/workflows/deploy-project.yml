@@ -177,7 +177,7 @@ jobs:
           EOF
 
       - name: Remote - Forced Cleanup workspace
-        if: failure()
+        if: always()
         shell: bash
         run: |
           ssh ${{ steps.conn.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
