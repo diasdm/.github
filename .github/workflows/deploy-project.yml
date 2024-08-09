@@ -114,6 +114,13 @@ jobs:
           ssh-keygen -f ~/.ssh/known_hosts -R ${{ inputs.host_ip }} || true
           ssh-keyscan -H ${{ inputs.host_ip }} >> ~/.ssh/known_hosts || true
 
+      - name: Remote - Forced Cleanup workspace
+        continue-on-error: true
+        shell: bash
+        run: |
+          ssh ${{ steps.conn.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
+            echo -e "${{ secrets.host_pwd }}" | sudo -S rm -rf ${{ env.REMOTE_WORKSPACE_PATH }}
+          '
       - name: Remote - Agent info
         run: |
           ssh ${{ steps.conn.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
