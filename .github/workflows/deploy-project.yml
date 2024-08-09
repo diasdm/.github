@@ -151,6 +151,7 @@ jobs:
 
           for robot in $(movai-cli list); do
             movai-cli stop $robot
+            movai-cli set $robot robot.auto_start false
           done
 
           mkdir -p artifacts
@@ -172,6 +173,7 @@ jobs:
           MOVAI_USER="movai"
           MOVAI_PWD="movai123"
           movai-cli user ${{ inputs.robot_name }} "$MOVAI_USER" "$MOVAI_PWD"
+          movai-cli set ${{ inputs.robot_name }} robot.auto_start true
           EOF
 
       - name: Remote - Forced Cleanup workspace
