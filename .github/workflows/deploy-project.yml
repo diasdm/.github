@@ -114,7 +114,12 @@ jobs:
             set -e
             ip=$(hostname -I | cut -d " " -f1)
             echo $ip
-            mkdir -p ./${{ env.REMOTE_WORKSPACE_PATH }}
+            mkdir -p ./${{ env.REMOTE_WORKSPACE_PATH }} ~/.pip/
+            echo "[global]" > ~/.pip/pip.conf
+            echo "index-url = https://artifacts.cloud.mov.ai/repository/pypi-experimental/simple" >> ~/.pip/pip.conf
+            echo "extra-index-url = https://pypi.org/simple" >> ~/.pip/pip.conf
+            echo "trusted-host = artifacts.cloud.mov.ai" >> ~/.pip/pip.conf
+            echo "               pypi.org" >> ~/.pip/pip.conf
           '
 
       - name: Remote - Install CI Scripts
