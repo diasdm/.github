@@ -83,10 +83,8 @@ jobs:
           echo "name=$key" >> $GITHUB_OUTPUT
           
       - name: Download product artifacts from release
-        id: infra_env_configs_setup
         shell: bash
         run: |
-          rm -rf $env_configs_dir
           . .ci-venv/bin/activate
           
           REPO_NAME=${GITHUB_REPOSITORY#*/}
@@ -116,6 +114,7 @@ jobs:
             set -e
             ip=$(hostname -I | cut -d " " -f1)
             echo $ip
+            mkdir -p ./${{ env.REMOTE_WORKSPACE_PATH }}
           '
 
       - name: Remote - Install CI Scripts
