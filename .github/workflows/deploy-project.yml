@@ -133,7 +133,7 @@ jobs:
         id: install
         shell: bash
         run: |
-          ssh ${{ steps.conn.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '#!/bin/bash
+          ssh ${{ steps.conn.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no << 'EOF'
           set -e
 
           cd ${{ env.REMOTE_WORKSPACE_PATH }}
@@ -148,7 +148,7 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_dependencies.platform_components --output_file /tmp/components.json
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_dependencies.installion.quickstart.version --output_file /tmp/quickstart_version.txt
-          service_version=$(cat "/tmp/components.json"  |sed  '\''s/'\''"'\''/"/g'\'' | jq .[0].version | sed '\''s/"//g'\'')
+          service_version=$(cat "/tmp/components.json" | sed "s/'/\"/g" | jq .[0].version | sed "s/\"//g")
           echo $service_version
           export USERSPACE_FOLDER_PATH=${{ inputs.userspace_folder_path }}
           sudo mkdir -p ${{ inputs.userspace_folder_path }}/.git;sudo chown 1000:1000 ${{ inputs.userspace_folder_path }}/ -Rf
@@ -161,7 +161,7 @@ jobs:
           MOVAI_USER="movai"
           MOVAI_PWD="movai123"
           movai-cli user ${{ inputs.robot_name }} "$MOVAI_USER" "$MOVAI_PWD"
-          '
+          EOF
 
       - name: Remote - Save docker container logs
         if: false
