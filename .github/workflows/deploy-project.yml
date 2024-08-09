@@ -159,9 +159,9 @@ jobs:
           #mkdir -p ${{ inputs.userspace_folder_path }}/.git;sudo chown 1000:1000 ${{ inputs.userspace_folder_path }}/ -Rf
           export PUBLIC_IP=$(hostname -I | awk '{print $1}')
 
-          echo "wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat /tmp/quickstart_version.txt).bash"
           wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat /tmp/quickstart_version.txt).bash
           chmod +x ./QuickStart_$(cat /tmp/quickstart_version.txt).bash
+          echo "./QuickStart_$(cat /tmp/quickstart_version.txt).bash --apps $service_version $CONFIG_FILE_NAME"
           ./QuickStart_$(cat /tmp/quickstart_version.txt).bash --apps $service_version $CONFIG_FILE_NAME
           MOVAI_USER="movai"
           MOVAI_PWD="movai123"
