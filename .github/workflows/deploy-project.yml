@@ -149,7 +149,7 @@ jobs:
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_dependencies.platform_components --output_file /tmp/components.json
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_dependencies.installion.quickstart.version --output_file /tmp/quickstart_version.txt
           service_version=$(cat "/tmp/components.json"  |sed  '\''s/'\''"'\''/"/g'\'' | jq .[0].version | sed '\''s/"//g'\'')
-          cat $service_version
+          echo $service_version
           export USERSPACE_FOLDER_PATH=${{ inputs.userspace_folder_path }}
           sudo mkdir -p ${{ inputs.userspace_folder_path }}/.git;sudo chown 1000:1000 ${{ inputs.userspace_folder_path }}/ -Rf
           export PUBLIC_IP=$(hostname -I | awk '{print $1}')
