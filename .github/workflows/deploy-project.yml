@@ -158,6 +158,9 @@ jobs:
 
           for robot in $(movai-cli list); do
             movai-cli stop $robot
+          done
+          sleep 3
+          for robot in $(movai-cli list); do
             movai-cli set $robot robot.auto_start false
           done
 
