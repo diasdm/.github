@@ -175,7 +175,7 @@ jobs:
           jq '.robot."auto-start" = "true"' $CONFIG_FILE_NAME
 
           export USERSPACE_FOLDER_PATH=${{ inputs.userspace_folder_path }}
-          mkdir -p ${{ inputs.userspace_folder_path }}/.git#;sudo chown 1000:1000 ${{ inputs.userspace_folder_path }}/ -Rf
+          mkdir -p ${{ inputs.userspace_folder_path }}/.git
           export PUBLIC_IP=$(hostname -I | awk '{print $1}')
 
           wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat /tmp/quickstart_version.txt).bash
