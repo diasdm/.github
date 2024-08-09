@@ -163,7 +163,7 @@ jobs:
           '
 
       - name: Remote - Save docker container logs
-        if: ${{ always() }}
+        if: false
         shell: bash
         run: |
           ssh ${{ steps.conn.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
@@ -186,7 +186,7 @@ jobs:
           '
 
       - name: Remote - Stash Install artifacts
-        if: ${{ always() }}
+        if: false
         shell: bash
         run: |
           ssh ${{ steps.conn.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
@@ -199,18 +199,3 @@ jobs:
             cp -r ./*.log ./artifacts || true
           '
           scp -r -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no ${{ steps.conn.outputs.ssh_connect_string }}:${{ env.REMOTE_WORKSPACE_PATH }}/artifacts .
-
-
-
-      - name: Job Summary Success
-        shell: bash
-        run: |
-          summary_message=":white_check_mark: Successfully passed\n Artifacts url: ${{ steps.minio_publish.outputs.publish_url }}"
-          echo -e "## ${{ github.job }} Summary\n${summary_message}" >> $GITHUB_STEP_SUMMARY
-
-      - name: Job Summary Failure
-        if: failure()
-        shell: bash
-        run: |
-          summary_message=":x: Failed \n Artifacts url: ${{ steps.minio_publish.outputs.publish_url }}"
-          echo -e "## ${{ github.job }} Summary\n${summary_message}" >> $GITHUB_STEP_SUMMARY
