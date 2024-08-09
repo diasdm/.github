@@ -185,7 +185,6 @@ jobs:
           MOVAI_USER="movai"
           MOVAI_PWD="movai123"
           movai-cli user ${{ inputs.robot_name }} "$MOVAI_USER" "$MOVAI_PWD"
-          movai-cli set ${{ inputs.robot_name }} robot.auto_start true
           EOF
 
       - name: Remote - Forced Cleanup workspace
