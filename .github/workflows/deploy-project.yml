@@ -19,10 +19,6 @@ on:
         type: string
 
     secrets:
-      registry_user:
-        required: true
-      registry_password:
-        required: true
       auto_commit_pwd:
         required: true
       slack_token_id:
