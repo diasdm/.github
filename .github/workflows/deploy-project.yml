@@ -89,8 +89,10 @@ jobs:
           
           REPO_NAME=${GITHUB_REPOSITORY#*/}
           rm product-manifest.yaml
-          integration-pipeline fetch_by_tag --repo $REPO_NAME --version ${{ inputs.deploy_version }} --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --all_assets --target_dir ./
+          integration-pipeline fetch_by_tag --repo $REPO_NAME --version ${{ inputs.deploy_version }} --gh_api_user $GITHUB_API_USR --gh_api_pwd ${{ secrets.auto_commit_pwd }} --all_assets --target_dir ./release_artifacts
           ls -la
+          ls -la release_artifacts
+          cp release_artifacts/* ./
           deactivate
 
 
