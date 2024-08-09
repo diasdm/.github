@@ -159,7 +159,9 @@ jobs:
           for robot in $(movai-cli list); do
             movai-cli stop $robot
           done
-          sleep 3
+          echo "Waiting for robots to stop so that we can set auto_start to false"
+          sleep 15
+          echo "Setting auto_start to false for all robots. Only the deployed robot will have auto_start set to true!"
           for robot in $(movai-cli list); do
             movai-cli set $robot robot.auto_start false
           done
