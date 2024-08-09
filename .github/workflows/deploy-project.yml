@@ -160,6 +160,7 @@ jobs:
           MOVAI_USER="movai"
           MOVAI_PWD="movai123"
           movai-cli user ${{ inputs.robot_name }} "$MOVAI_USER" "$MOVAI_PWD"
+          '
 
       - name: Remote - Save docker container logs
         if: ${{ always() }}
