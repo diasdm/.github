@@ -196,7 +196,7 @@ jobs:
             rm -rf artifacts
 
             mkdir -p artifacts
-            cp -r "./*.log ./artifacts || true
+            cp -r ./*.log ./artifacts || true
           '
           scp -r -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no ${{ steps.conn.outputs.ssh_connect_string }}:${{ env.REMOTE_WORKSPACE_PATH }}/artifacts .
 
