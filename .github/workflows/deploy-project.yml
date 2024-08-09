@@ -175,7 +175,7 @@ jobs:
         shell: bash
         run: |
           ssh ${{ steps.conn.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
-            echo -e "${{ secrets.host_pwd }}" | sudo rm -rf ${{ env.REMOTE_WORKSPACE_PATH }}
+            echo -e "${{ secrets.host_pwd }}" | sudo -S rm -rf ${{ env.REMOTE_WORKSPACE_PATH }}
           '
       - name: Remote - Save docker container logs
         if: false
