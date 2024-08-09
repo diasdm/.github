@@ -27,7 +27,7 @@ on:
         required: true
 
 env:
-  CI_INTEGRATION_SCRIPTS_VERSION: "2.2.0.27"
+  CI_INTEGRATION_SCRIPTS_VERSION: "3.0.0.3"
   MOBTEST_VERSION: "0.0.4.3"
   PACKAGE_DEPLOYER_VERSION: "1.0.0.26"
   GITHUB_API_USR: "OttoMation-Movai"
@@ -144,12 +144,12 @@ jobs:
 
           mkdir -p artifacts
           cp *.json artifacts/
-          CONFIG_FILE_NAME="spawner-${{ steps.product_data.outputs.name }}-noetic.json" 
+          CONFIG_FILE_NAME="${{ steps.product_data.outputs.name }}-noetic.json" 
           export PATH="$HOME/.local/bin:$PATH"
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_dependencies.platform_components --output_file /tmp/components.json
           integration-pipeline get_yml_value --file product-manifest.yaml --key product_dependencies.installion.quickstart.version --output_file /tmp/quickstart_version.txt
           service_version=$(cat "/tmp/components.json" | sed "s/'/\"/g" | jq .[0].version | sed "s/\"//g")
-          echo $service_version
+          integration-pipeline set_robot_name --file $CONFIG_FILE_NAME --robot_name ${{ inputs.robot_name }}
           export USERSPACE_FOLDER_PATH=${{ inputs.userspace_folder_path }}
           sudo mkdir -p ${{ inputs.userspace_folder_path }}/.git;sudo chown 1000:1000 ${{ inputs.userspace_folder_path }}/ -Rf
           export PUBLIC_IP=$(hostname -I | awk '{print $1}')
