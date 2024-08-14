@@ -231,8 +231,8 @@ jobs:
         if: always()
         id: pre_slack
         run: |
-          MESSAGE=":arrow_forward: New pre-version ${{ needs.Build.outputs.raised_version }}  of packer images available :sunny:\"
-          MESSAGE_ERR=":x: Build of pre-version ${{ needs.Build.outputs.raised_version }} is unstable :rain_cloud:\ Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          MESSAGE=":arrow_forward: New pre-version ${{ needs.Build.outputs.raised_version }} of packer images available :sunny:"
+          MESSAGE_ERR=":x: Build of pre-version ${{ needs.Build.outputs.raised_version }} is unstable :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
           echo "msg_error=${MESSAGE_ERR}" >> $GITHUB_OUTPUT
