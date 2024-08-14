@@ -203,29 +203,29 @@ jobs:
             exit 1
           fi
 
-      # - name: Deploy images to NFS server
-      #   run: |
+      - name: Deploy images to NFS server
+        run: |
 
-      #     nb_files=$(find $RUN_STAGING_DIR -name "*.img" | wc -l)
-      #     if [ $nb_files -eq 0 ]; then
-      #       echo "No images found to deploy"
-      #       exit 1
-      #     fi
+          nb_files=$(find $RUN_STAGING_DIR -name "*.img" | wc -l)
+          if [ $nb_files -eq 0 ]; then
+            echo "No images found to deploy"
+            exit 1
+          fi
 
-      #     sudo mkdir -p $PROXMOX_NFS_SERVER_PATH/
-      #     for file in $(find $RUN_STAGING_DIR -name "*.img"); do
-      #       basename=$(basename $file)
-      #       versioned_file="${{ needs.Build.outputs.raised_version }}-${basename%.*}.img"
+          sudo mkdir -p $PROXMOX_NFS_SERVER_PATH/
+          for file in $(find $RUN_STAGING_DIR -name "*.img"); do
+            basename=$(basename $file)
+            versioned_file="${{ needs.Build.outputs.raised_version }}-${basename%.*}.img"
 
-      #       if [ -f "$PROXMOX_NFS_SERVER_PATH/$versioned_file" ]; then
-      #         echo "ERROR: File $PROXMOX_NFS_SERVER_PATH/$versioned_file exists."
-      #         exit 1
-      #       else
-      #         echo "Copying $file to $PROXMOX_NFS_SERVER_PATH/$versioned_file"
-      #         sudo cp $file "$PROXMOX_NFS_SERVER_PATH/$versioned_file"
-      #       fi
-      #     done
-      #     echo "Images copied to NFS server to $PROXMOX_NFS_SERVER_URL"
+            if [ -f "$PROXMOX_NFS_SERVER_PATH/$versioned_file" ]; then
+              echo "ERROR: File $PROXMOX_NFS_SERVER_PATH/$versioned_file exists."
+              exit 1
+            else
+              echo "Copying $file to $PROXMOX_NFS_SERVER_PATH/$versioned_file"
+              sudo cp $file "$PROXMOX_NFS_SERVER_PATH/$versioned_file"
+            fi
+          done
+          echo "Images copied to NFS server to $PROXMOX_NFS_SERVER_URL"
 
       - name: Prepare slack variables
         if: always()
