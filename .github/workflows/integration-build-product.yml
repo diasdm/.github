@@ -56,6 +56,13 @@ on:
         required: false
         type: boolean
         default: false
+      pr_id:
+        required: false
+        type: string
+      pr_labels:
+        required: false
+        type: string
+        default: '[]'
 
 
     secrets:
@@ -149,6 +156,7 @@ jobs:
     outputs:
       slack_thread_id: ${{ fromJson(steps.send-message.outputs.slack-result).response.message.ts }}
       commit_hash: ${{ steps.Checkout.outputs.commit_hash }}
+      pr_prefix: ${{ steps.artifacts_prefix.outputs.pr_prefix }}
 
     steps:
       - name: Checkout
@@ -167,6 +175,15 @@ jobs:
           git config --global --add safe.directory $(pwd)
           git rev-parse HEAD > commit_hash
           echo "commit_hash=$(cat commit_hash)" >> $GITHUB_OUTPUT
+      
+      - name: Set PR prefix
+        id: artifacts_prefix
+        run: |
+          if [ -n "${{ inputs.pr_id }}" ]; then
+            echo "pr_prefix=pr${{ inputs.pr_id }}~" >> $GITHUB_OUTPUT
+          else
+            echo "pr_prefix=" >> $GITHUB_OUTPUT
+          fi
 
       - name: Job Summary Header
         shell: bash
@@ -195,14 +212,19 @@ jobs:
       - name: Bootstraping simulator metadata
         shell: bash
         run: |
+          if [ "${{ github.event_name }}" = "pull_request" ];
+          then
+            BRANCH_NAME=${{ github.head_ref }}
+          else
+            BRANCH_NAME=${{ github.ref_name }}
+          fi
+
+          # save branch name to output
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
           git config --global --add safe.directory $(pwd)
           git fetch
-          if [ "${{ inputs.is_nightly_run }}" == "true" ] ; then
-            BRANCH_NAME=${{inputs.nightly_run_branch}}
-          else
-            BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          fi
-          git checkout origin/${BRANCH_NAME} -- product.version
+          git checkout origin/$BRANCH_NAME -- product.version
           cat product.version
           rm -rf simulator_artifacts ci_artifacts
 
@@ -230,7 +252,7 @@ jobs:
           integration-pipeline generate_meta_simulator_artifacts \
                 --manifest_platform_base_key product_dependencies \
                 --product_name ${{ inputs.product_name }} \
-                --branch ${BRANCH_NAME} \
+                --branch $BRANCH_NAME \
                 --update_simulator \
                 --docker_registry $REGISTRY
 
@@ -242,7 +264,7 @@ jobs:
         if: ${{ inputs.with_simulation == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: sim_configs
+          name: ${{ steps.artifacts_prefix.outputs.pr_prefix }}sim_configs
           path: simulator_artifacts/*
           retention-days: 5
 
@@ -252,7 +274,29 @@ jobs:
           rm -rf simulator_artifacts ci_artifacts
           mkdir platform_configs
           source ci_scripts/bin/activate
-          integration-pipeline raise
+          current_version=$(cat product.version)
+          IFS='.-' read -r major minor patch build <<< "$current_version"
+          # Check if a PR triggered the workflow
+          if [ -n "${{ inputs.pr_id }}" ]; then
+            # raised version has sufix of PR number
+            raised_version="$major.$minor.$patch-$build~pr${{ inputs.pr_id }}"
+          elif [[ ",${{ inputs.pr_labels }}," == *"minor"* ]]; then
+            # raised version has new minor number
+            minor=$((minor + 1))
+            patch=0
+            build=0
+            raised_version="$major.$minor.$patch-$build"
+          elif [[ ",${{ inputs.pr_labels }}," == *"patch"* ]]; then
+            # raised version has new patch number
+            patch=$((patch + 1))
+            build=0
+            raised_version="$major.$minor.$patch-$build"
+          else
+            # raised version has new build number
+            build=$((build + 1))
+            raised_version="$major.$minor.$patch-$build"
+          fi
+          echo "$raised_versionDUMMY" > product.version
           cp product.version ./platform_configs/product.version
           cp product-manifest.yaml ./platform_configs/product-manifest.yaml
 
@@ -281,7 +325,7 @@ jobs:
       - name: Stash raised_meta
         uses: actions/upload-artifact@v4
         with:
-          name: raised_meta
+          name: ${{ steps.artifacts_prefix.outputs.pr_prefix }}raised_meta
           path: platform_configs/*
           retention-days: 5
 
@@ -339,7 +383,7 @@ jobs:
       - name: Stash manifest
         uses: actions/upload-artifact@v4
         with:
-          name: manifest
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}manifest
           path: product-manifest.yaml
           retention-days: 5
 
@@ -387,7 +431,7 @@ jobs:
         if: ${{ inputs.propagate_project == false }}
         uses: actions/upload-artifact@v4
         with:
-          name: dependency_version
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}dependency_version
           path: dependency_version
           retention-days: 10
 
@@ -449,7 +493,7 @@ jobs:
       - name: Stash robot_jsons_${{ matrix.distro }}
         uses: actions/upload-artifact@v4
         with:
-          name: robot_jsons_${{ matrix.distro }}
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}robot_jsons_${{ matrix.distro }}
           path: "*.json*"
           retention-days: 10
 
@@ -461,7 +505,7 @@ jobs:
           docker image prune --all -f
 
   Install-Robot:
-    needs: [Build-Spawner]
+    needs: [Validate-boostrap-configs, Build-Spawner]
     strategy:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
@@ -571,7 +615,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: install_logs
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}install_logs
           path: install_logs/*
           retention-days: 5
 
@@ -699,14 +743,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: project_metadata
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}project_metadata
           path: metadata_artifact/*
           retention-days: 3
 
       - name: Stash deploy_artifacts_noetic
         uses: actions/upload-artifact@v4
         with:
-          name: deploy_artifacts_noetic
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}deploy_artifacts_noetic
           path: artifacts/*
           retention-days: 5
 
@@ -913,7 +957,7 @@ jobs:
           fi
 
   Install-Simulator-Robot:
-    needs: [Build-Spawner, Build-Simulator]
+    needs: [Validate-boostrap-configs, Build-Spawner, Build-Simulator]
     strategy:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
@@ -1056,7 +1100,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: install_simulator_logs
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}install_simulator_logs
           path: install_logs/*
           retention-days: 5
 
@@ -1111,7 +1155,7 @@ jobs:
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: project_sim_metadata
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}project_sim_metadata
           path: metadata_artifact/*
           retention-days: 3
 
@@ -1164,7 +1208,7 @@ jobs:
         if: ${{ inputs.with_simulation == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: deploy_simulator_artifacts
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}deploy_simulator_artifacts
           path: simulator.image.artifact
           retention-days: 5
 
@@ -1182,7 +1226,7 @@ jobs:
           docker image prune --all -f
 
   Validation-Simulator-Tests:
-    needs: [Compute-timeout, Build-Spawner, Build-Simulator]
+    needs: [Validate-boostrap-configs, Compute-timeout, Build-Spawner, Build-Simulator]
     runs-on: ${{ needs.Build-Simulator.outputs.simulator_tests_agent_name }}
     timeout-minutes: ${{ fromJSON(needs.Compute-timeout.outputs.timeout) }}
     steps:
@@ -1611,7 +1655,7 @@ jobs:
         if: ${{ always() && inputs.with_simulation_tests && steps.simulation_tests.outputs.save_outputs == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: sim-outputs
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}sim-outputs
           path: test-output.json
           retention-days: 5
 
