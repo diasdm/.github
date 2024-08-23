@@ -367,7 +367,7 @@ jobs:
       - name: unstash raised_meta
         uses: actions/download-artifact@v4
         with:
-          name: raised_meta
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}raised_meta
           path: platform_configs
 
       - name: Generate product configs from manifest
@@ -531,19 +531,19 @@ jobs:
       - name: unstash raised_meta
         uses: actions/download-artifact@v4
         with:
-          name: raised_meta
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}raised_meta
           path: .
 
       - name: unstash manifest
         uses: actions/download-artifact@v4
         with:
-          name: manifest
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}manifest
           path: .
 
       - name: unstash robot_jsons_${{ matrix.distro }}
         uses: actions/download-artifact@v4
         with:
-          name: robot_jsons_${{ matrix.distro }}
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}robot_jsons_${{ matrix.distro }}
           path: .
 
       - name: Login to ${{ env.REGISTRY }} Registry
@@ -675,7 +675,7 @@ jobs:
         if: ${{ inputs.propagate_project == false }}
         uses: actions/download-artifact@v4
         with:
-          name: dependency_version
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}dependency_version
           path: dependency_version
 
       - name: Get project and solution version
@@ -811,14 +811,14 @@ jobs:
         if: ${{ inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v4
         with:
-          name: sim_configs
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}sim_configs
           path: simulator_artifacts
 
       - name: unstash manifest
         if: ${{ inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v4
         with:
-          name: manifest
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}manifest
           path: .
 
       - name: Prepare Skip variables
@@ -998,21 +998,21 @@ jobs:
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v4
         with:
-          name: raised_meta
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}raised_meta
           path: .
 
       - name: unstash manifest
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v4
         with:
-          name: manifest
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}manifest
           path: .
 
       - name: unstash robot_jsons_${{ matrix.distro }}
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v4
         with:
-          name: robot_jsons_${{ matrix.distro }}
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}robot_jsons_${{ matrix.distro }}
           path: .
 
       - name: Login to ${{ env.REGISTRY }} Registry
@@ -1260,28 +1260,28 @@ jobs:
         if: ${{ inputs.with_simulation_tests }}
         uses: actions/download-artifact@v4
         with:
-          name: raised_meta
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}raised_meta
           path: .
 
       - name: unstash manifest
         if: ${{ inputs.with_simulation_tests }}
         uses: actions/download-artifact@v4
         with:
-          name: manifest
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}manifest
           path: .
 
       - name: unstash sim_configs
         if: ${{ inputs.with_simulation_tests }}
         uses: actions/download-artifact@v4
         with:
-          name: sim_configs
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}sim_configs
           path: simulator_artifacts
 
       - name: unstash robot_jsons_noetic
         if: ${{ inputs.with_simulation_tests }}
         uses: actions/download-artifact@v4
         with:
-          name: robot_jsons_noetic
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}robot_jsons_noetic
           path: .
 
       - name: Setup infra environment configs
@@ -1811,7 +1811,7 @@ jobs:
           echo -e "## ${{ github.job }} Summary\n${summary_message}" >> $GITHUB_STEP_SUMMARY
 
   publish:
-    needs: [Install-Robot, Install-Simulator-Robot, Validation-Simulator-Tests]
+    needs: [Validate-boostrap-configs, Install-Robot, Install-Simulator-Robot, Validation-Simulator-Tests]
     runs-on: integration-pipeline
     container:
       image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.3
@@ -1836,42 +1836,42 @@ jobs:
         if: ${{ inputs.is_nightly_run == false }}
         uses: actions/download-artifact@v4
         with:
-          name: raised_meta
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}raised_meta
           path: platform_configs
 
       - name: unstash deploy_artifacts_noetic
         if: ${{ inputs.is_nightly_run == false }}
         uses: actions/download-artifact@v4
         with:
-          name: deploy_artifacts_noetic
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}deploy_artifacts_noetic
           path: artifacts
 
       - name: unstash manifest
         if: ${{ inputs.is_nightly_run == false }}
         uses: actions/download-artifact@v4
         with:
-          name: manifest
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}manifest
           path: .
 
       - name: unstash sim_configs
         if: ${{ inputs.with_simulation == 'true' && inputs.is_nightly_run == false }}
         uses: actions/download-artifact@v4
         with:
-          name: sim_configs
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}sim_configs
           path: simulator_artifacts
 
       - name: unstash project metadata
         if: ${{ inputs.is_nightly_run == false }}
         uses: actions/download-artifact@v4
         with:
-          name: project_metadata
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}project_metadata
           path: .
 
       - name: unstash deploy_simulator_artifacts
         if: ${{ inputs.with_simulation == 'true' && inputs.is_nightly_run == false }}
         uses: actions/download-artifact@v4
         with:
-          name: deploy_simulator_artifacts
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}deploy_simulator_artifacts
           path: .
 
       - name: Setup CI Scripts in .ci-venv
@@ -2114,7 +2114,7 @@ jobs:
       - name: unstash raised_meta
         uses: actions/download-artifact@v4
         with:
-          name: raised_meta
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}raised_meta
           path: platform_configs
 
       - name: Copy product configs
