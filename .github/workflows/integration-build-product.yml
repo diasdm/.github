@@ -24,6 +24,10 @@ on:
         required: false
         type: boolean
         default: false
+      is_pr_run:
+        required: false
+        type: boolean
+        default: false
       nightly_run_branch:
         required: false
         type: string
@@ -1821,62 +1825,62 @@ jobs:
         password: ${{secrets.registry_password}}
     steps:
       - uses: rtCamp/action-cleanup@master
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && inputs.is_pr_run == false }}
 
       - name: Checkout
         uses: actions/checkout@v4
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && inputs.is_pr_run == false }}
 
       - name: Agent info
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && inputs.is_pr_run == false }}
         run: |
           echo "public ip: $(curl ipinfo.io/ip)"
           echo "private ip: $(hostname -I | awk '{print $1}')"
 
       - name: unstash raised_meta
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && inputs.is_pr_run == false }}
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}raised_meta
           path: platform_configs
 
       - name: unstash deploy_artifacts_noetic
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && inputs.is_pr_run == false }}
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}deploy_artifacts_noetic
           path: artifacts
 
       - name: unstash manifest
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && inputs.is_pr_run == false }}
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}manifest
           path: .
 
       - name: unstash sim_configs
-        if: ${{ inputs.with_simulation == 'true' && inputs.is_nightly_run == false }}
+        if: ${{ inputs.with_simulation == 'true' && inputs.is_nightly_run == false && inputs.is_pr_run == false }}
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}sim_configs
           path: simulator_artifacts
 
       - name: unstash project metadata
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && inputs.is_pr_run == false }}
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}project_metadata
           path: .
 
       - name: unstash deploy_simulator_artifacts
-        if: ${{ inputs.with_simulation == 'true' && inputs.is_nightly_run == false }}
+        if: ${{ inputs.with_simulation == 'true' && inputs.is_nightly_run == false && inputs.is_pr_run == false }}
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}deploy_simulator_artifacts
           path: .
 
       - name: Setup CI Scripts in .ci-venv
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && inputs.is_pr_run == false }}
         shell: bash
         run: |
           python3 -m venv .ci-venv --clear --system-site-packages # needed for apt dependencies
@@ -1886,7 +1890,7 @@ jobs:
           python3 -m pip install movai-package-deployer==$PACKAGE_DEPLOYER_VERSION --ignore-installed
 
       - name: Login to ${{ env.MID_REGISTRY }} Registry
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && inputs.is_pr_run == false }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.registry_user }}
@@ -1894,7 +1898,7 @@ jobs:
           registry: ${{ env.MID_REGISTRY }}
 
       - name: Login to ${{ env.PUSH_REGISTRY }} Registry
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && inputs.is_pr_run == false }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.registry_user }}
@@ -1913,7 +1917,7 @@ jobs:
           deactivate
 
       - name: Publish and create release
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && inputs.is_pr_run == false }}
         id: bump
         shell: bash
         run: |
@@ -1989,13 +1993,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare raise variables
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && inputs.is_pr_run == false }}
         id: pre_raise
         run: |
           echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
 
       - name: Raise App version
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && inputs.is_pr_run == false }}
         uses: CasperWA/push-protected@v2.14.0
         with:
           token: ${{ secrets.auto_commit_pwd }}
@@ -2003,7 +2007,7 @@ jobs:
           unprotect_reviews: true
 
       - name: Github Publish
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && inputs.is_pr_run == false }}
         shell: bash
         run: |
           commit_hash=$(git log --format="%H" -n 1)
@@ -2021,7 +2025,7 @@ jobs:
 
       - name: Update release notes
         shell: bash
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && inputs.is_pr_run == false }}
         run: |
           # release version
           product_version=$(cat product.version)
@@ -2075,7 +2079,7 @@ jobs:
 
       - name: Propagate release
         continue-on-error: true
-        if: ${{ inputs.propagate_project && inputs.is_nightly_run == false }}
+        if: ${{ inputs.propagate_project && inputs.is_nightly_run == false && inputs.is_pr_run == false }}
         shell: bash
         run: |
           gh workflow run "Propagate base project dependency to projects - On Dispatch" \
