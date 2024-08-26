@@ -296,7 +296,9 @@ jobs:
             build=$((build + 1))
             raised_version="$major.$minor.$patch-$build"
           fi
-          echo "$raised_versionDUMMY" > product.version
+          echo "$raised_version~DUMMY"
+          echo "$raised_versionDUMMY"
+          echo "$raised_version~DUMMY" > product.version
           cp product.version ./platform_configs/product.version
           cp product-manifest.yaml ./platform_configs/product-manifest.yaml
 
@@ -437,6 +439,7 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
       - name: Docker build
         shell: bash
         run: |
