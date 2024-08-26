@@ -6,6 +6,10 @@ on:
         required: false
         type: string
         default: 'false'
+      run_lint_staged:
+        required: false
+        type: string
+        default: 'false'
       run_tests:
         required: false
         type: string
@@ -119,6 +123,15 @@ jobs:
     - name: Check NPM log on failure
       if: ${{ failure() }}
       run: cat /github/home/.npm/_logs/*.log
+
+    - name: Run lint-staged
+      if: ${{ inputs.run_lint_staged == 'true' }}
+      run: |
+        echo "The following files were changed from origin/${GITHUB_BASE_REF}...origin/${GITHUB_HEAD_REF} and will be validated"
+        git --no-pager diff "origin/${GITHUB_BASE_REF}...origin/${GITHUB_HEAD_REF}" --name-only
+        echo ""
+
+        npx lint-staged --diff="origin/${GITHUB_BASE_REF}...origin/${GITHUB_HEAD_REF}"
 
     - name: Run tests
       if: ${{ inputs.run_tests == 'true' }}
