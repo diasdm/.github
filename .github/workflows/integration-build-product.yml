@@ -279,7 +279,7 @@ jobs:
           # Check if a PR triggered the workflow
           if [ -n "${{ inputs.pr_id }}" ]; then
             # raised version has sufix of PR number
-            raised_version="$major.$minor.$patch-$build~pr${{ inputs.pr_id }}"
+            raised_version="$major.$minor.$patch-$build-pr${{ inputs.pr_id }}"
           elif [[ ",${{ inputs.pr_labels }}," == *"minor"* ]]; then
             # raised version has new minor number
             minor=$((minor + 1))
@@ -296,9 +296,7 @@ jobs:
             build=$((build + 1))
             raised_version="$major.$minor.$patch-$build"
           fi
-          echo "$raised_version~DUMMY"
-          echo "$raised_versionDUMMY"
-          echo "$raised_version~DUMMY" > product.version
+          echo "$raised_version-DUMMY" > product.version
           cp product.version ./platform_configs/product.version
           cp product-manifest.yaml ./platform_configs/product-manifest.yaml
 
