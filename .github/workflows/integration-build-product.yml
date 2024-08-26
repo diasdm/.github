@@ -390,7 +390,9 @@ jobs:
         run: |
           . .ci-venv/bin/activate
           # iterate over .json files and update spawner.image to use ci image
+          ls
           for file in $(find . -name "*.json"); do
+            echo $file
             # add ci prefix to spawner.image current value
             spawner_img=$(cat $file | jq .spawner.image | tr -d \")
             jq --arg spawner_img $spawner_img '.spawner.image = $spawner_img' "$file" > tmp.json
