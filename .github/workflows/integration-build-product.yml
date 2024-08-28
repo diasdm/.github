@@ -296,7 +296,7 @@ jobs:
             build=$((build + 1))
             raised_version="$major.$minor.$patch-$build"
           fi
-          echo "$raised_version-DUMMY" > product.version
+          echo "$raised_version" > product.version
           cp product.version ./platform_configs/product.version
           cp product-manifest.yaml ./platform_configs/product-manifest.yaml
 
