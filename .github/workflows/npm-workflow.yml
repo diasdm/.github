@@ -133,6 +133,14 @@ jobs:
 
         npx lint-staged --diff="origin/${GITHUB_BASE_REF}...origin/${GITHUB_HEAD_REF}"
 
+        # explicitly check for changes and fail if there are any
+        if ! git diff --quiet HEAD; then
+          echo ""
+          echo "ERROR, the following files have changed:"
+          git diff --name-only HEAD
+          exit 1
+        fi
+
     - name: Run tests
       if: ${{ inputs.run_tests == 'true' }}
       run: ${{ inputs.pm }} run test
