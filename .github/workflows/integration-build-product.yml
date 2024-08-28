@@ -381,7 +381,7 @@ jobs:
           deactivate
 
       - name: Update robot jsons to use ci project
-        if: ${{ github.event_name }} == "pull_request"
+        if: ${{ github.event_name == 'pull_request' }}
         shell: bash
         run: |
           . .ci-venv/bin/activate
