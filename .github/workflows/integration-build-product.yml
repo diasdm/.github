@@ -595,9 +595,8 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         shell: bash
         run: |
-          . .ci-venv/bin/activate
           # iterate over .json files and update spawner.image to use ci image
-          for file in $(find . -maxdepth 1 -name "*.json"); do
+          for file in $(find . -maxdepth 2 -name "*.json"); do
             echo $file
             # add ci prefix to spawner.image current value
             spawner_img=$(cat $file | jq .spawner.image | tr -d \" | sed 's/ci\///')
@@ -605,7 +604,6 @@ jobs:
             mv tmp.json $file
             cat $file | jq .spawner.image
           done
-          deactivate
       
       - name: Installation
         shell: bash
