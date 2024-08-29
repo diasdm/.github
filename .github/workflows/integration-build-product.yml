@@ -275,6 +275,7 @@ jobs:
           mkdir platform_configs
           source ci_scripts/bin/activate
           # Check if a PR triggered the workflow
+          pip install bump2version
           if [ -n "${{ inputs.pr_id }}" ]; then
             # raised version has sufix of PR number
             current_version=$(cat product.version)
