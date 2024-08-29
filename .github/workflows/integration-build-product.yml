@@ -279,7 +279,6 @@ jobs:
           if [ -n "${{ inputs.pr_id }}" ]; then
             # raised version has sufix of PR number
             current_version=$(cat product.version)
-            bump2version --new-version 1.2.4-pr${{ inputs.pr_id }} patch
             IFS='.-' read -r major minor patch build <<< "$current_version"
             raised_version="$major.$minor.$patch-$build-pr${{ inputs.pr_id }}"
             echo "$raised_version" > product.version
