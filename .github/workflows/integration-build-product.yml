@@ -274,29 +274,22 @@ jobs:
           rm -rf simulator_artifacts ci_artifacts
           mkdir platform_configs
           source ci_scripts/bin/activate
-          current_version=$(cat product.version)
-          IFS='.-' read -r major minor patch build <<< "$current_version"
           # Check if a PR triggered the workflow
           if [ -n "${{ inputs.pr_id }}" ]; then
             # raised version has sufix of PR number
+            current_version=$(cat product.version)
+            bump2version --new-version 1.2.4-pr${{ inputs.pr_id }} patch
+            IFS='.-' read -r major minor patch build <<< "$current_version"
             raised_version="$major.$minor.$patch-$build-pr${{ inputs.pr_id }}"
+            echo "$raised_version" > product.version
           elif [[ ",${{ inputs.pr_labels }}," == *"minor"* ]]; then
-            # raised version has new minor number
-            minor=$((minor + 1))
-            patch=0
-            build=0
-            raised_version="$major.$minor.$patch-$build"
+            bump2version minor --no-tag --no-commit --allow-dirty
           elif [[ ",${{ inputs.pr_labels }}," == *"patch"* ]]; then
-            # raised version has new patch number
-            patch=$((patch + 1))
-            build=0
-            raised_version="$major.$minor.$patch-$build"
+            bump2version patch --no-tag --no-commit --allow-dirty
           else
-            # raised version has new build number
-            build=$((build + 1))
-            raised_version="$major.$minor.$patch-$build"
+            bump2version build --no-tag --no-commit --allow-dirty
           fi
-          echo "$raised_version" > product.version
+          
           cp product.version ./platform_configs/product.version
           cp product-manifest.yaml ./platform_configs/product-manifest.yaml
 
