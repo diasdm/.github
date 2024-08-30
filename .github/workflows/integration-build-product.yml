@@ -2023,6 +2023,7 @@ jobs:
           cat product.version
 
           git add product.version
+          git add .bumpversion.cfg
           git commit -m "[skip actions] Automatic Raise"
 
           echo "version=${product_version}" >> $GITHUB_OUTPUT
