@@ -16,7 +16,14 @@ on:
         required: false
         type: boolean
         default: true
-      
+    secrets:
+      gh_token:
+        required: true
+      registry_user:
+          required: true
+      registry_password:
+        required: true
+
 jobs:
   handle-pr-merge:
     runs-on: ubuntu-latest
@@ -30,11 +37,9 @@ jobs:
 
       - name: Clean Artifacts from github
         id: clean_artifacts
-        env:
-          GITHUB_TOKEN: ${{ secrets.RAISE_BOT_COMMIT_PASSWORD }}
         run: |
           # Retrieve all artifacts using GitHub API
-          ARTIFACTS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          ARTIFACTS=$(curl -s -H "Authorization: token ${{ secrets.gh_token }}" \
             "https://api.github.com/repos/${{ github.repository }}/actions/artifacts")
         
           ARTIFACT_IDS=$(echo "$ARTIFACTS" | jq -r ".artifacts[] | select(.name | startswith(\"pr${{ github.event.pull_request.number }}~\")) | .id")
@@ -48,7 +53,7 @@ jobs:
 
           for ARTIFACT_ID in $ARTIFACT_IDS; do
             echo "Deleting artifact $ARTIFACT_ID"
-            curl -s -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            curl -s -X DELETE -H "Authorization: token ${{ secrets.gh_token }}" \
               "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID"
           done
       
@@ -56,7 +61,7 @@ jobs:
         if: ${{ inputs.clean_images }}
         shell: bash
         run: |
-          docker login ${{ matrix.registry }} -u ${{ secrets.PORTUS_APP_USER }} -p ${{ secrets.PORTUS_APP_TOKEN }}
+          docker login ${{ matrix.registry }} -u ${{ secrets.registry_user }} -p ${{ secrets.registry_password }}
 
       - name: Clean images from registry
         if: ${{ inputs.clean_images }}
