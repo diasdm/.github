@@ -5,6 +5,7 @@ on:
     inputs:
       product_name:
         required: true
+        type: string
       registries:
         required: true
         type: string
