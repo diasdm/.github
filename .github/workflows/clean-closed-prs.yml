@@ -24,8 +24,6 @@ jobs:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
         registry: ${{ fromJSON(inputs.registries) }}
-    env:
-      
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
