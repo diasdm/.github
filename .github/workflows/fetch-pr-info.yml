@@ -35,6 +35,8 @@ jobs:
                 PR_NUMBER=$(echo "$COMMIT_MESSAGE" | grep -oP '(?<=#)\d+')
                 LABELS=$(gh pr view $PR_NUMBER --json labels --jq '.labels[].name' | tr '\n' ',' | sed 's/,$//')
 
+                echo $LABELS
+
                 # Set the PR number as an output
                 echo "pr_number=" >> $GITHUB_OUTPUT
                 echo "pr_labels='[${LABELS}]'" | tee >> $GITHUB_OUTPUT
