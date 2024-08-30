@@ -1993,13 +1993,27 @@ jobs:
           product_version=$(cat product.version)
           deactivate
 
+          cat .bumpversion.cfg
+          cat product.version
+
           # danger zone. Everything will be deleted.
           git restore product.version
           git restore product-manifest.yaml
+          
+          cat .bumpversion.cfg
+          cat product.version
+
           git pull
+
+          cat .bumpversion.cfg
+          cat product.version
+
           # get previous version so we can generate the release report
           echo "previous_version=$(cat product.version)" >> $GITHUB_OUTPUT
           echo "$product_version" > product.version
+
+          cat .bumpversion.cfg
+          cat product.version
 
           git add product.version
           git commit -m "[skip actions] Automatic Raise"
