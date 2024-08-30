@@ -32,17 +32,11 @@ jobs:
             COMMIT_SHA="${{ github.sha }}"
             # Get the commit message
             COMMIT_MESSAGE=$(git log -1 --format=%B "$COMMIT_SHA")
-            echo "Commit message: $COMMIT_MESSAGE"
             # Check if this is a merge commit (a typical merge commit message contains "Merge pull request")
             if [[ "$COMMIT_MESSAGE" == Merge\ pull\ request* ]]; then
                 # Extract the PR number from the commit message
                 PR_NUMBER=$(echo "$COMMIT_MESSAGE" | grep -oP '(?<=#)\d+')
                 LABELS=$(gh pr view $PR_NUMBER --json labels --jq '.labels[].name' | tr '\n' ',' | sed 's/,$//')
-
-                echo "$(gh pr view $PR_NUMBER --json labels)"
-
-                echo "PR number: $PR_NUMBER"
-                echo "PR labels: $LABELS"
 
                 # Set the PR number as an output
                 echo "pr_number=" >> $GITHUB_OUTPUT
