@@ -1,6 +1,9 @@
 name: Fetch PR Info
 on:
   workflow_call:
+    secrets:
+      gh_token:
+        required: true
     outputs:
       pr_labels: 
         value: ${{ jobs.fetch_pr_info.outputs.pr_labels }}
@@ -21,7 +24,7 @@ jobs:
       - name: Get PR Information
         id: get_pr_info
         env:
-          GITHUB_TOKEN: ${{ secrets.RAISE_BOT_COMMIT_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.gh_token }}
         run: |
           # Check if workflow is triggered by a push event or a pull_request event
           if [[ ${{ github.event_name }} == "push" ]]; then
