@@ -2,8 +2,10 @@ name: Fetch PR Info
 on:
   workflow_call:
     outputs:
-      pr_number: ${{ jobs.fetch_pr_info.outputs.pr_number }}
-      pr_labels: ${{ jobs.fetch_pr_info.outputs.pr_labels }}
+      pr_labels: 
+        value: ${{ jobs.fetch_pr_info.outputs.pr_labels }}
+      pr_number:
+        value: ${{ jobs.fetch_pr_info.outputs.pr_number }}
 
 jobs:
   fetch_pr_info:
