@@ -36,6 +36,8 @@ jobs:
                 PR_NUMBER=$(echo "$COMMIT_MESSAGE" | grep -oP '(?<=#)\d+')
                 LABELS=$(gh pr view $PR_NUMBER --json labels --jq '.labels[].name' | tr '\n' ',' | sed 's/,$//')
 
+                echo "$(gh pr view $PR_NUMBER --json labels)"
+
                 echo "PR number: $PR_NUMBER"
                 echo "PR labels: $LABELS"
 
