@@ -280,7 +280,7 @@ jobs:
           cat .bumpversion.cfg
           cat product.version
 
-          
+
           if [ -n "${{ inputs.pr_id }}" ]; then
             # raised version has sufix of PR number
             sed -i ''1s/$/-pr${{ inputs.pr_id }}/'' product.version
@@ -293,6 +293,7 @@ jobs:
           fi
           
           cp product.version ./platform_configs/product.version
+          cp .bumpversion.cfg ./platform_configs/.bumpversion.cfg
           cp product-manifest.yaml ./platform_configs/product-manifest.yaml
 
       - name: Prepare slack variables
@@ -1948,6 +1949,7 @@ jobs:
           git config --global user.password ${{ secrets.auto_commit_pwd }}
 
           cp ./platform_configs/product.version product.version
+          cp ./platform_configs/.bumpversion.cfg .bumpversion.cfg
           cp ./platform_configs/product-manifest.yaml product-manifest.yaml
           mkdir -p deployment_artifacts
 
