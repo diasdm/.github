@@ -275,12 +275,12 @@ jobs:
           mkdir platform_configs
           source ci_scripts/bin/activate
           # Check if a PR triggered the workflow
-          pip install 
-          
+          pip install bump2version
 
           cat .bumpversion.cfg
           cat product.version
 
+          
           if [ -n "${{ inputs.pr_id }}" ]; then
             # raised version has sufix of PR number
             sed -i ''1s/$/-pr${{ inputs.pr_id }}/'' product.version
