@@ -291,8 +291,6 @@ jobs:
           cp .bumpversion.cfg ./platform_configs/.bumpversion.cfg
           cp product-manifest.yaml ./platform_configs/product-manifest.yaml
 
-          ls platform_configs -a
-
       - name: Prepare slack variables
         if: always()
         id: pre_slack
@@ -321,6 +319,7 @@ jobs:
           name: ${{ steps.artifacts_prefix.outputs.pr_prefix }}raised_meta
           path: platform_configs/*
           retention-days: 5
+          include-hidden-files: true
 
   Build-Spawner:
     needs: [Validate-boostrap-configs]
