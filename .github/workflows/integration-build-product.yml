@@ -291,7 +291,7 @@ jobs:
           cp .bumpversion.cfg ./platform_configs/.bumpversion.cfg
           cp product-manifest.yaml ./platform_configs/product-manifest.yaml
 
-          ls platform_configs
+          ls platform_configs -a
 
       - name: Prepare slack variables
         if: always()
