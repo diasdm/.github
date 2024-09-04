@@ -171,7 +171,7 @@ jobs:
           deactivate
 
       - name: Stash sim_configs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: sim_configs
           path: simulator_artifacts/*
@@ -208,7 +208,7 @@ jobs:
           slack-text: ${{ steps.pre_slack.outputs.msg }}
 
       - name: Stash raised_meta
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: raised_meta
           path: platform_configs/*
@@ -244,7 +244,7 @@ jobs:
           deactivate
 
       - name: unstash raised_meta
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: raised_meta
           path: platform_configs
@@ -261,7 +261,7 @@ jobs:
           deactivate
 
       - name: Stash manifest
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: manifest
           path: product-manifest.yaml
@@ -378,7 +378,7 @@ jobs:
 
 
       - name: Stash robot_jsons_${{ matrix.distro }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: robot_jsons_${{ matrix.distro }}
           path: "*.json*"
@@ -412,19 +412,19 @@ jobs:
           echo "private ip: $(hostname -I | awk '{print $1}')"
 
       - name: unstash raised_meta
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: raised_meta
           path: .
 
       - name: unstash manifest
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: manifest
           path: .
 
       - name: unstash robot_jsons_${{ matrix.distro }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: robot_jsons_${{ matrix.distro }}
           path: .
@@ -581,14 +581,14 @@ jobs:
       - name: Stash project metadata
 
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: project_metadata
           path: metadata_artifact/*
           retention-days: 3
 
       - name: Stash deploy_artifacts_noetic
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: deploy_artifacts_noetic
           path: artifacts/*
@@ -649,14 +649,14 @@ jobs:
 
       - name: unstash sim_configs
         if: ${{ inputs.with_simulation == 'true' }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: sim_configs
           path: simulator_artifacts
 
       - name: unstash manifest
         if: ${{ inputs.with_simulation == 'true' }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: manifest
           path: .
@@ -829,21 +829,21 @@ jobs:
 
       - name: unstash raised_meta
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: raised_meta
           path: .
 
       - name: unstash manifest
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: manifest
           path: .
 
       - name: unstash robot_jsons_${{ matrix.distro }}
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: robot_jsons_${{ matrix.distro }}
           path: .
@@ -934,7 +934,7 @@ jobs:
       - name: Stash Install simulator logs artifacts
         continue-on-error: true
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: install_simulator_logs
           path: install_logs/*
@@ -1012,7 +1012,7 @@ jobs:
 
       - name: Stash deploy_simulator_artifacts
         if: ${{ inputs.with_simulation == 'true' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: deploy_simulator_artifacts
           path: simulator.image.artifact
@@ -1055,19 +1055,19 @@ jobs:
           echo "private ip: $(hostname -I | awk '{print $1}')"
 
       - name: unstash raised_meta
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: raised_meta
           path: .
 
       - name: unstash manifest
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: manifest
           path: .
 
       - name: unstash robot_jsons_${{ matrix.distro }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: robot_jsons_${{ matrix.distro }}
           path: .
@@ -1263,7 +1263,7 @@ jobs:
           tar -czf fleet_install.tar.gz -C ${{ steps.ansible_install_setup.outputs.target_dir }} .
 
       - name: Stash Install scripts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: install_archive
           path: fleet_install.tar.gz
@@ -1332,14 +1332,14 @@ jobs:
   
       - name: Stash project metadata
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: project_metadata
           path: metadata_artifact/*
           retention-days: 3
 
       - name: Stash deploy_artifacts_noetic
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: deploy_artifacts_noetic
           path: artifacts/*
@@ -1385,36 +1385,36 @@ jobs:
           echo "private ip: $(hostname -I | awk '{print $1}')"
 
       - name: unstash raised_meta
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: raised_meta
           path: platform_configs
 
       - name: unstash deploy_artifacts_noetic
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: deploy_artifacts_noetic
           path: artifacts
 
       - name: unstash manifest
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: manifest
           path: .
       - name: unstash sim_configs
         if: ${{ inputs.with_simulation == 'true' }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: sim_configs
           path: simulator_artifacts
       - name: unstash deploy_simulator_artifacts
         if: ${{ inputs.with_simulation == 'true' }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: deploy_simulator_artifacts
           path: .
       - name: unstash install_archive
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: install_archive
           path: .
@@ -1638,7 +1638,7 @@ jobs:
     steps:
 
       - name: unstash raised_meta
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: raised_meta
           path: platform_configs
