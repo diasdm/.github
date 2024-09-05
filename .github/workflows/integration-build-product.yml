@@ -1252,6 +1252,7 @@ jobs:
     needs: [Validate-boostrap-configs, Compute-timeout, Build-Spawner, Build-Simulator]
     runs-on: ${{ needs.Build-Simulator.outputs.simulator_tests_agent_name }}
     timeout-minutes: ${{ fromJSON(needs.Compute-timeout.outputs.timeout) }}
+    if: ${{ github.event_name != 'pull_request'}}
     steps:
       - uses: rtCamp/action-cleanup@master
         if: ${{ inputs.with_simulation_tests }}
