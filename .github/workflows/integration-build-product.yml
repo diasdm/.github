@@ -379,11 +379,13 @@ jobs:
         run: |
           . .ci-venv/bin/activate
           # iterate over .json files and update spawner.image to use ci image
+          mkdir qa
           for file in $(find . -maxdepth 1 -name "*.json"); do
             echo $file
             # add ci prefix to spawner.image current value
             spawner_img=$(cat $file | jq .spawner.image | tr -d \")
             jq --arg spawner_img ci/$spawner_img '.spawner.image = $spawner_img' "$file" > tmp.json
+            mv $file qa/$file
             mv tmp.json $file
             cat $file | jq .spawner.image
           done
@@ -589,15 +591,8 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         shell: bash
         run: |
-          # iterate over .json files and update spawner.image to use ci image
-          for file in $(find . -maxdepth 2 -name "*.json"); do
-            echo $file
-            # add ci prefix to spawner.image current value
-            spawner_img=$(cat $file | jq .spawner.image | tr -d \" | sed 's/ci\///')
-            jq --arg spawner_img $spawner_img '.spawner.image = $spawner_img' "$file" > tmp.json
-            mv tmp.json $file
-            cat $file | jq .spawner.image
-          done
+          mv qa/*.json .
+          
       
       - name: Installation
         shell: bash
