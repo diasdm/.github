@@ -57,10 +57,3 @@ jobs:
             echo "pr_number=" >> $GITHUB_OUTPUT
             echo "pr_labels='[]'"  >> $GITHUB_OUTPUT
           fi
-
-
-          
-        
-          
-        
-          

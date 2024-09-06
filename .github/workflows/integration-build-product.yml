@@ -252,7 +252,7 @@ jobs:
           integration-pipeline generate_meta_simulator_artifacts \
                 --manifest_platform_base_key product_dependencies \
                 --product_name ${{ inputs.product_name }} \
-                --branch $BRANCH_NAME \
+                --branch ${BRANCH_NAME} \
                 --update_simulator \
                 --docker_registry $REGISTRY
 
