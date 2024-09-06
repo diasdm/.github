@@ -330,7 +330,7 @@ jobs:
     runs-on: integration-pipeline
     outputs:
       raised_version: ${{ steps.pre_build.outputs.raised_version }}
-      slack_thread_id: ${{ needs.Validate-boostrap-configs.outputs.slack_thread_id || '' }}
+      slack_thread_id: ${{ needs.Validate-boostrap-configs.outputs.slack_thread_id }}
       commit_hash: ${{ needs.Validate-boostrap-configs.outputs.commit_hash }}
     steps:
       - uses: rtCamp/action-cleanup@master
@@ -802,7 +802,7 @@ jobs:
       image_name: "${{ steps.pre_build.outputs.push_name }}"
       skip_simulator: "${{ steps.pre_simulator_build.outputs.skip_simulator_build }}"
       simulator_tests_agent_name: "${{ steps.post_simulator_build.outputs.simul_tests_infra }}"
-      slack_thread_id: ${{ needs.Validate-boostrap-configs.outputs.slack_thread_id || '' }}
+      slack_thread_id: ${{ needs.Validate-boostrap-configs.outputs.slack_thread_id }}
       commit_hash: ${{ needs.Build-Spawner.outputs.commit_hash }}
     steps:
       - name: Pre clean ups
@@ -990,7 +990,7 @@ jobs:
         distro: ${{ fromJSON(inputs.ros_distro) }}
     runs-on: integration-pipeline
     outputs:
-      slack_thread_id: ${{ needs.Build-Spawner.outputs.slack_thread_id || '' }}
+      slack_thread_id: ${{ needs.Build-Spawner.outputs.slack_thread_id }}
       skip_simulator: ${{ needs.Build-Simulator.outputs.skip_simulator }}
 
     steps:
