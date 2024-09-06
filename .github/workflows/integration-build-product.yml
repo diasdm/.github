@@ -292,7 +292,7 @@ jobs:
           cp product-manifest.yaml ./platform_configs/product-manifest.yaml
 
       - name: Prepare slack variables
-        if: always()
+        if: ${{ always() && github.event_name != 'pull_request' }}
         id: pre_slack
         shell: bash
         run: |
@@ -304,6 +304,7 @@ jobs:
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
 
       - name: Send Slack Message
+        if: ${{ github.event_name != 'pull_request' }}
         uses: archive/github-actions-slack@master
         id: send-message
 
@@ -472,7 +473,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
-        if: always()
+        if: ${{ always() && github.event_name != 'pull_request' }}
         id: pre_slack_result
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
@@ -481,6 +482,7 @@ jobs:
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
       - name: Slack message success
+        if: ${{ github.event_name != 'pull_request' }}
         uses: archive/github-actions-slack@master
         with:
           slack-function: send-message
@@ -491,7 +493,7 @@ jobs:
 
       - name: Slack message failure
         uses: archive/github-actions-slack@master
-        if: failure()
+        if: ${{ failure() && github.event_name != 'pull_request' }}
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
@@ -735,7 +737,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
-        if: always()
+        if: ${{ always() && github.event_name != 'pull_request' }}
         id: pre_slack_result
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
@@ -744,6 +746,7 @@ jobs:
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
       - name: Slack message success
+        if: ${{ github.event_name != 'pull_request' }}
         uses: archive/github-actions-slack@master
         with:
           slack-function: send-message
@@ -754,7 +757,7 @@ jobs:
 
       - name: Slack message failure
         uses: archive/github-actions-slack@master
-        if: failure()
+        if: ${{ failure() && github.event_name != 'pull_request' }}
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
@@ -934,7 +937,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
-        if: always()
+        if: ${{ always() && github.event_name != 'pull_request' }}
         id: pre_slack_result
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
@@ -943,6 +946,7 @@ jobs:
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
       - name: Slack message success
+        if: ${{ github.event_name != 'pull_request' }}
         uses: archive/github-actions-slack@master
         with:
           slack-function: send-message
@@ -953,7 +957,7 @@ jobs:
 
       - name: Slack message failure
         uses: archive/github-actions-slack@master
-        if: failure()
+        if: ${{ failure() && github.event_name != 'pull_request' }}
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
@@ -1194,7 +1198,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
-        if: always()
+        if: ${{ always() && github.event_name != 'pull_request' }}
         id: pre_slack_result
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
@@ -1203,6 +1207,7 @@ jobs:
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
       - name: Slack message success
+        if: ${{ github.event_name != 'pull_request' }}
         uses: archive/github-actions-slack@master
         with:
           slack-function: send-message
@@ -1213,7 +1218,7 @@ jobs:
 
       - name: Slack message failure
         uses: archive/github-actions-slack@master
-        if: failure()
+        if: ${{ failure() && github.event_name != 'pull_request' }}
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
@@ -1419,7 +1424,7 @@ jobs:
           '
 
       - name: Prepare Devops provisioning slack message
-        if: ${{ inputs.with_simulation_tests }}
+        if: ${{ inputs.with_simulation_tests && github.event_name != 'pull_request' }}
         id: pre_slack_infra
         run: |
           MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is being impacted by an infrastructural issue. \
@@ -1428,7 +1433,7 @@ jobs:
           echo "msg_error=${MESSAGE_ERR}" >> $GITHUB_OUTPUT
 
       - name: Slack message failure
-        if: ${{ inputs.with_simulation_tests  && failure()}}
+        if: ${{ inputs.with_simulation_tests  && failure() && github.event_name != 'pull_request' }}
         uses: slackapi/slack-github-action@v1.23.0
         with:
           channel-id: "G0102LEV1CL"
@@ -1735,7 +1740,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
-        if: always()
+        if: ${{ always() && github.event_name != 'pull_request' }}
         id: pre_slack_result
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
@@ -1744,6 +1749,7 @@ jobs:
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
       - name: Slack message success
+        if: ${{ github.event_name != 'pull_request' }}
         uses: archive/github-actions-slack@master
         with:
           slack-function: send-message
@@ -1754,7 +1760,7 @@ jobs:
 
       - name: Slack message failure
         uses: archive/github-actions-slack@master
-        if: failure()
+        if: ${{ failure() && github.event_name != 'pull_request' }}
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
@@ -1791,7 +1797,7 @@ jobs:
 
       - name: Slack message Artifact info
         uses: archive/github-actions-slack@master
-        if: ${{ always() &&  inputs.with_simulation_tests }}
+        if: ${{ always() &&  inputs.with_simulation_tests && github.event_name != 'pull_request' }}
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
@@ -2110,7 +2116,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
-        if: always()
+        if: ${{ always() && github.event_name != 'pull_request' }}
         id: pre_slack
         shell: bash
         run: |
@@ -2123,6 +2129,7 @@ jobs:
 
       - name: Slack message
         uses: archive/github-actions-slack@master
+        if: ${{ github.event_name != 'pull_request'}}
         with:
           slack-function: update-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
@@ -2150,6 +2157,7 @@ jobs:
 
       - name: Prepare slack variables
         id: pre_slack
+        if: ${{ github.event_name != 'pull_request' }}
         shell: bash
         run: |
           MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) (Attempt: #${{ github.run_attempt }}) is unstable (or canceled) :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
@@ -2160,6 +2168,7 @@ jobs:
           echo "msg_error=${MESSAGE_ERR}" >> $GITHUB_OUTPUT
 
       - name: Slack message
+        if: ${{ github.event_name != 'pull_request' }}
         uses: archive/github-actions-slack@master
         with:
           slack-function: update-message
