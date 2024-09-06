@@ -292,7 +292,7 @@ jobs:
           cp product-manifest.yaml ./platform_configs/product-manifest.yaml
 
       - name: Prepare slack variables
-        if: ${{ always() && github.event_name != 'pull_request' }}
+        if: always()
         id: pre_slack
         shell: bash
         run: |
@@ -473,7 +473,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
-        if: ${{ always() && github.event_name != 'pull_request' }}
+        if: always()
         id: pre_slack_result
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
@@ -737,7 +737,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
-        if: ${{ always() && github.event_name != 'pull_request' }}
+        if: always()
         id: pre_slack_result
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
@@ -937,7 +937,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
-        if: ${{ always() && github.event_name != 'pull_request' }}
+        if: always()
         id: pre_slack_result
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
@@ -1198,7 +1198,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
-        if: ${{ always() && github.event_name != 'pull_request' }}
+        if: always()
         id: pre_slack_result
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
@@ -1424,7 +1424,7 @@ jobs:
           '
 
       - name: Prepare Devops provisioning slack message
-        if: ${{ inputs.with_simulation_tests && github.event_name != 'pull_request' }}
+        if: ${{ inputs.with_simulation_tests }}
         id: pre_slack_infra
         run: |
           MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is being impacted by an infrastructural issue. \
@@ -1740,7 +1740,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
-        if: ${{ always() && github.event_name != 'pull_request' }}
+        if: always()
         id: pre_slack_result
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
@@ -2116,7 +2116,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
-        if: ${{ always() && github.event_name != 'pull_request' }}
+        if: always()
         id: pre_slack
         shell: bash
         run: |
@@ -2157,7 +2157,6 @@ jobs:
 
       - name: Prepare slack variables
         id: pre_slack
-        if: ${{ github.event_name != 'pull_request' }}
         shell: bash
         run: |
           MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) (Attempt: #${{ github.run_attempt }}) is unstable (or canceled) :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
