@@ -159,7 +159,7 @@ jobs:
   Validate-boostrap-configs:
     runs-on: integration-pipeline
     container:
-      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.3
+      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -285,7 +285,6 @@ jobs:
           mkdir platform_configs
           source ci_scripts/bin/activate
           # Check if a PR triggered the workflow
-          pip install bump2version
           if [ -n "${{ inputs.pr_id }}" ]; then
             # raised version has sufix of PR number
             sed -i ''1s/$/-pr${{ inputs.pr_id }}/'' product.version
