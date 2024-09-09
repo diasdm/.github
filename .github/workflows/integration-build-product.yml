@@ -131,6 +131,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       timeout: ${{ steps.Compute-timeout.outputs.timeout }}
+      jobtimeout: ${{ steps.Compute-timeout.outputs.jobtimeout }}
     steps:
       - name: "Compute Timeout"
         id: Compute-timeout
@@ -141,10 +142,19 @@ jobs:
             duration_minutes=0
           fi
           if [[ $duration_minutes -gt $((${{ env.TIMEOUT }})) ]]; then
-            echo "timeout=$((duration_minutes * 110 / 100))" >> $GITHUB_OUTPUT
+            calc_timeout=$((duration_minutes * 110 / 100))
           else
-            echo "timeout=${{ env.TIMEOUT }}" >> $GITHUB_OUTPUT
+            calc_timeout=${{ env.TIMEOUT }}
           fi
+          if [[ $calc_timeout -ne 0 ]]; then
+            calc_jobtimeout=$((calc_timeout +2))
+          else
+            calc_jobtimeout=0
+          fi
+          echo "simulation tests step timeout $calc_timeout"
+          echo "Simulation tests job timeout $calc_jobtimeout"
+          echo "timeout=$calc_timeout" >> $GITHUB_OUTPUT
+          echo "jobtimeout=$calc_jobtimeout" >> $GITHUB_OUTPUT
 
   Validate-boostrap-configs:
     runs-on: integration-pipeline
@@ -1250,6 +1260,7 @@ jobs:
     needs: [Validate-boostrap-configs, Compute-timeout, Build-Spawner, Build-Simulator]
     runs-on: ${{ needs.Build-Simulator.outputs.simulator_tests_agent_name }}
     if: ${{ github.event_name != 'pull_request'}}
+    timeout-minutes: ${{ fromJSON(needs.Compute-timeout.outputs.jobtimeout) }}
     steps:
       - uses: rtCamp/action-cleanup@master
         if: ${{ inputs.with_simulation_tests }}
@@ -1617,7 +1628,7 @@ jobs:
       - name: Remote - Simulation Tests
         if: ${{ inputs.with_simulation_tests }}
         id: simulation_tests
-        timeout-minutes: ${{ fromJSON(needs.Compute-timeout.outputs.timeout) }}
+        timeout-minutes: ${{ fromJSON( needs.Compute-timeout.outputs.timeout) }}
         shell: bash
         run: |
           # Avoid setting github outputs from within a block that is executed remotely
