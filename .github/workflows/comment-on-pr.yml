@@ -65,6 +65,6 @@ jobs:
                   | Logs      | ${{ env.JOB_PATH }}
     
                   | Jar Files | 
-                  ${{ env.ARTIFACT_URL }}
+                  ${{ fromJson(env.ARTIFACT_URL) }}
     
                   [badge]: https://img.shields.io/badge/Build-Success!-3fb950?logo=github&style=for-the-badge
