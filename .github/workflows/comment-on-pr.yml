@@ -49,8 +49,6 @@ jobs:
     
                   Please note that files only stay for around 90 days or as long as the PR is opened!
     
-                  | Name                | Link
-                  --------------------------------------------------------------------
                   | Commit              | ${{ env.HEAD_SHA }}
     
                   | Logs & Artifacts    | ${{ env.JOB_PATH }}
