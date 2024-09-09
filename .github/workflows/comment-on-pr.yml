@@ -47,7 +47,7 @@ jobs:
     
                   You can find files attached to the below linked Workflow Run URL (Logs).
     
-                  Please note that files only stay for around 90 days!
+                  Please note that files only stay for around 90 days or as long as the PR is opened!
     
                   | Name                | Link
                   --------------------------------------------------------------------
