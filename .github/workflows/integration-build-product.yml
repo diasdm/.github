@@ -1193,7 +1193,7 @@ jobs:
   Validation-Simulator-Tests:
     needs: [Compute-timeout, Build-Spawner, Build-Simulator]
     runs-on: ${{ needs.Build-Simulator.outputs.simulator_tests_agent_name }}
-    timeout-minutes: ${{ needs.Compute-timeout.outputs.jobtimeout}}
+    timeout-minutes: ${{ fromJSON(needs.Compute-timeout.outputs.jobtimeout) }}
     steps:
       - uses: rtCamp/action-cleanup@master
         if: ${{ inputs.with_simulation_tests }}
@@ -1561,7 +1561,7 @@ jobs:
       - name: Remote - Simulation Tests
         if: ${{ inputs.with_simulation_tests }}
         id: simulation_tests
-        timeout-minutes: ${{ needs.Compute-timeout.outputs.timeout}}
+        timeout-minutes: ${{ fromJSON( needs.Compute-timeout.outputs.timeout) }}
         shell: bash
         run: |
           # Avoid setting github outputs from within a block that is executed remotely
