@@ -49,10 +49,10 @@ jobs:
     
                   Please note that files only stay for around 90 days!
     
-                  | Name                  | Link
+                  | Name                | Link
                   --------------------------------------------------------------------
-                  | Commit                | ${{ env.HEAD_SHA }}
+                  | Commit              | ${{ env.HEAD_SHA }}
     
-                  | Logs %«& Artifacts    | ${{ env.JOB_PATH }}
+                  | Logs & Artifacts    | ${{ env.JOB_PATH }}
     
                   [badge]: https://img.shields.io/badge/Build-Success!-3fb950?logo=github&style=for-the-badge
