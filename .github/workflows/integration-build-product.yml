@@ -144,6 +144,8 @@ jobs:
           else
             calc_jobtimeout=0
           fi
+          echo "simulation tests step timeout $calc_timeout"
+          echo "Simulation tests job timeout $calc_jobtimeout"
           echo "timeout=$calc_timeout" >> $GITHUB_OUTPUT
           echo "jobtimeout=$calc_jobtimeout" >> $GITHUB_OUTPUT
 
