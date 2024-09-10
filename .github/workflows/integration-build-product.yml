@@ -56,6 +56,13 @@ on:
         required: false
         type: boolean
         default: false
+      pr_id:
+        required: false
+        type: string
+      pr_labels:
+        required: false
+        type: string
+        default: '[]'
 
 
     secrets:
@@ -152,13 +159,14 @@ jobs:
   Validate-boostrap-configs:
     runs-on: integration-pipeline
     container:
-      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.3
+      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
     outputs:
-      slack_thread_id: ${{ fromJson(steps.send-message.outputs.slack-result).response.message.ts }}
+      slack_thread_id: ${{ steps.send-message.outputs.slack-result != '' && fromJson(steps.send-message.outputs.slack-result).response.message.ts || 'UNDEFINED' }}
       commit_hash: ${{ steps.Checkout.outputs.commit_hash }}
+      pr_prefix: ${{ steps.artifacts_prefix.outputs.pr_prefix }}
 
     steps:
       - name: Checkout
@@ -177,6 +185,15 @@ jobs:
           git config --global --add safe.directory $(pwd)
           git rev-parse HEAD > commit_hash
           echo "commit_hash=$(cat commit_hash)" >> $GITHUB_OUTPUT
+      
+      - name: Set PR prefix
+        id: artifacts_prefix
+        run: |
+          if [ -n "${{ inputs.pr_id }}" ]; then
+            echo "pr_prefix=pr${{ inputs.pr_id }}~" >> $GITHUB_OUTPUT
+          else
+            echo "pr_prefix=" >> $GITHUB_OUTPUT
+          fi
 
       - name: Job Summary Header
         shell: bash
@@ -205,14 +222,19 @@ jobs:
       - name: Bootstraping simulator metadata
         shell: bash
         run: |
+          if [ "${{ github.event_name }}" = "pull_request" ];
+          then
+            BRANCH_NAME=${{ github.head_ref }}
+          else
+            BRANCH_NAME=${{ github.ref_name }}
+          fi
+
+          # save branch name to output
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
           git config --global --add safe.directory $(pwd)
           git fetch
-          if [ "${{ inputs.is_nightly_run }}" == "true" ] ; then
-            BRANCH_NAME=${{inputs.nightly_run_branch}}
-          else
-            BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          fi
-          git checkout origin/${BRANCH_NAME} -- product.version
+          git checkout origin/$BRANCH_NAME -- product.version
           cat product.version
           rm -rf simulator_artifacts ci_artifacts
 
@@ -252,7 +274,7 @@ jobs:
         if: ${{ inputs.with_simulation == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: sim_configs
+          name: ${{ steps.artifacts_prefix.outputs.pr_prefix }}sim_configs
           path: simulator_artifacts/*
           retention-days: 5
 
@@ -262,12 +284,24 @@ jobs:
           rm -rf simulator_artifacts ci_artifacts
           mkdir platform_configs
           source ci_scripts/bin/activate
-          integration-pipeline raise
+          # Check if a PR triggered the workflow
+          if [ -n "${{ inputs.pr_id }}" ]; then
+            # raised version has sufix of PR number
+            sed -i ''1s/$/-pr${{ inputs.pr_id }}/'' product.version
+          elif [[ ",${{ inputs.pr_labels }}," == *"minor"* ]]; then
+            bump2version minor --no-tag --no-commit --allow-dirty
+          elif [[ ",${{ inputs.pr_labels }}," == *"patch"* ]]; then
+            bump2version patch --no-tag --no-commit --allow-dirty
+          else
+            bump2version build --no-tag --no-commit --allow-dirty
+          fi
+          
           cp product.version ./platform_configs/product.version
+          cp .bumpversion.cfg ./platform_configs/.bumpversion.cfg
           cp product-manifest.yaml ./platform_configs/product-manifest.yaml
 
       - name: Prepare slack variables
-        if: always()
+        if: ${{ always() && github.event_name != 'pull_request' }}
         id: pre_slack
         shell: bash
         run: |
@@ -279,6 +313,7 @@ jobs:
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
 
       - name: Send Slack Message
+        if: ${{ github.event_name != 'pull_request' }}
         uses: archive/github-actions-slack@master
         id: send-message
 
@@ -291,9 +326,10 @@ jobs:
       - name: Stash raised_meta
         uses: actions/upload-artifact@v4
         with:
-          name: raised_meta
+          name: ${{ steps.artifacts_prefix.outputs.pr_prefix }}raised_meta
           path: platform_configs/*
           retention-days: 5
+          include-hidden-files: true
 
   Build-Spawner:
     needs: [Validate-boostrap-configs]
@@ -333,7 +369,7 @@ jobs:
       - name: unstash raised_meta
         uses: actions/download-artifact@v4
         with:
-          name: raised_meta
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}raised_meta
           path: platform_configs
 
       - name: Generate product configs from manifest
@@ -346,10 +382,26 @@ jobs:
           integration-pipeline generate_meta_artifacts --update_simulator --override_spawner ${{ inputs.product_name }} --manifest_platform_base_key "product_dependencies"
           deactivate
 
+      - name: Update robot jsons to use ci project
+        if: ${{ github.event_name == 'pull_request' }}
+        shell: bash
+        run: |
+          . .ci-venv/bin/activate
+          # iterate over .json files and update spawner.image to use ci image
+          for file in $(find . -maxdepth 1 -name "*.json"); do
+            echo $file
+            # add ci prefix to spawner.image current value
+            spawner_img=$(cat $file | jq .spawner.image | tr -d \")
+            jq --arg spawner_img ci/$spawner_img '.spawner.image = $spawner_img' "$file" > tmp.json
+            mv tmp.json $file
+            cat $file | jq .spawner.image
+          done
+          deactivate
+
       - name: Stash manifest
         uses: actions/upload-artifact@v4
         with:
-          name: manifest
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}manifest
           path: product-manifest.yaml
           retention-days: 5
 
@@ -397,12 +449,13 @@ jobs:
         if: ${{ inputs.propagate_project == false }}
         uses: actions/upload-artifact@v4
         with:
-          name: dependency_version
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}dependency_version
           path: dependency_version
           retention-days: 10
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
       - name: Docker build
         shell: bash
         run: |
@@ -429,7 +482,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
-        if: always()
+        if: ${{ always() && github.event_name != 'pull_request' }}
         id: pre_slack_result
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
@@ -438,6 +491,7 @@ jobs:
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
       - name: Slack message success
+        if: ${{ github.event_name != 'pull_request' }}
         uses: archive/github-actions-slack@master
         with:
           slack-function: send-message
@@ -448,7 +502,7 @@ jobs:
 
       - name: Slack message failure
         uses: archive/github-actions-slack@master
-        if: failure()
+        if: ${{ failure() && github.event_name != 'pull_request' }}
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
@@ -459,7 +513,7 @@ jobs:
       - name: Stash robot_jsons_${{ matrix.distro }}
         uses: actions/upload-artifact@v4
         with:
-          name: robot_jsons_${{ matrix.distro }}
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}robot_jsons_${{ matrix.distro }}
           path: "*.json*"
           retention-days: 10
 
@@ -471,7 +525,7 @@ jobs:
           docker image prune --all -f
 
   Install-Robot:
-    needs: [Build-Spawner]
+    needs: [Validate-boostrap-configs, Build-Spawner]
     strategy:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
@@ -497,19 +551,19 @@ jobs:
       - name: unstash raised_meta
         uses: actions/download-artifact@v4
         with:
-          name: raised_meta
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}raised_meta
           path: .
 
       - name: unstash manifest
         uses: actions/download-artifact@v4
         with:
-          name: manifest
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}manifest
           path: .
 
       - name: unstash robot_jsons_${{ matrix.distro }}
         uses: actions/download-artifact@v4
         with:
-          name: robot_jsons_${{ matrix.distro }}
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}robot_jsons_${{ matrix.distro }}
           path: .
 
       - name: Login to ${{ env.REGISTRY }} Registry
@@ -539,7 +593,13 @@ jobs:
           docker pull "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
           docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
           docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.PUSH_REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
-
+          # if event is pr create ci tags
+          if [ "${{ github.event_name }}" = "pull_request" ];
+          then
+            docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
+            docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.PUSH_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
+          fi
+      
       - name: Installation
         shell: bash
         run: |
@@ -582,7 +642,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: install_logs
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}install_logs
           path: install_logs/*
           retention-days: 5
 
@@ -642,7 +702,7 @@ jobs:
         if: ${{ inputs.propagate_project == false }}
         uses: actions/download-artifact@v4
         with:
-          name: dependency_version
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}dependency_version
           path: dependency_version
 
       - name: Get project and solution version
@@ -679,7 +739,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
-        if: always()
+        if: ${{ always() && github.event_name != 'pull_request' }}
         id: pre_slack_result
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
@@ -688,6 +748,7 @@ jobs:
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
       - name: Slack message success
+        if: ${{ github.event_name != 'pull_request' }}
         uses: archive/github-actions-slack@master
         with:
           slack-function: send-message
@@ -698,7 +759,7 @@ jobs:
 
       - name: Slack message failure
         uses: archive/github-actions-slack@master
-        if: failure()
+        if: ${{ failure() && github.event_name != 'pull_request' }}
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
@@ -710,14 +771,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: project_metadata
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}project_metadata
           path: metadata_artifact/*
           retention-days: 3
 
       - name: Stash deploy_artifacts_noetic
         uses: actions/upload-artifact@v4
         with:
-          name: deploy_artifacts_noetic
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}deploy_artifacts_noetic
           path: artifacts/*
           retention-days: 5
 
@@ -778,14 +839,14 @@ jobs:
         if: ${{ inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v4
         with:
-          name: sim_configs
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}sim_configs
           path: simulator_artifacts
 
       - name: unstash manifest
         if: ${{ inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v4
         with:
-          name: manifest
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}manifest
           path: .
 
       - name: Prepare Skip variables
@@ -878,7 +939,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
-        if: always()
+        if: ${{ always() && github.event_name != 'pull_request' }}
         id: pre_slack_result
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
@@ -887,6 +948,7 @@ jobs:
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
       - name: Slack message success
+        if: ${{ github.event_name != 'pull_request' }}
         uses: archive/github-actions-slack@master
         with:
           slack-function: send-message
@@ -897,7 +959,7 @@ jobs:
 
       - name: Slack message failure
         uses: archive/github-actions-slack@master
-        if: failure()
+        if: ${{ failure() && github.event_name != 'pull_request' }}
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
@@ -924,7 +986,7 @@ jobs:
           fi
 
   Install-Simulator-Robot:
-    needs: [Build-Spawner, Build-Simulator]
+    needs: [Validate-boostrap-configs, Build-Spawner, Build-Simulator]
     strategy:
       matrix:
         distro: ${{ fromJSON(inputs.ros_distro) }}
@@ -965,21 +1027,21 @@ jobs:
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v4
         with:
-          name: raised_meta
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}raised_meta
           path: .
 
       - name: unstash manifest
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v4
         with:
-          name: manifest
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}manifest
           path: .
 
       - name: unstash robot_jsons_${{ matrix.distro }}
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/download-artifact@v4
         with:
-          name: robot_jsons_${{ matrix.distro }}
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}robot_jsons_${{ matrix.distro }}
           path: .
 
       - name: Login to ${{ env.REGISTRY }} Registry
@@ -1067,7 +1129,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: install_simulator_logs
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}install_simulator_logs
           path: install_logs/*
           retention-days: 5
 
@@ -1122,7 +1184,7 @@ jobs:
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: project_sim_metadata
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}project_sim_metadata
           path: metadata_artifact/*
           retention-days: 3
 
@@ -1138,7 +1200,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
-        if: always()
+        if: ${{ always() && github.event_name != 'pull_request' }}
         id: pre_slack_result
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
@@ -1147,6 +1209,7 @@ jobs:
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
       - name: Slack message success
+        if: ${{ github.event_name != 'pull_request' }}
         uses: archive/github-actions-slack@master
         with:
           slack-function: send-message
@@ -1157,7 +1220,7 @@ jobs:
 
       - name: Slack message failure
         uses: archive/github-actions-slack@master
-        if: failure()
+        if: ${{ failure() && github.event_name != 'pull_request' }}
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
@@ -1175,7 +1238,7 @@ jobs:
         if: ${{ inputs.with_simulation == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: deploy_simulator_artifacts
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}deploy_simulator_artifacts
           path: simulator.image.artifact
           retention-days: 5
 
@@ -1193,8 +1256,9 @@ jobs:
           docker image prune --all -f
 
   Validation-Simulator-Tests:
-    needs: [Compute-timeout, Build-Spawner, Build-Simulator]
+    needs: [Validate-boostrap-configs, Compute-timeout, Build-Spawner, Build-Simulator]
     runs-on: ${{ needs.Build-Simulator.outputs.simulator_tests_agent_name }}
+    if: ${{ github.event_name != 'pull_request'}}
     timeout-minutes: ${{ fromJSON(needs.Compute-timeout.outputs.jobtimeout) }}
     steps:
       - uses: rtCamp/action-cleanup@master
@@ -1227,28 +1291,28 @@ jobs:
         if: ${{ inputs.with_simulation_tests }}
         uses: actions/download-artifact@v4
         with:
-          name: raised_meta
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}raised_meta
           path: .
 
       - name: unstash manifest
         if: ${{ inputs.with_simulation_tests }}
         uses: actions/download-artifact@v4
         with:
-          name: manifest
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}manifest
           path: .
 
       - name: unstash sim_configs
         if: ${{ inputs.with_simulation_tests }}
         uses: actions/download-artifact@v4
         with:
-          name: sim_configs
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}sim_configs
           path: simulator_artifacts
 
       - name: unstash robot_jsons_noetic
         if: ${{ inputs.with_simulation_tests }}
         uses: actions/download-artifact@v4
         with:
-          name: robot_jsons_noetic
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}robot_jsons_noetic
           path: .
 
       - name: Setup infra environment configs
@@ -1362,7 +1426,7 @@ jobs:
           '
 
       - name: Prepare Devops provisioning slack message
-        if: ${{ inputs.with_simulation_tests }}
+        if: ${{ inputs.with_simulation_tests && github.event_name != 'pull_request' }}
         id: pre_slack_infra
         run: |
           MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) is being impacted by an infrastructural issue. \
@@ -1371,7 +1435,7 @@ jobs:
           echo "msg_error=${MESSAGE_ERR}" >> $GITHUB_OUTPUT
 
       - name: Slack message failure
-        if: ${{ inputs.with_simulation_tests  && failure()}}
+        if: ${{ inputs.with_simulation_tests  && failure() && github.event_name != 'pull_request' }}
         uses: slackapi/slack-github-action@v1.23.0
         with:
           channel-id: "G0102LEV1CL"
@@ -1622,7 +1686,7 @@ jobs:
         if: ${{ always() && inputs.with_simulation_tests && steps.simulation_tests.outputs.save_outputs == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: sim-outputs
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}sim-outputs
           path: test-output.json
           retention-days: 5
 
@@ -1678,7 +1742,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
-        if: always()
+        if: ${{ always() && github.event_name != 'pull_request' }}
         id: pre_slack_result
         run: |
           MESSAGE=":white_check_mark: ${{ github.job }} (Attempt: #${{ github.run_attempt }}) job passed"
@@ -1687,6 +1751,7 @@ jobs:
           echo "msg_error=${MESSAGE_ERR}\n  Details: ${{ steps.job_info.outputs.job_url }}" >> $GITHUB_OUTPUT
 
       - name: Slack message success
+        if: ${{ github.event_name != 'pull_request' }}
         uses: archive/github-actions-slack@master
         with:
           slack-function: send-message
@@ -1697,7 +1762,7 @@ jobs:
 
       - name: Slack message failure
         uses: archive/github-actions-slack@master
-        if: failure()
+        if: ${{ failure() && github.event_name != 'pull_request' }}
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
@@ -1734,7 +1799,7 @@ jobs:
 
       - name: Slack message Artifact info
         uses: archive/github-actions-slack@master
-        if: ${{ always() &&  inputs.with_simulation_tests }}
+        if: ${{ always() &&  inputs.with_simulation_tests && github.event_name != 'pull_request' }}
         with:
           slack-function: send-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
@@ -1778,7 +1843,7 @@ jobs:
           echo -e "## ${{ github.job }} Summary\n${summary_message}" >> $GITHUB_STEP_SUMMARY
 
   publish:
-    needs: [Install-Robot, Install-Simulator-Robot, Validation-Simulator-Tests]
+    needs: [Validate-boostrap-configs, Install-Robot, Install-Simulator-Robot, Validation-Simulator-Tests]
     runs-on: integration-pipeline
     container:
       image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.3
@@ -1787,62 +1852,62 @@ jobs:
         password: ${{secrets.registry_password}}
     steps:
       - uses: rtCamp/action-cleanup@master
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && github.event_name != 'pull_request' }}
 
       - name: Checkout
         uses: actions/checkout@v4
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && github.event_name != 'pull_request' }}
 
       - name: Agent info
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && github.event_name != 'pull_request' }}
         run: |
           echo "public ip: $(curl ipinfo.io/ip)"
           echo "private ip: $(hostname -I | awk '{print $1}')"
 
       - name: unstash raised_meta
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && github.event_name != 'pull_request' }}
         uses: actions/download-artifact@v4
         with:
-          name: raised_meta
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}raised_meta
           path: platform_configs
 
       - name: unstash deploy_artifacts_noetic
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && github.event_name != 'pull_request' }}
         uses: actions/download-artifact@v4
         with:
-          name: deploy_artifacts_noetic
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}deploy_artifacts_noetic
           path: artifacts
 
       - name: unstash manifest
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && github.event_name != 'pull_request' }}
         uses: actions/download-artifact@v4
         with:
-          name: manifest
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}manifest
           path: .
 
       - name: unstash sim_configs
-        if: ${{ inputs.with_simulation == 'true' && inputs.is_nightly_run == false }}
+        if: ${{ inputs.with_simulation == 'true' && inputs.is_nightly_run == false && github.event_name != 'pull_request' }}
         uses: actions/download-artifact@v4
         with:
-          name: sim_configs
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}sim_configs
           path: simulator_artifacts
 
       - name: unstash project metadata
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && github.event_name != 'pull_request' }}
         uses: actions/download-artifact@v4
         with:
-          name: project_metadata
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}project_metadata
           path: .
 
       - name: unstash deploy_simulator_artifacts
-        if: ${{ inputs.with_simulation == 'true' && inputs.is_nightly_run == false }}
+        if: ${{ inputs.with_simulation == 'true' && inputs.is_nightly_run == false && github.event_name != 'pull_request' }}
         uses: actions/download-artifact@v4
         with:
-          name: deploy_simulator_artifacts
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}deploy_simulator_artifacts
           path: .
 
       - name: Setup CI Scripts in .ci-venv
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && github.event_name != 'pull_request' }}
         shell: bash
         run: |
           python3 -m venv .ci-venv --clear --system-site-packages # needed for apt dependencies
@@ -1852,7 +1917,7 @@ jobs:
           python3 -m pip install movai-package-deployer==$PACKAGE_DEPLOYER_VERSION --ignore-installed
 
       - name: Login to ${{ env.MID_REGISTRY }} Registry
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && github.event_name != 'pull_request' }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.registry_user }}
@@ -1860,7 +1925,7 @@ jobs:
           registry: ${{ env.MID_REGISTRY }}
 
       - name: Login to ${{ env.PUSH_REGISTRY }} Registry
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && github.event_name != 'pull_request' }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.registry_user }}
@@ -1868,7 +1933,7 @@ jobs:
           registry: ${{ env.PUSH_REGISTRY }}
 
       - name: Publish simulator state
-        if: ${{ needs.Install-Simulator-Robot.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' && inputs.is_nightly_run == false }}
+        if: ${{ needs.Install-Simulator-Robot.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' && github.event_name != 'pull_request' }}
         shell: bash
         run: |
           . .ci-venv/bin/activate
@@ -1879,7 +1944,7 @@ jobs:
           deactivate
 
       - name: Publish and create release
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && github.event_name != 'pull_request' }}
         id: bump
         shell: bash
         run: |
@@ -1889,6 +1954,7 @@ jobs:
           git config --global user.password ${{ secrets.auto_commit_pwd }}
 
           cp ./platform_configs/product.version product.version
+          cp ./platform_configs/.bumpversion.cfg .bumpversion.cfg
           cp ./platform_configs/product-manifest.yaml product-manifest.yaml
           mkdir -p deployment_artifacts
 
@@ -1946,8 +2012,8 @@ jobs:
           # get previous version so we can generate the release report
           echo "previous_version=$(cat product.version)" >> $GITHUB_OUTPUT
           echo "$product_version" > product.version
-
           git add product.version
+          git add .bumpversion.cfg
           git commit -m "[skip actions] Automatic Raise"
 
           echo "version=${product_version}" >> $GITHUB_OUTPUT
@@ -1955,13 +2021,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare raise variables
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && github.event_name != 'pull_request' }}
         id: pre_raise
         run: |
           echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
 
       - name: Raise App version
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && github.event_name != 'pull_request' }}
         uses: CasperWA/push-protected@v2.14.0
         with:
           token: ${{ secrets.auto_commit_pwd }}
@@ -1969,7 +2035,7 @@ jobs:
           unprotect_reviews: true
 
       - name: Github Publish
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && github.event_name != 'pull_request' }}
         shell: bash
         run: |
           commit_hash=$(git log --format="%H" -n 1)
@@ -1987,7 +2053,7 @@ jobs:
 
       - name: Update release notes
         shell: bash
-        if: ${{ inputs.is_nightly_run == false }}
+        if: ${{ inputs.is_nightly_run == false && github.event_name != 'pull_request' }}
         run: |
           # release version
           product_version=$(cat product.version)
@@ -2041,7 +2107,7 @@ jobs:
 
       - name: Propagate release
         continue-on-error: true
-        if: ${{ inputs.propagate_project && inputs.is_nightly_run == false }}
+        if: ${{ inputs.propagate_project && inputs.is_nightly_run == false && github.event_name != 'pull_request' }}
         shell: bash
         run: |
           gh workflow run "Propagate base project dependency to projects - On Dispatch" \
@@ -2052,7 +2118,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
       - name: Prepare slack variables
-        if: always()
+        if: ${{ always() && github.event_name != 'pull_request' }}
         id: pre_slack
         shell: bash
         run: |
@@ -2065,6 +2131,7 @@ jobs:
 
       - name: Slack message
         uses: archive/github-actions-slack@master
+        if: ${{ github.event_name != 'pull_request'}}
         with:
           slack-function: update-message
           slack-bot-user-oauth-access-token: ${{ secrets.slack_token_id }}
@@ -2081,7 +2148,7 @@ jobs:
       - name: unstash raised_meta
         uses: actions/download-artifact@v4
         with:
-          name: raised_meta
+          name: ${{ needs.Validate-boostrap-configs.outputs.pr_prefix }}raised_meta
           path: platform_configs
 
       - name: Copy product configs
@@ -2092,6 +2159,7 @@ jobs:
 
       - name: Prepare slack variables
         id: pre_slack
+        if: ${{ github.event_name != 'pull_request' }}
         shell: bash
         run: |
           MESSAGE_ERR=":x: CI: ${GITHUB_REPOSITORY}, (${GITHUB_REF#refs/heads/}), build: $(cat product.version) (Attempt: #${{ github.run_attempt }}) is unstable (or canceled) :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
@@ -2102,6 +2170,7 @@ jobs:
           echo "msg_error=${MESSAGE_ERR}" >> $GITHUB_OUTPUT
 
       - name: Slack message
+        if: ${{ github.event_name != 'pull_request' }}
         uses: archive/github-actions-slack@master
         with:
           slack-function: update-message
