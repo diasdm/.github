@@ -52,9 +52,6 @@ jobs:
           xray download ${{ inputs.test_set }}
           xray compare ./tests/feature/
 
-          # deactivate venv
-          deactivate
-
   Validate:
     runs-on: ubuntu-latest
     steps:
@@ -97,93 +94,33 @@ jobs:
           sudo apt-get update
           while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
           sudo apt-get upgrade -y
-          # ros_comm are needed for tests
-          # tcpdump pcap2har are needed for tests capturing network traffic
-          sudo apt install -y --allow-downgrades python3-rosnode python3-rosparam python3-rostopic tcpdump pcap2har
-          sudo setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump
 
-      - name: Setup QA install tests
-        uses: actions/checkout@v4
-        with:
-          repository: MOV-AI/qa_install_tests
-          ref: refs/heads/${{ inputs.install_tests_ref }}
-          path: qa_install_tests
-          token: ${{ secrets.gh_token }}
-
-      - name: Install tests setup
-        working-directory: qa_install_tests
+      - name: Setup environment
         shell: bash
         run: |
-          python3 -m venv test-venv --clear --system-site-packages
-          . test-venv/bin/activate
+          # install test dependencies on host
+          sudo apt install -y --allow-downgrades python3-rosnode python3-rosparam python3-rostopic
+
+          # create virtual environment
+          rm -rf venv
+          python3 -m venv venv
+          . venv/bin/activate
+
+          # install tests requirements in venv
           pip install -r requirements.txt
-
-      - name: Install tests
-        id: install
-        working-directory: qa_install_tests
-        shell: bash
-        run: |
-          . test-venv/bin/activate
-
-          # tests execution
-          python3 -m pytest tests/ \
-            -k 'AMR_installation_validator' \
-            --installPath="." \
-            --jsonConfigFilePath="config/platform_example_script.json"
-
-          user=$(cat results/credentials.txt | awk -F: '{print $1}')
-          pwd=$(cat results/credentials.txt | awk -F: '{print $2}')
-          echo "movai_user=$user" >> $GITHUB_OUTPUT
-          echo "movai_pwd=$pwd" >> $GITHUB_OUTPUT
-
-      - name: Install tests cleanup
-        if: always()
-        working-directory: qa_install_tests
-        shell: bash
-        run: |
-          rm -rf test-venv
-
-      - name: UI tests setup
-        shell: bash
-        run: |
-          python3 -m venv test-venv --clear --system-site-packages
-          . test-venv/bin/activate
-          pip install -r requirements.txt
-
-          . test-venv/bin/activate
-
-          # install test dependencies on spawner
-          if [ -f apt-requirements.txt ]; then
-            ## get spawner container name
-            CONTAINER_ID=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
-            ## get apt dependencies
-            APT_DEPS=$(cat apt-requirements.txt | tr "\n" " ")
-            ## install
-            docker exec -t "${CONTAINER_ID}" bash -c "
-              sudo apt update
-              sudo apt install -y ${APT_DEPS}
-            "
-          fi
 
       - name: UI tests
         id: ui
         shell: bash
         run: |
-          . test-venv/bin/activate
-
+          export PYTHONPATH="${PYTHONPATH}:/usr/lib/python3/dist-packages"
+          # activate venv
+          . venv/bin/activate
           # tests execution
-          python3 -m pytest \
-            --ignore qa_install_tests \
+          pytest \
             --hub_url http://selenoid-ui.hel.mov.ai \
             --base_url https://${{ steps.agent_info.outputs.ip }}/ \
-            --movai-user ${{ steps.install.outputs.movai_user }} \
-            --movai-pw ${{ steps.install.outputs.movai_pwd }}
-
-      - name: UI tests cleanup
-        if: always()
-        shell: bash
-        run: |
-          rm -rf test-venv
+            --install-platform
 
       - name: Save docker container logs
         if: always()
@@ -202,6 +139,9 @@ jobs:
           # movai-service
           journalctl -u movai-service --since '1hour ago' &> "movai-service.log"
 
+          # spawner (mobros firmware)
+          journalctl -u movai-service -t mobros --since '1hour ago' &> spawner-firmware.log || true
+
       - name: Stash QA artifacts
         if: always()
         shell: bash
@@ -215,15 +155,11 @@ jobs:
           cp -r *.log ./qa_artifacts || true
           cp -r *.tar ./qa_artifacts || true
           cp -r *.json ./qa_artifacts || true
-          cp -r *.pcap ./qa_artifacts || true
-          cp -r *.har ./qa_artifacts || true
           cp -r *.html ./qa_artifacts || true
 
           # install
           mkdir -p qa_artifacts/install
-          cp -r qa_install_tests/results/*.log ./qa_artifacts/install/ || true
-          cp -r qa_install_tests/results/*.zip ./qa_artifacts/install/ || true
-          cp -r qa_install_tests/results/test_report_*.html ./qa_artifacts/install/ || true
+          cp -r ./installation ./qa_artifacts/ || true
 
       - name: Upload artifacts
         if: always()
