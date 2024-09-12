@@ -390,12 +390,19 @@ jobs:
         shell: bash
         run: |
           . .ci-venv/bin/activate
-          # iterate over .json files and update spawner.image to use ci image
+          # iterate over .json files and update images to use ci image
           for file in $(find . -maxdepth 1 -name "*.json"); do
             echo $file
             # add ci prefix to spawner.image current value
             spawner_img=$(cat $file | jq .spawner.image | tr -d \")
             jq --arg spawner_img ci/$spawner_img '.spawner.image = $spawner_img' "$file" > tmp.json
+            # verify if there is simulator section
+            if [[ $(cat tmp.json | jq .simulator) != "null" ]]; then
+              # add ci prefix to simulator.image current value
+              simulator_img=$(cat tmp.json | jq .simulator.image | tr -d \")
+              jq --arg simulator_img ci/$simulator_img '.simulator.image = $simulator_img' tmp.json > tmp-sim.json
+              mv tmp-sim.json tmp.json
+            fi
             mv tmp.json $file
             cat $file | jq .spawner.image
           done
@@ -1077,12 +1084,23 @@ jobs:
           docker pull "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
           docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
           docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.PUSH_REGISTRY }}/qa/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
+          # if event is pr create ci tags
+          if [ "${{ github.event_name }}" = "pull_request" ];
+          then
+            docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
+            docker tag "${{ env.MID_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}" "${{ env.PUSH_REGISTRY }}/ci/${{ inputs.product_name }}-${{ matrix.distro }}:${{ needs.Build-Spawner.outputs.raised_version }}"
+          fi
 
       - name: Docker load simulator image
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
           promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g" | sed "s-${{ env.MID_REGISTRY }}-${{ env.REGISTRY }}-g")
+          # if event is pr create ci tags
+          if [ "${{ github.event_name }}" = "pull_request" ];
+          then
+            promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-${{ env.MID_REGISTRY }}-${{ env.REGISTRY }}-g")
+          fi
 
           docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
           docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
