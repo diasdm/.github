@@ -921,7 +921,7 @@ jobs:
         if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' && inputs.with_simulation == 'true'}}
         shell: bash
         run: |
-          echo docker build --add-host ${{ env.REGISTRY }}:172.22.0.106 \
+          docker build --add-host ${{ env.REGISTRY }}:172.22.0.106 \
             --build-arg BASE_IMAGE=${{ steps.pre_build.outputs.base_name }} \
             --build-arg CI_SCRIPT_VERSION=${{ env.CI_INTEGRATION_SCRIPTS_VERSION }} \
             --file docker/${{ env.DISTRO }}/Dockerfile-simulator \
