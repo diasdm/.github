@@ -328,7 +328,7 @@ jobs:
         if: ${{ inputs.propagate_project == false }}
         uses: actions/upload-artifact@v4
         with:
-          name: manifest
+          name: dependency_version
           path: dependency_version
           retention-days: 10
 
@@ -567,7 +567,7 @@ jobs:
         if: ${{ inputs.propagate_project == false }}
         uses: actions/download-artifact@v4
         with:
-          name: manifest
+          name: dependency_version
           path: dependency_version
 
       - name: Get project and solution version
