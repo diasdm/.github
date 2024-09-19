@@ -86,7 +86,7 @@ jobs:
         password: ${{secrets.registry_password}}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Validate Manifest
         shell: bash
@@ -120,13 +120,13 @@ jobs:
                 --manifest_platform_base_key product_components
 
       - name: Stash robot_configs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: robot_configs
           path: "*.json*"
 
       - name: Stash sim_configs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: sim_configs
           path: simulator_artifacts/*
@@ -140,7 +140,7 @@ jobs:
           cp product-manifest.yaml ./platform_configs/product-manifest.yaml
 
       - name: Stash raised_meta
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: raised_meta
           path: platform_configs/*
@@ -159,7 +159,7 @@ jobs:
       - name: Cleanup Workspace
         uses: rtCamp/action-cleanup@master
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Agent info
         id: agent_info
@@ -177,7 +177,7 @@ jobs:
         run: python3 -m pip install movai-package-deployer==$PACKAGE_DEPLOYER_VERSION --ignore-installed
 
       - name: unstash robot_configs
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: robot_configs
           path: .
@@ -378,7 +378,7 @@ jobs:
 
       - name: Stash QA artifacts
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: qa_artifacts_ui_tests
           path: qa_artifacts/*
@@ -407,7 +407,7 @@ jobs:
       - name: Cleanup Workspace
         uses: rtCamp/action-cleanup@master
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Agent info
         id: agent_info
@@ -425,7 +425,7 @@ jobs:
         run: python3 -m pip install movai-package-deployer==$PACKAGE_DEPLOYER_VERSION --ignore-installed
 
       - name: unstash robot_configs
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: robot_configs
           path: .
@@ -589,7 +589,7 @@ jobs:
 
       - name: Stash QA artifacts
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: qa_artifacts_install_tests
           path: qa_artifacts/*
@@ -633,7 +633,7 @@ jobs:
           cp /tmp/undeployable.dploy artifacts/host-noetic-3rdParty.dploy
 
       - name: Stash deploy_artifacts_noetic
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: deploy_artifacts_noetic
           path: artifacts/*.dploy
@@ -671,7 +671,7 @@ jobs:
       - name: Cleanup Workspace
         uses: rtCamp/action-cleanup@master
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Agent info
         id: agent_info
@@ -689,7 +689,7 @@ jobs:
         run: python3 -m pip install movai-package-deployer==$PACKAGE_DEPLOYER_VERSION --ignore-installed
 
       - name: unstash robot_configs
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: robot_configs
           path: .
@@ -822,7 +822,7 @@ jobs:
 
       - name: Stash QA artifacts
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: qa_artifacts_api_tests
           path: qa_artifacts/*
@@ -851,7 +851,7 @@ jobs:
       - name: Cleanup Workspace
         uses: rtCamp/action-cleanup@master
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Agent info
         id: agent_info
@@ -869,7 +869,7 @@ jobs:
         run: python3 -m pip install movai-package-deployer==$PACKAGE_DEPLOYER_VERSION --ignore-installed
 
       - name: unstash robot_configs
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: robot_configs
           path: .
@@ -1024,7 +1024,7 @@ jobs:
 
       - name: Stash QA artifacts
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: qa_artifacts_flow_tests
           path: qa_artifacts/*
@@ -1060,7 +1060,7 @@ jobs:
       - name: Cleanup Workspace
         uses: rtCamp/action-cleanup@master
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Agent info
         id: agent_info
@@ -1074,7 +1074,7 @@ jobs:
         run: python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
 
       - name: unstash robot_configs
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: robot_configs
           path: .
@@ -1094,7 +1094,7 @@ jobs:
 
       - name: Stash ci_infra_artifacts (AWS)
         if: ${{ false }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ci_infra_artifacts
           path: aws_artifacts/*
@@ -1283,7 +1283,7 @@ jobs:
 
       - name: Stash Fleet QA artifacts
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: fleet_qa_artifacts
           path: ${{ steps.ansible_install_setup.outputs.target_dir }}/fleet_qa_artifacts/*
@@ -1323,7 +1323,7 @@ jobs:
       - name: Cleanup Workspace
         uses: rtCamp/action-cleanup@master
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Agent info
         id: agent_info
@@ -1337,7 +1337,7 @@ jobs:
         run: python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
 
       - name: unstash sim_configs
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: sim_configs
           path: simulator_artifacts
@@ -1373,7 +1373,7 @@ jobs:
 
       - name: Login to Private Registry
         if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' }}
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.registry_user }}
           password: ${{ secrets.registry_password }}
@@ -1388,7 +1388,7 @@ jobs:
 
       - name: Build with args and push:${{ inputs.deploy }}
         if: ${{ steps.pre_simulator_build.outputs.skip_simulator_build == 'false' }}
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           platforms: linux/amd64
@@ -1416,7 +1416,7 @@ jobs:
           echo "$REGISTRY/qa/$(cat simulator_artifacts/simulator_name.ci)" > simulator.image.artifact
 
       - name: Stash deploy_simulator_artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: deploy_simulator_artifacts
           path: simulator.image.artifact
@@ -1435,7 +1435,7 @@ jobs:
       - uses: rtCamp/action-cleanup@master
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Agent info
         run: |
@@ -1443,25 +1443,25 @@ jobs:
           echo "private ip: $(hostname -I | awk '{print $1}')"
 
       - name: unstash raised_meta
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: raised_meta
           path: .
 
       - name: unstash sim_configs
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: sim_configs
           path: simulator_artifacts
 
       - name: unstash robot_jsons_noetic
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: robot_configs
           path: .
 
       - name: Login to Private Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.registry_user }}
           password: ${{ secrets.registry_password }}
@@ -1614,7 +1614,7 @@ jobs:
 
       - name: Stash QA artifacts
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: qa_artifacts_simulator_tests
           path: qa_artifacts/*
@@ -1658,7 +1658,7 @@ jobs:
           cp /tmp/undeployable.dploy artifacts/simulator-noetic-3rdParty.dploy
 
       - name: Stash deploy_artifacts_simulator_noetic
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: deploy_artifacts_simulator_noetic
           path: artifacts/*.dploy
@@ -1687,7 +1687,7 @@ jobs:
       - name: Cleanup Workspace
         uses: rtCamp/action-cleanup@master
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Agent info
         id: agent_info
         run: |
@@ -1695,31 +1695,31 @@ jobs:
           echo $ip
           echo "ip=${ip}" >> $GITHUB_OUTPUT
       - name: unstash robot_configs
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: robot_configs
           path: .
 
       - name: unstash raised_meta
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: raised_meta
           path: platform_configs
 
       - name: unstash deploy_artifacts_noetic
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: deploy_artifacts_noetic
           path: artifacts
 
       - name: unstash deploy_artifacts_simulator_noetic
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: deploy_artifacts_simulator_noetic
           path: artifacts
 
       - name: unstash deploy_simulator_artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: deploy_simulator_artifacts
           path: .

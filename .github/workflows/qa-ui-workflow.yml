@@ -30,7 +30,7 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Feature file validation
         shell: bash
@@ -64,7 +64,7 @@ jobs:
         uses: rtCamp/action-cleanup@master
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Agent info
         id: agent_info
@@ -115,7 +115,7 @@ jobs:
           pre-commit run --show-diff-on-failure --color=always --all-files
 
       - name: Setup QA install tests
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: MOV-AI/qa_install_tests
           ref: refs/heads/${{ inputs.install_tests_ref }}
@@ -227,7 +227,7 @@ jobs:
 
       - name: Upload artifacts
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: qa_artifacts_ui_tests
           path: qa_artifacts/*

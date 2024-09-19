@@ -141,7 +141,7 @@ jobs:
       working-directory: ${{ matrix.sub_component }}
 
     - name: Archive binary
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: packages
         path: ${{ matrix.sub_component }}/artifacts/*
@@ -170,7 +170,7 @@ jobs:
         submodules: recursive
 
     - name: Download a single artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: packages
         path: artifacts
