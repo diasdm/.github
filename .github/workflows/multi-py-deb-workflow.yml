@@ -210,29 +210,14 @@ jobs:
         echo "py_pkg_version=$PACKAGE_RELEASE_VERSION" >> $GITHUB_OUTPUT
 
     - name: Build
-      run: python3 -m build
+      run: python3 -m build -o dist/${{ matrix.pack_path }}
 
     - name: Archive binary
       uses: actions/upload-artifact@v4
       with:
-        name: packages
-        path: dist/*
+        name: packages_${{ matrix.pack_path }}
+        path: dist/${{ matrix.pack_path }}/*
         retention-days: 5
-
-    - name: Publish package to TestPyPI Experimental
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        user: ${{ secrets.nexus_publisher_user }}
-        password: ${{ secrets.nexus_publisher_password }}
-        repository-url: https://artifacts.cloud.mov.ai/repository/pypi-experimental/
-
-    - name: Publish package to TestPyPI Testing
-      if: ${{ inputs.deploy == 'true' }}
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        user: ${{ secrets.nexus_publisher_user }}
-        password: ${{ secrets.nexus_publisher_password }}
-        repository-url: https://artifacts.cloud.mov.ai/repository/pypi-integration/
 
     - name: Remove hardlinks for package ${{ matrix.pack_path }}
       run: |
@@ -305,6 +290,42 @@ jobs:
           #echo ::set-output name=commit_id::$commit_hash
           echo "commit_id=$commit_hash" >> $GITHUB_OUTPUT
 
+  PublishPypi:
+    needs: [Raise]
+    if: ${{ inputs.release == 'false' }}
+    runs-on: ubuntu-20.04
+    container:
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
+      credentials:
+        username: ${{secrets.registry_user}}
+        password: ${{secrets.registry_password}}
+    strategy:
+        matrix:
+          pack_path: ${{ fromJSON(inputs.package_paths) }}
+    steps:
+      - name: Download a single artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: packages_${{ matrix.pack_path }}
+          path: dist_${{ matrix.pack_path }}/
+
+      - name: Publish package to TestPyPI Experimental
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: ${{ secrets.nexus_publisher_user }}
+          password: ${{ secrets.nexus_publisher_password }}
+          repository-url: https://artifacts.cloud.mov.ai/repository/pypi-experimental/
+          packages-dir: dist_${{ matrix.pack_path }}/
+
+      - name: Publish package to TestPyPI Testing
+        if: ${{ inputs.deploy == 'true' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: ${{ secrets.nexus_publisher_user }}
+          password: ${{ secrets.nexus_publisher_password }}
+          repository-url: https://artifacts.cloud.mov.ai/repository/pypi-integration/
+          packages-dir: dist_${{ matrix.pack_path }}/
+
   Debian-Pack:
     if: ${{ inputs.release == 'false' }}
     strategy:
@@ -330,7 +351,7 @@ jobs:
     - name: Download a single artifact
       uses: actions/download-artifact@v4
       with:
-        name: packages
+        name: packages_${{ matrix.pack_path }}
         path: dist
 
     - name: Create links for package ${{ matrix.pack_path }}
@@ -524,7 +545,6 @@ jobs:
           name: debian_test_journal
           path: ./logs/*
           retention-days: 5
-
 
   Rpm-Test:
     needs: [Raise, Rpm-Pack]
