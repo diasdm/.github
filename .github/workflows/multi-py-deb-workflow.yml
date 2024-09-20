@@ -483,7 +483,10 @@ jobs:
 
       - name: Install test requirements
         run: |
+          python3 -m venv test_venv
+          source test_venv/bin/activate
           python3 -m pip install -r build-requirements.txt
+          deactivate
 
       - name: Prereq Docker
         if: ${{ inputs.install_test_docker == 'true' }}
@@ -505,7 +508,7 @@ jobs:
           cd artifacts/
           find ./ -name "*.deb" -not -name "*src*" -exec sudo apt install -y {} \;
 
-      - name: Download a single artifact
+      - name: Download linting reports
         uses: actions/download-artifact@v4
         with:
           name: linting_reports
@@ -514,6 +517,7 @@ jobs:
       - name: Run tests
         if: ${{ inputs.skip_testing != 'true' }}
         run: |
+          source test_venv/bin/activate
           # add current user to movai-system group and apply changes
           sudo usermod -aG movai-system $USER
           newgrp movai-system
@@ -524,6 +528,7 @@ jobs:
               # run tests
               python3 -m pytest tests/
           fi
+          deactivate
 
       - name: Store tests reports for SonarCloud
         uses: actions/upload-artifact@v4
@@ -836,6 +841,9 @@ jobs:
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
+    strategy:
+      matrix:
+        publish_repo: ${{ fromJSON(inputs.prod_publish_repos) }}
 
     steps:
     - name: Checkout
