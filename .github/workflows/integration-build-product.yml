@@ -125,6 +125,7 @@ env:
   MINIO_S3_URL: "https://s3.mov.ai"
   MINIO_PUBLIC_URL: "https://minio.mov.ai"
   TIMEOUT: 720
+  DESIRED_DOCKER_VERSION: "27.2.1"
 
 jobs:
   Compute-timeout:
@@ -1444,6 +1445,15 @@ jobs:
           ssh ${{ steps.infra_outputs.outputs.ssh_connect_string }} -i ~/.ssh/ci_priv_key.pem -o StrictHostKeyChecking=no '
             set -e
             cloud-init status --wait; rm -rf ./${{ env.REMOTE_WORKSPACE_PATH }}; mkdir -p ./${{ env.REMOTE_WORKSPACE_PATH }}
+            DOCKER_VERSION=\$(docker --version | awk '{print \$3}' | sed \'s/,//\')
+            if dpkg --compare-versions "\$DOCKER_VERSION" "le" "${{ env.DESIRED_DOCKER_VERSION }}"; then
+              echo "Docker version is \$DOCKER_VERSION (<= ${{ env.DESIRED_DOCKER_VERSION }}). Marking Docker packages on hold..."
+              while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 ; do echo Waiting for other software managers to finish... ; sleep 5;done
+              sudo apt-mark hold docker-ce docker-ce-cli containerd.io
+            else
+              echo "Docker version is higher than ${{ env.DESIRED_DOCKER_VERSION }}: \$DOCKER_VERSION. Movai-service is currently with a blocking bug and does not yet support this docker breaking change"
+              exit 1
+            fi
           '
 
       - name: Prepare Devops provisioning slack message
