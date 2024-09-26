@@ -210,29 +210,14 @@ jobs:
         echo "py_pkg_version=$PACKAGE_RELEASE_VERSION" >> $GITHUB_OUTPUT
 
     - name: Build
-      run: python3 -m build
+      run: python3 -m build -o dist/${{ matrix.pack_path }}
 
     - name: Archive binary
       uses: actions/upload-artifact@v4
       with:
-        name: packages
-        path: dist/*
+        name: packages_${{ matrix.pack_path }}
+        path: dist/${{ matrix.pack_path }}/*
         retention-days: 5
-
-    - name: Publish package to TestPyPI Experimental
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        user: ${{ secrets.nexus_publisher_user }}
-        password: ${{ secrets.nexus_publisher_password }}
-        repository-url: https://artifacts.cloud.mov.ai/repository/pypi-experimental/
-
-    - name: Publish package to TestPyPI Testing
-      if: ${{ inputs.deploy == 'true' }}
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        user: ${{ secrets.nexus_publisher_user }}
-        password: ${{ secrets.nexus_publisher_password }}
-        repository-url: https://artifacts.cloud.mov.ai/repository/pypi-integration/
 
     - name: Remove hardlinks for package ${{ matrix.pack_path }}
       run: |
@@ -305,6 +290,42 @@ jobs:
           #echo ::set-output name=commit_id::$commit_hash
           echo "commit_id=$commit_hash" >> $GITHUB_OUTPUT
 
+  PublishPypi:
+    needs: [Raise]
+    if: ${{ inputs.release == 'false' }}
+    runs-on: ubuntu-20.04
+    container:
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
+      credentials:
+        username: ${{secrets.registry_user}}
+        password: ${{secrets.registry_password}}
+    strategy:
+        matrix:
+          pack_path: ${{ fromJSON(inputs.package_paths) }}
+    steps:
+      - name: Download a single artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: packages_${{ matrix.pack_path }}
+          path: dist_${{ matrix.pack_path }}/
+
+      - name: Publish package to TestPyPI Experimental
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: ${{ secrets.nexus_publisher_user }}
+          password: ${{ secrets.nexus_publisher_password }}
+          repository-url: https://artifacts.cloud.mov.ai/repository/pypi-experimental/
+          packages-dir: dist_${{ matrix.pack_path }}/
+
+      - name: Publish package to TestPyPI Testing
+        if: ${{ inputs.deploy == 'true' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: ${{ secrets.nexus_publisher_user }}
+          password: ${{ secrets.nexus_publisher_password }}
+          repository-url: https://artifacts.cloud.mov.ai/repository/pypi-integration/
+          packages-dir: dist_${{ matrix.pack_path }}/
+
   Debian-Pack:
     if: ${{ inputs.release == 'false' }}
     strategy:
@@ -330,7 +351,7 @@ jobs:
     - name: Download a single artifact
       uses: actions/download-artifact@v4
       with:
-        name: packages
+        name: packages_${{ matrix.pack_path }}
         path: dist
 
     - name: Create links for package ${{ matrix.pack_path }}
@@ -358,7 +379,7 @@ jobs:
     - name: Archive binary
       uses: actions/upload-artifact@v4
       with:
-        name: artifacts
+        name: deb_artifacts_${{ matrix.pack_path }}
         path: artifacts/*.deb
         retention-days: 5
 
@@ -393,7 +414,7 @@ jobs:
       if: ${{ inputs.release == 'false' && inputs.rpm_build == 'true' }}
       uses: actions/download-artifact@v4
       with:
-        name: packages
+        name: packages_${{ matrix.pack_path }}
         path: dist
 
     - name: Sync setup.py
@@ -442,7 +463,7 @@ jobs:
       if: ${{ inputs.release == 'false' && inputs.rpm_build == 'true' }}
       uses: actions/upload-artifact@v4
       with:
-        name: artifacts
+        name: rpm_artifacts_${{ matrix.pack_path }}
         path: artifacts/*.rpm
         retention-days: 5
 
@@ -450,6 +471,7 @@ jobs:
     strategy:
       matrix:
         distro: [ "20.04", "22.04", "24.04" ]
+      fail-fast: false
     needs: [Raise, Debian-Pack]
     if: ${{ inputs.release == 'false' && inputs.install_test == 'true' }}
     runs-on: ubuntu-${{ matrix.distro }}
@@ -462,7 +484,10 @@ jobs:
 
       - name: Install test requirements
         run: |
+          python3 -m venv test_venv
+          source test_venv/bin/activate
           python3 -m pip install -r build-requirements.txt
+          deactivate
 
       - name: Prereq Docker
         if: ${{ inputs.install_test_docker == 'true' }}
@@ -471,11 +496,12 @@ jobs:
           curl -fsSL https://get.docker.com -o get-docker.sh
           sh get-docker.sh
 
-      - name: Download artifacts
+      - name: Download deb artifacts
         uses: actions/download-artifact@v4
         with:
-          name: artifacts
+          pattern: deb_artifacts_*
           path: artifacts
+          merge-multiple: true
 
       - name: Install debian artifacts
         run: |
@@ -483,7 +509,7 @@ jobs:
           cd artifacts/
           find ./ -name "*.deb" -not -name "*src*" -exec sudo apt install -y {} \;
 
-      - name: Download a single artifact
+      - name: Download linting reports
         uses: actions/download-artifact@v4
         with:
           name: linting_reports
@@ -499,6 +525,7 @@ jobs:
               # run tests
               python3 -m pytest tests/
           fi
+          deactivate
 
       - name: Store tests reports for SonarCloud
         uses: actions/upload-artifact@v4
@@ -518,10 +545,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: debian_test_journal
+          name: debian_test_journal_${{ matrix.distro }}
           path: ./logs/*
           retention-days: 5
-
 
   Rpm-Test:
     needs: [Raise, Rpm-Pack]
@@ -550,8 +576,9 @@ jobs:
         if: ${{ inputs.release == 'false' && inputs.install_test == 'true' &&  inputs.rpm_build == 'true' }}
         uses: actions/download-artifact@v4
         with:
-          name: artifacts
+          pattern: rpm_artifacts_*
           path: artifacts
+          merge-multiple: true
 
       - name: Install rpm artifacts
         if: ${{ inputs.release == 'false' && inputs.install_test == 'true' &&  inputs.rpm_build == 'true' }}
@@ -594,7 +621,7 @@ jobs:
       run: |
         python3 -m pip install -r build-requirements.txt
 
-    - name: Download artifacts
+    - name: Download test_reports
       uses: actions/download-artifact@v4
       with:
         name: test_reports
@@ -647,17 +674,26 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Download a single artifact
+      - name: Download package artifacts
         uses: actions/download-artifact@v4
         with:
-          name: packages
+          pattern: packages_*
           path: dist
+          merge-multiple: true
 
-      - name: Download a single artifact
+      - name: Download deb artifacts
         uses: actions/download-artifact@v4
         with:
-          name: artifacts
+          pattern: deb_artifacts_*
           path: artifacts
+          merge-multiple: true
+
+      - name: Download rpm artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: rpm_artifacts_*
+          path: artifacts
+          merge-multiple: true
 
       - name: Publish to Nexus ppa-dev
         shell: bash
@@ -802,6 +838,9 @@ jobs:
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
+    strategy:
+      matrix:
+        publish_repo: ${{ fromJSON(inputs.prod_publish_repos) }}
 
     steps:
     - name: Checkout
@@ -827,21 +866,21 @@ jobs:
     - name: Archive binary
       uses: actions/upload-artifact@v4
       with:
-        name: packages
+        name: released_packages
         path: dist/*
         retention-days: 5
 
     - name: Archive binary
       uses: actions/upload-artifact@v4
       with:
-        name: artifacts
+        name: released_deb_artifacts
         path: artifacts/*.deb
         retention-days: 5
 
     - name: Archive binary
       uses: actions/upload-artifact@v4
       with:
-        name: artifacts
+        name: released_rpm_artifacts
         path: artifacts/*.rpm
         retention-days: 5
 
