@@ -492,9 +492,6 @@ jobs:
       - name: Run tests
         if: ${{ inputs.skip_testing != 'true' }}
         run: |
-          # add current user to movai-system group and apply changes
-          sudo usermod -aG movai-system $USER
-          newgrp movai-system
           if [ -f tox.ini ]; then
               # run tests and generates coverage.xml
               tox
