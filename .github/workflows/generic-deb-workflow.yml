@@ -63,8 +63,9 @@ jobs:
       run: |
         PACKAGE_VERSION=$(dpkg-parsechangelog --show-field Version)
         PACKAGE_NAME=$(dpkg-parsechangelog --show-field Source)
-        echo ::set-output name=pkg_name::$PACKAGE_NAME
-        echo ::set-output name=pkg_version::$PACKAGE_VERSION
+
+        echo "pkg_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+        echo "pkg_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
     - name: Raise Version
       id: vars-after-raise
       run: |
@@ -73,7 +74,7 @@ jobs:
         build_id="${PACKAGE_VERSION#*-}"
         raised_buildid=$(($build_id+1))
         RAISED_PACKAGE_VERSION="$main_version-$raised_buildid"
-        echo ::set-output name=pkg_version::$RAISED_PACKAGE_VERSION
+        echo "pkg_version=$RAISED_PACKAGE_VERSION" >> $GITHUB_OUTPUT
     - name: Pack debian
       run: |
         git config --global --add safe.directory $(pwd)
@@ -100,7 +101,6 @@ jobs:
     - name: Prepare raise variables
       id: pre_raise
       run: |
-        #echo ::set-output name=branch::${GITHUB_REF#refs/heads/}
         echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
 
     - name: Raise App version
@@ -133,17 +133,19 @@ jobs:
       shell: bash
       run: |
         commit_hash=$(git log --format="%H" -n 1)
-        #echo ::set-output name=commit_id::$commit_hash
         echo "commit_id=$commit_hash" >> $GITHUB_OUTPUT
 
     - name: Create Github Release
-      uses: softprops/action-gh-release@v1
-      with:
-        prerelease: false
-        name: "Release of ${{ steps.vars-after-raise.outputs.pkg_version  }}"
-        generate_release_notes: true
-        files: artifacts/*.deb
-        tag_name: ${{ steps.vars-after-raise.outputs.pkg_version  }}
-        target_commitish: ${{ steps.commit.outputs.commit_id }}
+      shell: bash
+      run: |
+        product_version=${{ steps.vars-after-raise.outputs.pkg_version }}
+        previous_version_option=""
+        if gh release view ${{ steps.vars.outputs.pkg_version }} &>/dev/null; then
+          previous_version_option="--notes-start-tag ${{ steps.vars.outputs.pkg_version }}"
+        fi
+        gh release create -p --generate-notes $previous_version_option --target $commit_hash -t "Release of $product_version" $product_version
+        # add all files in the artifacts folder
+        find artifacts -type f -exec gh release upload $product_version {} \;
       env:
         GITHUB_TOKEN: ${{ secrets.gh_token }}
+
