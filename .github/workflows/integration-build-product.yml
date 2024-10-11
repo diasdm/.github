@@ -1543,9 +1543,12 @@ jobs:
 
           export USERSPACE_FOLDER_PATH="/opt/userspace"
           sudo mkdir -p $USERSPACE_FOLDER_PATH/.git;sudo chown 1000:1000 $USERSPACE_FOLDER_PATH/ -Rf
-          export PUBLIC_IP=$(hostname -I | awk '{print $1}')
+          export PUBLIC_IP="$(hostname -I | cut -d " " -f1)"
           export SIMULATION_ID="CI"
           rm -rf userspace
+
+          # Enable debug logs of movai-service
+          sudo sh -c "echo MOVAI_SERVICE_LOGGER_LEVEL=DEBUG >> /etc/movai/config.env"
 
           wget https://movai-scripts.s3.amazonaws.com/QuickStart_$(cat quickstart_version).bash
           chmod +x ./QuickStart_$(cat quickstart_version).bash
@@ -1650,6 +1653,9 @@ jobs:
 
             # spawner (mobros firmware)
             journalctl -u movai-service -t mobros --since "1hour ago" &> spawner-firmware.log || true
+
+            # docker logs 
+            journalctl -u docker --since "1hour ago" &> "docker-service.log"
           '
 
       - name: Remote - Stash QA artifacts
