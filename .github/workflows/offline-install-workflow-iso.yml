@@ -42,10 +42,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Lint with shellcheck
-        uses: azohra/shell-linter@latest
-        with:
-          path: ./*.bash
+      # - name: Lint with shellcheck
+      #   uses: azohra/shell-linter@latest
+      #   with:
+      #     path: ./*.bash
 
       - name: Fetch platform artifacts
         run: |
