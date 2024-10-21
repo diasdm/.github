@@ -70,7 +70,7 @@ jobs:
         run: |
           wget https://movai-scripts.s3.amazonaws.com/Deployment_Toolkit.bash
           chmod +x Deployment_Toolkit.bash
-          ./Deployment_Toolkit.bash config.cfg
+          ./Deployment_Toolkit.bash
         env:
           DOCKER_REG_USER: ${{ secrets.registry_user }}
           DOCKER_REG_PWD: ${{ secrets.registry_password }}
@@ -85,7 +85,7 @@ jobs:
       - name: Run the script
         run: |
           mv offline_install_artifacts/* .
-          ./mkisofs-movai-autoinstall.bash ${{ inputs.OS_NAME }} ${{ inputs.OS_VERSION }} ${{ inputs.OS_FULL_VERSION }} ${{ inputs.HOSTNAME }}
+          ./mkisofs-movai-autoinstall.bash config.cfg
     
       - name: Clean up
         if: always()
