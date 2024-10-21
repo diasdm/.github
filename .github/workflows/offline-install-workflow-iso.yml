@@ -138,10 +138,60 @@ jobs:
           docker rm -f $(docker ps -a -q) || true
           docker rmi -f $(docker images -q) || true
 
+  Create-Release:
+    runs-on: ubuntu-latest
+    needs: Build
+    if: ${{ inputs.deploy == 'true' && inputs.release == 'false' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Commit raise
+        if: ${{ inputs.deploy == 'true' }}
+        run: |
+          git config --global --add safe.directory $(pwd)
+          git config --global user.name '${{ secrets.auto_commit_user }}'
+          git config --global user.email '${{ secrets.auto_commit_mail }}'
+          git config --global user.password ${{ secrets.auto_commit_pwd }}
+          git restore version
+          git pull
+          echo "${{ needs.Build.outputs.raised_version }}">version
+          git add version
+          git commit -m "[skip actions] Automatic Bump of image version to ${{ needs.Build.outputs.raised_version }}"
+
+      - name: Prepare raise variables
+        id: pre_raise_push
+        run: |
+          echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
+
+      - name: Raise App version
+        uses: CasperWA/push-protected@v2
+        with:
+          token: ${{ secrets.auto_commit_pwd }}
+          branch: ${{ steps.pre_raise_push.outputs.branch }}
+          unprotect_reviews: true
+
+      - name: Commit info
+        id: commit
+        shell: bash
+        run: |
+          commit_hash=$(git log --format="%H" -n 1)
+          echo "commit_id=$commit_hash" >> $GITHUB_OUTPUT
+
+      - name: Create Github Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "Release of ${{ needs.Build.outputs.raised_version }}"
+          body: "Please add release notes"
+          tag_name: ${{ needs.Build.outputs.raised_version }}
+          target_commitish: ${{ steps.commit.outputs.commit_id }}
+          token: ${{ secrets.auto_commit_pwd }}
+          prerelease: true
+          generate_release_notes: true
 
   Deploy-Images:
     runs-on: packer-runner
-    needs: [ Build ]
+    needs: [ Build, Create-Release ]
     if: ${{ inputs.deploy == 'true' && inputs.release == 'false' }}
     steps:
       - name: Test NFS server
