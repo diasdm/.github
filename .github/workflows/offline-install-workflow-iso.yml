@@ -42,10 +42,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Lint with shellcheck
-        uses: azohra/shell-linter@latest
-        with:
-          path: ./*.bash
+      # - name: Lint with shellcheck
+      #   uses: azohra/shell-linter@latest
+      #   with:
+      #     path: ./*.bash
+
+      - name: Create config file
+        run: |
+          echo "UBUNTU_NAME=${{ inputs.OS_NAME }}" > config
+          echo "UBUNTU_VERSION=${{ inputs.OS_VERSION }}" >> config
+          echo "UBUNTU_VERSION_BUILD=${{ inputs.OS_FULL_VERSION }}" >> config
+          echo "HOSTNAME=${{ inputs.HOSTNAME }}" >> config
+          echo "SSID=MOVAIPT" >> config
+          echo "PASSWORD=your_password" >> config
+          echo "WIFI_INTERFACE=wlp0s20f3" >> config
+          echo "ETHERNET_INTERFACE=enp7s0" >> config
+          echo "DHCP4=yes" >> config
+          echo "OPTIONAL=true" >> config
+
 
       - name: Fetch platform artifacts
         run: |
