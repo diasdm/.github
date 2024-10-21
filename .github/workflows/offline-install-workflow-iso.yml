@@ -84,13 +84,14 @@ jobs:
 
       - name: Run the script
         run: |
-          cp offline_install_artifacts/* .
+          mv offline_install_artifacts/* .
           ./mkisofs-movai-autoinstall.bash ${{ inputs.OS_NAME }} ${{ inputs.OS_VERSION }} ${{ inputs.OS_FULL_VERSION }} ${{ inputs.HOSTNAME }}
     
       - name: Clean up
         if: always()
         run: |
           docker rm -f $(docker ps -a -q) || true
+          docker rmi -f $(docker images -q) || true
 
 
     
