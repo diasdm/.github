@@ -49,23 +49,23 @@ jobs:
 
       - name: Create config file
         run: |
-          echo "UBUNTU_NAME=${{ inputs.OS_NAME }}" > config
-          echo "UBUNTU_VERSION=${{ inputs.OS_VERSION }}" >> config
-          echo "UBUNTU_VERSION_BUILD=${{ inputs.OS_FULL_VERSION }}" >> config
-          echo "HOSTNAME=${{ inputs.HOSTNAME }}" >> config
-          echo "SSID=MOVAIPT" >> config
-          echo "PASSWORD=your_password" >> config
-          echo "WIFI_INTERFACE=wlp0s20f3" >> config
-          echo "ETHERNET_INTERFACE=enp7s0" >> config
-          echo "DHCP4=yes" >> config
-          echo "OPTIONAL=true" >> config
+          echo "UBUNTU_NAME=${{ inputs.OS_NAME }}" > config.cfg
+          echo "UBUNTU_VERSION=${{ inputs.OS_VERSION }}" >> config.cfg
+          echo "UBUNTU_VERSION_BUILD=${{ inputs.OS_FULL_VERSION }}" >> config.cfg
+          echo "HOSTNAME=${{ inputs.HOSTNAME }}" >> config.cfg
+          echo "SSID=MOVAIPT" >> config.cfg
+          echo "PASSWORD=your_password" >> config.cfg
+          echo "WIFI_INTERFACE=wlp0s20f3" >> config.cfg
+          echo "ETHERNET_INTERFACE=enp7s0" >> config.cfg
+          echo "DHCP4=yes" >> config.cfg
+          echo "OPTIONAL=true" >> config.cfg
 
 
       - name: Fetch platform artifacts
         run: |
           wget https://movai-scripts.s3.amazonaws.com/Deployment_Toolkit.bash
           chmod +x Deployment_Toolkit.bash
-          ./Deployment_Toolkit.bash 
+          ./Deployment_Toolkit.bash config.cfg
         env:
           DOCKER_REG_USER: ${{ secrets.registry_user }}
           DOCKER_REG_PWD: ${{ secrets.registry_password }}
