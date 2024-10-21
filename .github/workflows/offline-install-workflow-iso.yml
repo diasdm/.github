@@ -64,7 +64,9 @@ jobs:
 
 
       - name: Run the script
-        run: ./mkisofs-movai-autoinstall.bash ${{ inputs.OS_NAME }} ${{ inputs.OS_VERSION }} ${{ inputs.OS_FULL_VERSION }} ${{ inputs.HOSTNAME }}
+        run: |
+          cp offline_install_artifacts/* .
+          ./mkisofs-movai-autoinstall.bash ${{ inputs.OS_NAME }} ${{ inputs.OS_VERSION }} ${{ inputs.OS_FULL_VERSION }} ${{ inputs.HOSTNAME }}
     
       - name: Clean up
         run: rm -rf ./docker-packages ./deb-packages ./*.iso
