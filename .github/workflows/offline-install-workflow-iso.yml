@@ -14,7 +14,27 @@ on:
       HOSTNAME:
         type: string
         required: true
-
+      PRODUCT_NAME:
+        type: string
+        required: true
+      PRODUCT_VERSION:
+        type: string
+        required: true
+    secrets:
+      auto_commit_user:
+        required: true
+      auto_commit_mail:
+        required: true
+      auto_commit_pwd:
+        required: true
+      registry_user:
+        required: true
+      registry_password:
+        required: true
+      nexus_publisher_user:
+        required: true
+      nexus_publisher_password:
+        required: true
 jobs:
   Validate-features:
     runs-on: packer-runner
@@ -26,7 +46,23 @@ jobs:
         uses: azohra/shell-linter@latest
         with:
           path: ./*.bash
-  
+
+      - name: Fetch platform artifacts
+        run: |
+          wget https://movai-scripts.s3.amazonaws.com/Deployment_Toolkit.bash
+          chmod +x Deployment_Toolkit.bash
+          ./Deployment_Toolkit.bash 
+        env:
+          DOCKER_REG_USER: ${{ secrets.registry_user }}
+          DOCKER_REG_PWD: ${{ secrets.registry_password }}
+          NX_API_USR: ${{ secrets.nexus_publisher_user }}
+          NX_API_PWD: ${{ secrets.nexus_publisher_password }}
+          GITHUB_API_USR: ${{ secrets.auto_commit_user }}
+          GITHUB_API_PWD: ${{ secrets.auto_commit_pwd }}
+          PRODUCT_NAME: ${{ inputs.PRODUCT_NAME }}
+          PRODUCT_VERSION: ${{ inputs.PRODUCT_VERSION }}
+
+
       - name: Run the script
         run: ./mkisofs-movai-autoinstall.bash ${{ inputs.OS_NAME }} ${{ inputs.OS_VERSION }} ${{ inputs.OS_FULL_VERSION }} ${{ inputs.HOSTNAME }}
     
