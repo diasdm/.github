@@ -10,6 +10,10 @@ on:
         required: false
         type: string
         default: 'false'
+      run_lint_staged:
+        required: false
+        type: string
+        default: 'false'
       run_tests:
         required: false
         type: string
@@ -116,12 +120,41 @@ jobs:
       env:
         npm_token: ${{ secrets.npm_token }}
 
-    - name: Raise App version
+    - name: Global git config
       run: |
         git config --global --add safe.directory $(pwd)
         git config --global user.name '${{ secrets.auto_commit_user }}'
         git config --global user.email '${{ secrets.auto_commit_mail }}'
         git config --global user.password ${{ secrets.auto_commit_pwd }}
+
+    - name: Install dependencies
+      run: |
+        if test "${{ inputs.pm }}" = "pnpm"; then
+          pnpm i
+        elif ${{ inputs.legacy }}; then
+          npm ci --loglevel verbose --legacy-peer-deps
+        else
+          npm ci --loglevel verbose
+        fi
+
+    - name: Run lint-staged
+      if: ${{ inputs.run_lint_staged == 'true' }}
+      run: |
+        echo "The following files were changed from origin/${GITHUB_BASE_REF}...origin/${GITHUB_HEAD_REF} and will be validated:"
+        git --no-pager diff "origin/${GITHUB_BASE_REF}...origin/${GITHUB_HEAD_REF}" --name-only
+        echo ""
+        npx lint-staged --diff="origin/${GITHUB_BASE_REF}...origin/${GITHUB_HEAD_REF}"
+        echo ""
+        # explicitly check for changes and fail if there are any
+        if ! git diff --quiet HEAD; then
+          echo ""
+          echo "ERROR, the following files have changed:"
+          git diff --name-only HEAD
+          exit 1
+        fi
+
+    - name: Raise App version
+      run: |
         ${{ inputs.pm }} version prerelease --no-git-tag-version
 
     - name: Find Package details
@@ -148,16 +181,6 @@ jobs:
           {
             "version": "${{steps.vars-after-raise.outputs.npm_pkg_version}}"
           }
-
-    - name: Install dependencies
-      run: |
-        if test "${{ inputs.pm }}" = "pnpm"; then
-          pnpm i
-        elif ${{ inputs.legacy }}; then
-          npm ci --loglevel verbose --legacy-peer-deps
-        else
-          npm ci --loglevel verbose
-        fi
 
     - name: Build
       run: ${{ inputs.pm }} run build
