@@ -39,6 +39,7 @@ jobs:
   Validate-features:
     runs-on: packer-runner
     steps:
+      - uses: rtCamp/action-cleanup@master
       - name: Checkout
         uses: actions/checkout@v4
 
