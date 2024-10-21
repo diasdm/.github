@@ -1,0 +1,36 @@
+name: Build Offline ISO 
+on:
+  workflow_call:
+    inputs:
+      OS_NAME:
+        type: string
+        required: true
+      OS_VERSION:
+        type: string
+        required: true
+      OS_FULL_VERSION:
+        type: string
+        required: true
+      HOSTNAME:
+        type: string
+        required: true
+
+jobs:
+  Validate-features:
+    runs-on: packer-runner
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lint with shellcheck
+        uses: koalaman/shellcheck-action@v2
+        with:
+          shellcheck_flags: -x
+          shellcheck_files: ./*.bash
+  
+      - name: Run the script
+        run: ./mkisofs-movai-autoinstall.bash
+    
+      - name: Clean up
+        run: rm -rf ./docker-packages ./deb-packages ./*.iso
+    
