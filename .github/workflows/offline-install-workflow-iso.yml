@@ -236,9 +236,9 @@ jobs:
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN_ID }}
 
-      - name: Cleanup
-        if: always()
-        shell: bash
-        run: |
-          rm -rf $RUN_STAGING_DIR
+      # - name: Cleanup
+      #   if: always()
+      #   shell: bash
+      #   run: |
+      #     rm -rf $RUN_STAGING_DIR
         
