@@ -116,7 +116,7 @@ jobs:
 
       - name: Run the script
         run: |
-          mv offline_install_artifacts/* .
+          # mv offline_install_artifacts/* .
           ./mkisofs-movai-autoinstall.bash config.cfg
 
     
