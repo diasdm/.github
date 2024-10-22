@@ -125,12 +125,13 @@ jobs:
         id: prepare_deploy
         run: |
           generated_file_name=${{ inputs.PRODUCT_NAME }}_${{ steps.raise.outputs.raised_version }}_offline_install.iso
+          echo "::group::Artifact local copy to staging area $RUN_STAGING_DIR"
+          mkdir -p $RUN_STAGING_DIR
           for file in $(find $RUN_STAGING_DIR -name "*custom*.iso"); do
             file_dir=$(dirname $file)
-            mv $file "$file_dir/$generated_file_name"
+            mv $file "$RUN_STAGING_DIR/$generated_file_name"
           done
           echo "file_name=$generated_file_name" >> $GITHUB_OUTPUT
-
 
       - name: Clean up
         if: always()
