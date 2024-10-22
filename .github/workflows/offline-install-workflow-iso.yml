@@ -91,8 +91,8 @@ jobs:
           echo "UBUNTU_VERSION_BUILD=${{ inputs.OS_FULL_VERSION }}" >> config.cfg
           echo "HOSTNAME=${{ inputs.HOSTNAME }}" >> config.cfg
           echo "SSID=MOVAIPT" >> config.cfg
-          echo "PASSWORD=your_password" >> config.cfg
-          echo "WIFI_INTERFACE=wlp0s20f3" >> config.cfg
+          echo "PASSWORD=${{ secrets.WIFI_MOVAIPT_PASSWORD }}" >> config.cfg
+          echo "WIFI_INTERFACE=wlo1" >> config.cfg
           echo "ETHERNET_INTERFACE=enp7s0" >> config.cfg
           echo "DHCP4=yes" >> config.cfg
           echo "OPTIONAL=true" >> config.cfg
