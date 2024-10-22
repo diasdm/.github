@@ -98,20 +98,20 @@ jobs:
           echo "OPTIONAL=true" >> config.cfg
 
 
-      - name: Fetch platform artifacts
-        run: |
-          wget https://movai-scripts.s3.amazonaws.com/Deployment_Toolkit.bash
-          chmod +x Deployment_Toolkit.bash
-          ./Deployment_Toolkit.bash
-        env:
-          DOCKER_REG_USER: ${{ secrets.registry_user }}
-          DOCKER_REG_PWD: ${{ secrets.registry_password }}
-          NX_API_USR: ${{ secrets.nexus_publisher_user }}
-          NX_API_PWD: ${{ secrets.nexus_publisher_password }}
-          GITHUB_API_USR: ${{ secrets.auto_commit_user }}
-          GITHUB_API_PWD: ${{ secrets.auto_commit_pwd }}
-          PRODUCT_NAME: ${{ inputs.PRODUCT_NAME }}
-          PRODUCT_VERSION: ${{ inputs.PRODUCT_VERSION }}
+      # - name: Fetch platform artifacts
+      #   run: |
+      #     wget https://movai-scripts.s3.amazonaws.com/Deployment_Toolkit.bash
+      #     chmod +x Deployment_Toolkit.bash
+      #     ./Deployment_Toolkit.bash
+      #   env:
+      #     DOCKER_REG_USER: ${{ secrets.registry_user }}
+      #     DOCKER_REG_PWD: ${{ secrets.registry_password }}
+      #     NX_API_USR: ${{ secrets.nexus_publisher_user }}
+      #     NX_API_PWD: ${{ secrets.nexus_publisher_password }}
+      #     GITHUB_API_USR: ${{ secrets.auto_commit_user }}
+      #     GITHUB_API_PWD: ${{ secrets.auto_commit_pwd }}
+      #     PRODUCT_NAME: ${{ inputs.PRODUCT_NAME }}
+      #     PRODUCT_VERSION: ${{ inputs.PRODUCT_VERSION }}
 
 
       - name: Run the script
@@ -129,7 +129,7 @@ jobs:
           mkdir -p $RUN_STAGING_DIR
           for file in $(find ${{ inputs.OS_NAME }}"-${{ inputs.OS_VERSION }} -name "*custom*.iso"); do
             file_dir=$(dirname $file)
-            mv {{ inputs.OS_NAME }}"-${{ inputs.OS_VERSION }}/ubuntu-custom-{{ inputs.OS_NAME }}"-${{ inputs.OS_FULL_VERSION }}.iso "$RUN_STAGING_DIR/$generated_file_name"
+            mv ${{ inputs.OS_NAME }}"-${{ inputs.OS_VERSION }}/ubuntu-custom-${{ inputs.OS_NAME }}"-${{ inputs.OS_FULL_VERSION }}.iso "$RUN_STAGING_DIR/$generated_file_name"
           done
           echo "file_name=$generated_file_name" >> $GITHUB_OUTPUT
 
