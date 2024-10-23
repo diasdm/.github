@@ -627,6 +627,7 @@ jobs:
           python3 -m pip install integration-pipeline==$CI_INTEGRATION_SCRIPTS_VERSION --ignore-installed
 
           export USERSPACE_FOLDER_PATH="$(pwd)/userspace"
+          export ROBOTNAME="ci_${{ inputs.product_name }}"
           mkdir -p userspace/
           integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key services_version --output_file movai_service_version
           integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key quickstart_version --output_file quickstart_version
@@ -1120,6 +1121,7 @@ jobs:
 
           export USERSPACE_FOLDER_PATH="$(pwd)/userspace"
           export PUBLIC_IP=$(hostname -I | awk '{print $1}')
+          export ROBOTNAME="ci_${{ inputs.product_name }}"
 
           . .ci-venv/bin/activate
           integration-pipeline get_json_value --file $CONFIG_FILE_NAME.ci --key services_version --output_file movai_service_version
@@ -1666,6 +1668,7 @@ jobs:
           sudo mkdir -p $USERSPACE_FOLDER_PATH/.git;sudo chown 1000:1000 $USERSPACE_FOLDER_PATH/ -Rf
           export PUBLIC_IP="$(hostname -I | cut -d " " -f1)"
           export SIMULATION_ID="CI"
+          export ROBOTNAME="ci_${{ inputs.product_name }}"
           rm -rf userspace
 
           # Enable debug logs of movai-service
