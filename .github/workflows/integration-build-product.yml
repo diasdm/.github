@@ -63,6 +63,10 @@ on:
         required: false
         type: string
         default: '[]'
+      deployment_project:
+        required: false
+        type: boolean
+        default: false
 
 
     secrets:
@@ -660,6 +664,7 @@ jobs:
           retention-days: 5
 
       - name: Run mobtest
+        if: ${{ inputs.deployment_project == false }}
         shell: bash
         run: |
           container_id=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
@@ -1159,7 +1164,7 @@ jobs:
           retention-days: 5
 
       - name: Run mobtest
-        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' && inputs.deployment_project == false}}
         shell: bash
         run: |
           container_id=$(docker ps --format '{{.Names}}' --filter "name=^spawner-.*")
