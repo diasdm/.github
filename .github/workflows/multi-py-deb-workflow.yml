@@ -455,6 +455,16 @@ jobs:
     runs-on: ubuntu-${{ matrix.distro }}
     timeout-minutes: 90
     steps:
+      - name: Maximize build space
+        uses: AdityaGarg8/remove-unwanted-software@v4.1
+        with:
+          remove-android: 'true'
+          remove-dotnet: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+          remove-large-packages: 'true'
+          verbose: 'true'
+          
       - name: Checkout
         uses: actions/checkout@v3
         with:
