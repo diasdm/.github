@@ -227,7 +227,7 @@ jobs:
         retention-days: 5
 
     - name: Publish package to TestPyPI Experimental
-      uses: pypa/gh-action-pypi-publish@release/v1.11.0
+      uses: pypa/gh-action-pypi-publish@v1.11.0
       with:
         user: ${{ secrets.nexus_publisher_user }}
         password: ${{ secrets.nexus_publisher_password }}
@@ -275,7 +275,7 @@ jobs:
 
     - name: Publish package to TestPyPI Integration
       if: ${{ inputs.deploy == 'true' }}
-      uses: pypa/gh-action-pypi-publish@release/v1.11.0
+      uses: pypa/gh-action-pypi-publish@v1.11.0
       with:
         user: ${{ secrets.nexus_publisher_user }}
         password: ${{ secrets.nexus_publisher_password }}
@@ -344,7 +344,7 @@ jobs:
         retention-days: 5
 
     - name: Publish package to ${{ matrix.publish_repo }}
-      uses: pypa/gh-action-pypi-publish@release/v1.11.0
+      uses: pypa/gh-action-pypi-publish@v1.11.0
       with:
         user: ${{ secrets.nexus_publisher_user }}
         password: ${{ secrets.nexus_publisher_password }}
