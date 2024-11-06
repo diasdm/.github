@@ -105,10 +105,6 @@ jobs:
         fetch-depth: 0
         submodules: recursive
 
-    - name: Create hard link to pip 3.8
-      run: |
-        ln /usr/bin/pip3 /usr/bin/pip3.8
-
     - name: Install build-requirements
       run: |
         if [ -f build-apt-requirements.txt ]; then
@@ -181,7 +177,7 @@ jobs:
         fetch-depth: 0
         submodules: recursive
 
-    - name: install build-requirements
+    - name: Install build-requirements
       run: python3 -m pip install -r build-requirements.txt
 
     - name: Create links for package ${{ matrix.pack_path }}
@@ -675,7 +671,7 @@ jobs:
         echo "Please check report here: https://sonarcloud.io/project/overview?id=${{ github.repository_owner }}_${{ github.event.repository.name }}"
 
   Publish:
-    needs: [Raise, Debian-Pack, Rpm-Pack, Debian-Test]
+    needs: [Raise, Debian-Pack, Rpm-Pack, Debian-Test, SonarCloud]
     if: ${{ inputs.deploy == 'true' }}
     runs-on: ubuntu-20.04
     container:
