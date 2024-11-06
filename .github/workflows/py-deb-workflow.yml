@@ -241,7 +241,7 @@ jobs:
       with:
         user: ${{ secrets.nexus_publisher_user }}
         password: ${{ secrets.nexus_publisher_password }}
-        repository_url: https://artifacts.cloud.mov.ai/repository/pypi-experimental/
+        repository-url: https://artifacts.cloud.mov.ai/repository/pypi-experimental/
 
     - name: Publish package to TestPyPI Testing
       if: ${{ inputs.deploy == 'true' }}
@@ -249,7 +249,7 @@ jobs:
       with:
         user: ${{ secrets.nexus_publisher_user }}
         password: ${{ secrets.nexus_publisher_password }}
-        repository_url: https://artifacts.cloud.mov.ai/repository/pypi-integration/
+        repository-url: https://artifacts.cloud.mov.ai/repository/pypi-integration/
 
 
   Debian-Pack:
@@ -452,7 +452,7 @@ jobs:
         with:
           user: ${{ secrets.nexus_publisher_user }}
           password: ${{ secrets.nexus_publisher_password }}
-          repository_url: https://artifacts.cloud.mov.ai/repository/${{ inputs.prod_publish_pypi }}/
+          repository-url: https://artifacts.cloud.mov.ai/repository/${{ inputs.prod_publish_pypi }}/
 
 
   Release-Deb:

@@ -231,7 +231,7 @@ jobs:
       with:
         user: ${{ secrets.nexus_publisher_user }}
         password: ${{ secrets.nexus_publisher_password }}
-        repository_url: https://artifacts.aws.cloud.mov.ai/repository/pypi-experimental/
+        repository-url: https://artifacts.aws.cloud.mov.ai/repository/pypi-experimental/
 
     - name: Build docs
       if: ${{ inputs.with_docs }}
@@ -279,7 +279,7 @@ jobs:
       with:
         user: ${{ secrets.nexus_publisher_user }}
         password: ${{ secrets.nexus_publisher_password }}
-        repository_url: https://artifacts.aws.cloud.mov.ai/repository/pypi-integration/
+        repository-url: https://artifacts.aws.cloud.mov.ai/repository/pypi-integration/
 
     - name: Create Github Release
       if: ${{ inputs.deploy == 'true' }}
@@ -348,4 +348,4 @@ jobs:
       with:
         user: ${{ secrets.nexus_publisher_user }}
         password: ${{ secrets.nexus_publisher_password }}
-        repository_url: https://artifacts.aws.cloud.mov.ai/repository/${{ matrix.publish_repo }}/
+        repository-url: https://artifacts.aws.cloud.mov.ai/repository/${{ matrix.publish_repo }}/
