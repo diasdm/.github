@@ -40,6 +40,10 @@ on:
         required: false
         type: string
         default: 'false'
+      install_test_distros:
+        required: false
+        type: string
+        default: '["20.04", "22.04", "24.04"]'
       install_test_zmq:
         required: false
         type: string
@@ -470,13 +474,23 @@ jobs:
   Debian-Test:
     strategy:
       matrix:
-        distro: [ "20.04", "22.04", "24.04" ]
+        distro: ${{ fromJSON(inputs.install_test_distros) }}
       fail-fast: false
     needs: [Raise, Debian-Pack]
     if: ${{ inputs.release == 'false' && inputs.install_test == 'true' }}
     runs-on: ubuntu-${{ matrix.distro }}
     timeout-minutes: 90
     steps:
+      - name: Maximize build space
+        uses: AdityaGarg8/remove-unwanted-software@v4.1
+        with:
+          remove-android: 'true'
+          remove-dotnet: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+          remove-large-packages: 'true'
+          verbose: 'true'
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -509,12 +523,6 @@ jobs:
           cd artifacts/
           find ./ -name "*.deb" -not -name "*src*" -exec sudo apt install -y {} \;
 
-      - name: Download linting reports
-        uses: actions/download-artifact@v4
-        with:
-          name: linting_reports
-          path: ./
-
       - name: Run tests
         if: ${{ inputs.skip_testing != 'true' }}
         run: |
@@ -531,8 +539,8 @@ jobs:
       - name: Store tests reports for SonarCloud
         uses: actions/upload-artifact@v4
         with:
-          name: test_reports
-          path: ./flake8-report.txt ./pylint-report.txt ./coverage.xml
+          name: coverage_report
+          path: ./coverage.xml
         if: ${{ matrix.distro == '20.04' }}
 
       - name: Store logs of journalctl
@@ -622,10 +630,16 @@ jobs:
       run: |
         python3 -m pip install -r build-requirements.txt
 
-    - name: Download test_reports
+    - name: Download coverage reports
       uses: actions/download-artifact@v4
       with:
-        name: test_reports
+        name: coverage_report
+        path: ./
+
+    - name: Download linting reports
+      uses: actions/download-artifact@v4
+      with:
+        name: linting_reports
         path: ./
 
     - name: Create SonarCloud project and disable autoscan
@@ -886,7 +900,7 @@ jobs:
         retention-days: 5
 
     - name: Publish package to prod PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      uses: pypa/gh-action-pypi-publish@v1.11.0
       with:
         user: ${{ secrets.nexus_publisher_user }}
         password: ${{ secrets.nexus_publisher_password }}
