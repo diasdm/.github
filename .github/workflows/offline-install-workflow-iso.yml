@@ -11,9 +11,9 @@ on:
       OS_FULL_VERSION:
         type: string
         required: true
-      HOSTNAME:
+      PRODUCT_TYPE:
         type: string
-        required: false
+        required: true
       PRODUCT_NAME:
         type: string
         required: true
