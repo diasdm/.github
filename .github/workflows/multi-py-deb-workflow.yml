@@ -537,7 +537,7 @@ jobs:
         with:
           name: coverage_report
           path: ./coverage.xml
-        if: ${{ matrix.distro == '20.04' }}
+        if: ${{ matrix.distro == '20.04' }} and ${{ inputs.skip_testing != 'true' }}
 
       - name: Store logs of journalctl
         shell: bash
@@ -631,6 +631,7 @@ jobs:
       with:
         name: coverage_report
         path: ./
+      if: ${{ inputs.skip_testing != 'true' }}
 
     - name: Download linting reports
       uses: actions/download-artifact@v4
@@ -644,8 +645,30 @@ jobs:
         sonar_org: 'mov-ai'
         sonar_token: ${{ secrets.sonar_token }}
 
-    - name: SonarCloud Scan
+    - name: SonarCloud Scan and Quality Gate check
       uses: SonarSource/sonarcloud-github-action@v2.0.2
+      if: ${{ inputs.skip_testing != 'true' }}
+      env:
+        GITHUB_TOKEN: ${{ github.token }}  # Needed to get PR information, if any
+        SONAR_TOKEN: ${{ secrets.sonar_token }}
+      with:
+        projectBaseDir: ./
+        args: >
+          -Dsonar.organization=mov-ai
+          -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}
+          -Dsonar.sources=.
+          -Dsonar.scm.provider=git
+          -Dsonar.qualitygate.wait=true
+          -Dsonar.qualitygate.timeout=300
+          -Dsonar.coverage.exclusions=tests/**
+          -Dsonar.cpd.exclusions=tests/**
+          -Dsonar.python.version=3
+          -Dsonar.python.flake8.reportPaths=flake8-report.txt
+          -Dsonar.python.pylint.reportPaths=pylint-report.txt
+
+    - name: SonarCloud Scan and Quality Gate check (no coverage)
+      uses: SonarSource/sonarcloud-github-action@v2.0.2
+      if: ${{ inputs.skip_testing == 'true' }}
       env:
         GITHUB_TOKEN: ${{ github.token }}  # Needed to get PR information, if any
         SONAR_TOKEN: ${{ secrets.sonar_token }}
