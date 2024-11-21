@@ -537,7 +537,7 @@ jobs:
         with:
           name: coverage_report
           path: ./coverage.xml
-        if: ${{ matrix.distro == '20.04' }} and ${{ inputs.skip_testing != 'true' }}
+        if: ${{ matrix.distro == '20.04' && inputs.skip_testing != 'true' }}
 
       - name: Store logs of journalctl
         shell: bash
