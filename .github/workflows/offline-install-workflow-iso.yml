@@ -1,4 +1,4 @@
-name: Build Offline ISO 
+name: Build Offline ISO
 on:
   workflow_call:
     inputs:
@@ -20,6 +20,9 @@ on:
       PRODUCT_VERSION:
         type: string
         required: true
+      PRODUCT_PACKAGES:
+        type: string
+        required: false
       deploy:
         type: string
         required: true
@@ -86,17 +89,19 @@ jobs:
 
       - name: Create config file
         run: |
-          echo "UBUNTU_NAME=${{ inputs.OS_NAME }}" > config.cfg
-          echo "UBUNTU_VERSION=${{ inputs.OS_VERSION }}" >> config.cfg
-          echo "UBUNTU_VERSION_BUILD=${{ inputs.OS_FULL_VERSION }}" >> config.cfg
-          echo "HOSTNAME=${{ inputs.HOSTNAME }}" >> config.cfg
-          echo "SSID=MOVAIPT" >> config.cfg
-          echo "PASSWORD=${{ secrets.WIFI_MOVAIPT_PASSWORD }}" >> config.cfg
-          echo "WIFI_INTERFACE=wlo1" >> config.cfg
-          echo "ETHERNET_INTERFACE=enp7s0" >> config.cfg
-          echo "DHCP4=yes" >> config.cfg
-          echo "OPTIONAL=true" >> config.cfg
-
+          # overwrite the config file with the new values with sed
+          sed -i 's/UBUNTU_NAME=.*/UBUNTU_NAME=${{ inputs.OS_NAME }}/' config.cfg
+          sed -i 's/UBUNTU_VERSION=.*/UBUNTU_VERSION=${{ inputs.OS_VERSION }}/' config.cfg
+          sed -i 's/UBUNTU_VERSION_BUILD=.*/UBUNTU_VERSION_BUILD=${{ inputs.OS_FULL_VERSION }}/' config.cfg
+          sed -i 's/PRODUCT_TYPE=.*/PRODUCT_TYPE=${{ inputs.PRODUCT_TYPE }}/' config.cfg
+          sed -i 's/PRODUCT_NAME=.*/PRODUCT_NAME=${{ inputs.PRODUCT_NAME }}/' config.cfg
+          sed -i 's/PRODUCT_VERSION=.*/PRODUCT_VERSION=${{ inputs.PRODUCT_VERSION }}/' config.cfg
+          # test if PRODUCT_PACKAGES is set
+          if [ -z "${{ inputs.PRODUCT_PACKAGES }}" ]; then
+            sed -i 's/PRODUCT_PACKAGES=.*/PRODUCT_PACKAGES=none/' config.cfg
+          else
+            sed -i 's/PRODUCT_PACKAGES=.*/PRODUCT_PACKAGES=${{ inputs.PRODUCT_PACKAGES }}/' config.cfg
+          fi
 
       - name: Fetch platform artifacts
         run: |
@@ -117,9 +122,8 @@ jobs:
       - name: Run the script
         run: |
           mv offline_install_artifacts/* .
-          ./mkisofs-movai-autoinstall.bash config.cfg
+          make
 
-    
       - name: Prepare for deployment
         if: ${{ inputs.deploy == 'true' && inputs.release == 'false' }}
         id: prepare_deploy
@@ -238,4 +242,3 @@ jobs:
         shell: bash
         run: |
           rm -rf $RUN_STAGING_DIR
-        
