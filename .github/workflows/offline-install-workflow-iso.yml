@@ -131,7 +131,7 @@ jobs:
           generated_file_name=${{ inputs.PRODUCT_NAME }}_${{ steps.raise.outputs.raised_version }}_offline_install.iso
           echo "::group::Artifact local copy to staging area $RUN_STAGING_DIR"
           mkdir -p $RUN_STAGING_DIR
-          mv "${{ inputs.OS_NAME }}-${{ inputs.OS_VERSION }}/ubuntu-custom-${{ inputs.OS_NAME }}-${{ inputs.OS_FULL_VERSION }}.iso" "$RUN_STAGING_DIR/$generated_file_name"
+          mv "staging/${{ inputs.OS_NAME }}-${{ inputs.OS_VERSION }}/ubuntu-custom-${{ inputs.OS_NAME }}-${{ inputs.OS_FULL_VERSION }}.iso" "$RUN_STAGING_DIR/$generated_file_name"
           echo "file_name=$generated_file_name" >> $GITHUB_OUTPUT
 
       - name: Clean up
