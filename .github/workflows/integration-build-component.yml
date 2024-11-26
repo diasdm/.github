@@ -40,7 +40,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-
       - name: Install CI Scripts in container
         shell: bash
         run: |
