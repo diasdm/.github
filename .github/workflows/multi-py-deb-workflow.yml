@@ -346,6 +346,13 @@ jobs:
       with:
         ref: ${{ needs.Raise.outputs.commit_id }}
         submodules: recursive
+    
+    - name: Login to registry.cloud.mov.ai Registry
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.registry_user }}
+        password: ${{ secrets.registry_password }}
+        registry: registry.cloud.mov.ai
 
     - name: Raise & Deb Pack
       env:
