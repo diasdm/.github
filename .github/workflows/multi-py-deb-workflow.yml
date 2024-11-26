@@ -28,6 +28,10 @@ on:
         required: false
         type: string
         default: '["./"]'
+      distributions:
+        required: false
+        type: string
+        default: '["focal", "jammy", "noble"]'
       rpm_build:
         required: false
         type: string
@@ -330,15 +334,9 @@ jobs:
     if: ${{ inputs.release == 'false' }}
     strategy:
       matrix:
-        pack_path: ${{ fromJSON(inputs.package_paths) }}
+        distro: ${{ fromJSON(inputs.distributions) }}
     needs: [Raise]
     runs-on: ubuntu-20.04
-    container:
-      image: registry.aws.cloud.mov.ai/qa/ros-buildtools-noetic:v2.0.10
-      options: --user root
-      credentials:
-        username: ${{secrets.registry_user}}
-        password: ${{secrets.registry_password}}
     outputs:
       package_version: ${{ needs.Raise.outputs.package_version }}
       commit_id: ${{ needs.Raise.outputs.commit_id }}
@@ -346,41 +344,21 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       with:
+        ref: ${{ needs.Raise.outputs.commit_id }}
         submodules: recursive
 
-    - name: Create links for package ${{ matrix.pack_path }}
-      run: |
-        ln -f ${{ matrix.pack_path }}/debian/setup.py setup.py
-        ln -sf ${{ matrix.pack_path }}/debian debian
-
-    - name: Sync setup.py
-      run: sed -i s/"$(cat setup.py | grep version=)"/"    version=\"${{ needs.Raise.outputs.package_version }}\","/g setup.py
-
     - name: Raise & Deb Pack
+      env:
+        PACKAGE_VERSION: ${{ needs.Raise.outputs.package_version }}
       run: |
-        dch -b -v "${{ needs.Raise.outputs.package_version }}" "Auto created package version ${{ needs.Raise.outputs.package_version }}"
-        PKG_VERSION_ANCHOR='$PKG_VERSION'
-        sed -i "s/$PKG_VERSION_ANCHOR/${{ needs.Raise.outputs.package_version }}/g" ./debian/postinst
-        sed -i "s/$PKG_VERSION_ANCHOR/${{ needs.Raise.outputs.package_version }}/g" ./debian/prerm
-        curl -fsSL https://artifacts.cloud.mov.ai/repository/movai-applications/gpg | sudo apt-key add -
-        apt update
-        install_tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes"
-        mk-build-deps --install --root-cmd sudo --tool="${install_tool}" debian/control
-        dpkg-buildpackage -nc -d -b -rfakeroot -us -uc -tc
-        mkdir artifacts && \
-        mv ../*.deb artifacts
+        make pack_${{ matrix.distro }}
 
     - name: Archive binary
       uses: actions/upload-artifact@v4
       with:
-        name: deb_artifacts_${{ matrix.pack_path }}
-        path: artifacts/*.deb
+        name: deb_artifacts_${{ matrix.distro }}
+        path: dist/${{ matrix.distro }}/*.deb
         retention-days: 5
-
-    - name: Remove hardlinks for package ${{ matrix.pack_path }}
-      run: |
-        rm -f setup.py
-        rm -f debian
 
   Rpm-Pack:
     strategy:
