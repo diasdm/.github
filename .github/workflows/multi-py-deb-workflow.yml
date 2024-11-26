@@ -446,7 +446,7 @@ jobs:
       fail-fast: false
     needs: [Raise, Debian-Pack]
     if: ${{ inputs.release == 'false' && inputs.install_test == 'true' }}
-    runs-on: ubuntu-${{ matrix.distro }}
+    runs-on: ubuntu-${{ matrix.distro == 'focal' && 'ubuntu-20.04' || matrix.distro == 'jammy' && 'ubuntu-22.04' || matrix.distro == 'noble' && 'ubuntu-24.04' }}
     timeout-minutes: 90
     steps:
       - name: Maximize build space
