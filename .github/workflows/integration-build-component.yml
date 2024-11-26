@@ -85,7 +85,7 @@ jobs:
       - name: pre-install patch
         shell: bash
         run: |
-          export CONFIG_FILE_NAME=$(cat product/robot.json)
+          export CONFIG_FILE_NAME="product/$(cat product/robot.json)"
           export COMPONENT_VERSION=$(cat component_artifacts/component_version.txt)
           if test -f .github/workflows/pre_install_platform.bash; then
             echo "Running pre-install patch"
@@ -97,7 +97,7 @@ jobs:
         shell: bash
         run: |
           timeout 30 movai-cli remove --all || true
-          PRODUCT=${{ inputs.product_name }}
+
           QUICKSTART_VERSION=$(cat product/quickstart_version.txt)
           export CONFIG_FILE_NAME=$(cat product/robot.json)
 
