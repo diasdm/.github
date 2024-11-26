@@ -442,7 +442,7 @@ jobs:
   Debian-Test:
     strategy:
       matrix:
-        distro: ${{ fromJSON(inputs.install_test_distros) }}
+        distro: ${{ fromJSON(inputs.distributions) }}
       fail-fast: false
     needs: [Raise, Debian-Pack]
     if: ${{ inputs.release == 'false' && inputs.install_test == 'true' }}
@@ -481,7 +481,7 @@ jobs:
       - name: Download deb artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: deb_artifacts_*
+          pattern: deb_artifacts_${{ matrix.distro }}
           path: artifacts
           merge-multiple: true
 
@@ -509,7 +509,7 @@ jobs:
         with:
           name: coverage_report
           path: ./coverage.xml
-        if: ${{ matrix.distro == '20.04' && inputs.skip_testing != 'true' }}
+        if: ${{ matrix.distro == 'focal' && inputs.skip_testing != 'true' }}
 
       - name: Store logs of journalctl
         shell: bash
