@@ -86,6 +86,7 @@ jobs:
         shell: bash
         run: |
           export CONFIG_FILE_NAME=$(cat product/robot.json)
+          export COMPONENT_VERSION=$(cat component_artifacts/component_version.txt)
           if test -f .github/workflows/pre_install_platform.bash; then
             echo "Running pre-install patch"
             . .github/workflows/pre_install_platform.bash
