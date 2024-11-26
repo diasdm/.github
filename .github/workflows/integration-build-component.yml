@@ -69,7 +69,7 @@ jobs:
                 --gh_api_pwd ${{ secrets.auto_commit_pwd }} \
                 --target_dir product
 
-          fi
+
       - name: calculate robot.json to use
         shell: bash
         run: |
