@@ -27,7 +27,7 @@ on:
         required: true
 
 env:
-  CI_INTEGRATION_SCRIPTS_VERSION: "4.0.0.12"
+  CI_INTEGRATION_SCRIPTS_VERSION: "4.0.0.13"
   GITHUB_API_USR: "OttoMation-Movai"
   USERSPACE_FOLDER_PATH: userspace
   REMOTE_WORKSPACE_PATH: workspace
