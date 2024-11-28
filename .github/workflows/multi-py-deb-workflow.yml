@@ -754,7 +754,7 @@ jobs:
             done
 
   PublishRpm:
-    needs: [Raise, Debian-Pack, Rpm-Pack, Debian-Test, SonarCloud]
+    needs: [Raise, Debian-Pack, Rpm-Pack, Rpm-Test, SonarCloud]
     if: ${{ inputs.deploy == 'true' }}
     runs-on: ubuntu-20.04
     container:
@@ -883,7 +883,65 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
 
-  Release:
+  ReleasePypi:
+    if: ${{ inputs.release == 'true' }}
+    runs-on: ubuntu-20.04
+    container:
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
+      credentials:
+        username: ${{secrets.registry_user}}
+        password: ${{secrets.registry_password}}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+  
+      - name: Set tag output
+        id: vars
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+  
+      - name: Fetch artifact from github release
+        run: |
+          git config --global --add safe.directory $(pwd)
+          mkdir dist artifacts
+          cd dist
+          gh release download ${{ steps.vars.outputs.tag}} -p *.whl
+          gh release download ${{ steps.vars.outputs.tag}} -p *.tar.gz
+          cd ../artifacts
+          gh release download ${{ steps.vars.outputs.tag}} -p *.deb
+          gh release download ${{ steps.vars.outputs.tag}} -p *.rpm
+        env:
+          GITHUB_TOKEN: ${{ secrets.gh_token }}
+  
+      - name: Archive binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: released_packages
+          path: dist/*
+          retention-days: 5
+  
+      - name: Archive binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: released_deb_artifacts
+          path: artifacts/*.deb
+          retention-days: 5
+  
+      - name: Archive binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: released_rpm_artifacts
+          path: artifacts/*.rpm
+          retention-days: 5
+  
+      - name: Publish package to prod PyPI
+        uses: pypa/gh-action-pypi-publish@v1.11.0
+        with:
+          user: ${{ secrets.nexus_publisher_user }}
+          password: ${{ secrets.nexus_publisher_password }}
+          repository-url: https://artifacts.cloud.mov.ai/repository/${{ inputs.prod_publish_pypi }}/
+      
+
+  ReleasePpa:
     if: ${{ inputs.release == 'true' }}
     runs-on: ubuntu-20.04
     container:
@@ -900,50 +958,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Set tag output
-      id: vars
-      run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-
-    - name: Fetch artifact from github release
-      run: |
-        git config --global --add safe.directory $(pwd)
-        mkdir dist artifacts
-        cd dist
-        gh release download ${{ steps.vars.outputs.tag}} -p *.whl
-        gh release download ${{ steps.vars.outputs.tag}} -p *.tar.gz
-        cd ../artifacts
-        gh release download ${{ steps.vars.outputs.tag}} -p *.deb
-        gh release download ${{ steps.vars.outputs.tag}} -p *.rpm
-      env:
-        GITHUB_TOKEN: ${{ secrets.gh_token }}
-
-    - name: Archive binary
-      uses: actions/upload-artifact@v4
-      with:
-        name: released_packages
-        path: dist/*
-        retention-days: 5
-
-    - name: Archive binary
-      uses: actions/upload-artifact@v4
+    - name: Download deb artifacts
+      uses: actions/download-artifact@v4
       with:
         name: released_deb_artifacts
         path: artifacts/*.deb
-        retention-days: 5
-
-    - name: Archive binary
-      uses: actions/upload-artifact@v4
-      with:
-        name: released_rpm_artifacts
-        path: artifacts/*.rpm
-        retention-days: 5
-
-    - name: Publish package to prod PyPI
-      uses: pypa/gh-action-pypi-publish@v1.11.0
-      with:
-        user: ${{ secrets.nexus_publisher_user }}
-        password: ${{ secrets.nexus_publisher_password }}
-        repository-url: https://artifacts.cloud.mov.ai/repository/${{ inputs.prod_publish_pypi }}/
 
     - name: Publish to Nexus
       shell: bash
