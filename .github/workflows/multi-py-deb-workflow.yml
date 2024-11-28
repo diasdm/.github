@@ -942,6 +942,7 @@ jobs:
       
 
   ReleasePpa:
+    needs: [ReleasePypi]
     if: ${{ inputs.release == 'true' }}
     runs-on: ubuntu-20.04
     container:
