@@ -55,7 +55,7 @@ on:
       prod_publish_repos:
         required: false
         type: string
-        default: '["ppa-main"]'
+        default: '["ppa-stable"]'
       prod_publish_pypi:
         required: false
         type: string
@@ -364,7 +364,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: deb_artifacts_${{ matrix.distro }}
-        path: dist/${{ matrix.distro }}/*.deb
+        path: artifacts/${{ matrix.distro }}/*.deb
         retention-days: 5
 
   Rpm-Pack:
@@ -665,9 +665,13 @@ jobs:
       run: |
         echo "Please check report here: https://sonarcloud.io/project/overview?id=${{ github.repository_owner }}_${{ github.event.repository.name }}"
 
-  Publish:
+  PublishDebian:
     needs: [Raise, Debian-Pack, Rpm-Pack, Debian-Test, SonarCloud]
     if: ${{ inputs.deploy == 'true' }}
+    strategy:
+      matrix:
+        distro: ${{ fromJSON(inputs.distributions) }}
+      fail-fast: false
     runs-on: ubuntu-20.04
     container:
       image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
@@ -680,24 +684,10 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Download package artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: packages_*
-          path: dist
-          merge-multiple: true
-
       - name: Download deb artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: deb_artifacts_*
-          path: artifacts
-          merge-multiple: true
-
-      - name: Download rpm artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: rpm_artifacts_*
+          pattern: deb_artifacts_${{ matrix.distro }}
           path: artifacts
           merge-multiple: true
 
@@ -705,7 +695,7 @@ jobs:
         shell: bash
         run: |
             NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
-            NEXUS_REPO="ppa-dev"
+            NEXUS_REPO="ppa-devel-${{ matrix.distro }}"
 
             for file in artifacts/*.deb
             do
@@ -736,7 +726,7 @@ jobs:
         shell: bash
         run: |
             NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
-            NEXUS_REPO="ppa-testing"
+            NEXUS_REPO="ppa-testing-${{ matrix.distro }}"
 
             for file in artifacts/*.deb
             do
@@ -762,6 +752,28 @@ jobs:
                 exit 1
               fi
             done
+
+  PublishRpm:
+    needs: [Raise, Debian-Pack, Rpm-Pack, Debian-Test, SonarCloud]
+    if: ${{ inputs.deploy == 'true' }}
+    runs-on: ubuntu-20.04
+    container:
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
+      credentials:
+        username: ${{secrets.registry_user}}
+        password: ${{secrets.registry_password}}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download rpm artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: rpm_artifacts_*
+          path: artifacts
+          merge-multiple: true
 
       - name: Publish to Nexus yum-integration (new Nexus)
         if: ${{ inputs.rpm_build == 'true' }}
@@ -805,6 +817,41 @@ jobs:
               fi
             done
 
+  Github-Release:
+    needs: [Raise, Debian-Pack, Rpm-Pack, Debian-Test, SonarCloud, PublishDebian, PublishRpm]
+    runs-on: ubuntu-20.04
+    container:
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
+      credentials:
+        username: ${{secrets.registry_user}}
+        password: ${{secrets.registry_password}}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download package artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: packages_*
+          path: dist
+          merge-multiple: true
+
+      - name: Download deb artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: deb_artifacts_*
+          path: artifacts
+          merge-multiple: true
+      
+      - name: Download rpm artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: rpm_artifacts_*
+          path: artifacts
+          merge-multiple: true
+
       - name: Create Github Release
         if: ${{ inputs.deploy == 'true' }}
         shell: bash
@@ -847,6 +894,7 @@ jobs:
     strategy:
       matrix:
         publish_repo: ${{ fromJSON(inputs.prod_publish_repos) }}
+        distro: ${{ fromJSON(inputs.distributions) }}
 
     steps:
     - name: Checkout
@@ -900,7 +948,7 @@ jobs:
     - name: Publish to Nexus
       shell: bash
       run: |
-            NEXUS_REPO="${{ matrix.publish_repo }}"
+            NEXUS_REPO="${{ matrix.publish_repo }}-${{ matrix.distro }}"
             if [ "$NEXUS_REPO" != "ppa-public" ]; then
               NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
             else
