@@ -949,11 +949,7 @@ jobs:
       shell: bash
       run: |
             NEXUS_REPO="${{ matrix.publish_repo }}-${{ matrix.distro }}"
-            if [ "$NEXUS_REPO" != "ppa-public" ]; then
-              NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
-            else
-              NEXUS_ENDPOINT="artifacts.aws.cloud.mov.ai"
-            fi
+            NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
 
             for file in artifacts/*.deb
             do
