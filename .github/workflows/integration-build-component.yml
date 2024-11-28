@@ -92,6 +92,13 @@ jobs:
             . .github/workflows/pre_install_platform.bash
           fi
 
+      - name: Upload robot configs (after pre-patch)
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot_configs_after_pre_patch
+          path: product
+          retention-days: 5
+
       - name: Install platform
         id: install  
         shell: bash
@@ -125,3 +132,10 @@ jobs:
             echo "Running post-install patch"
             . .github/workflows/post_install_platform.bash
           fi
+
+      - name: Upload robot configs (after post-patch)
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot_configs_after_post_patch
+          path: product
+          retention-days: 5
