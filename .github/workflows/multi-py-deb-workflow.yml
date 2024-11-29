@@ -873,7 +873,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.gh_token }}
   
   Github-Release-Debian-Upload:
-    needs: [Raise, Debian-Pack, Rpm-Pack, Debian-Test, SonarCloud, PublishDebian, PublishRpm]
+    needs: [Raise, Debian-Pack, Rpm-Pack, Debian-Test, SonarCloud, PublishDebian, PublishRpm, Github-Release]
     runs-on: ubuntu-20.04
     container:
       image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
