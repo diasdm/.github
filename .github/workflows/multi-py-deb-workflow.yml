@@ -725,6 +725,7 @@ jobs:
       - name: Publish to Nexus ppa-testing
         shell: bash
         run: |
+            ls -la artifacts
             NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
             NEXUS_REPO="ppa-testing-${{ matrix.distro }}"
 
