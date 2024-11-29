@@ -17,6 +17,10 @@ on:
       PRODUCT_NAME:
         type: string
         required: true
+      PRODUCT_JSON_NAME:
+        type: string
+        required: false
+        default: "manager-spawner-${{ inputs.PRODUCT_NAME }}-noetic.json"
       PRODUCT_VERSION:
         type: string
         required: true
@@ -33,6 +37,10 @@ on:
         required: false
         type: string
         default: "C05UYMX2U0K"
+      manual_request:
+        type: boolean
+        required: false
+        default: false
     secrets:
       auto_commit_user:
         required: true
@@ -48,19 +56,23 @@ on:
         required: true
       nexus_publisher_password:
         required: true
+      slack_token_id:
+        required: False
 env:
   RUN_STAGING_DIR: "/home/devops/iso-ci/staging/${{ github.repository }}/${{ github.run_id}}/"
-  PROXMOX_NFS_SERVER_PATH: "/media/nas-mary/template/iso/baremetal"
-  PROXMOX_NFS_SERVER_URL: "https://hel.mov.ai:8006/#v1:0:=storage%2Fhel%2Fnas-mary:4:5:=contentIso:::::"
+  NFS_SERVER_PATH: "/media/nas-mary/template/iso/baremetal"
+  NAS_URL: "https://s3.lis.mov.ai:8443/"
 
 jobs:
   Build:
     outputs:
+      current_version: ${{ steps.raise.outputs.current_version }}
       raised_version: ${{ steps.raise.outputs.raised_version }}
       file_name: ${{ steps.prepare_deploy.outputs.file_name }}
     runs-on: packer-runner
     steps:
       - uses: rtCamp/action-cleanup@master
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -72,7 +84,7 @@ jobs:
       - name: Lint with shellcheck
         uses: azohra/shell-linter@latest
         with:
-          path: ./*.bash
+          path: ./*.bash,./scripts/*.bash,./scripts/*.sh
 
       - name: Raise Version
         id: raise
@@ -86,6 +98,7 @@ jobs:
           echo $RAISED_COMP_VERSION>version
           echo $RAISED_COMP_VERSION
           echo "raised_version=$RAISED_COMP_VERSION" >> $GITHUB_OUTPUT
+          echo "current_version=$COMP_VERSION" >> $GITHUB_OUTPUT
 
       - name: Create config file
         run: |
@@ -96,12 +109,22 @@ jobs:
           sed -i 's/PRODUCT_TYPE=.*/PRODUCT_TYPE=${{ inputs.PRODUCT_TYPE }}/' config.cfg
           sed -i 's/PRODUCT_NAME=.*/PRODUCT_NAME=${{ inputs.PRODUCT_NAME }}/' config.cfg
           sed -i 's/PRODUCT_VERSION=.*/PRODUCT_VERSION=${{ inputs.PRODUCT_VERSION }}/' config.cfg
+          sed -i 's/PRODUCT_JSON_NAME=.*/PRODUCT_JSON_NAME=${{ inputs.PRODUCT_JSON_NAME }}/' config.cfg
           # test if PRODUCT_PACKAGES is set
           if [ -z "${{ inputs.PRODUCT_PACKAGES }}" ]; then
             sed -i 's/PRODUCT_PACKAGES=.*/PRODUCT_PACKAGES=none/' config.cfg
           else
             sed -i 's/PRODUCT_PACKAGES=.*/PRODUCT_PACKAGES=${{ inputs.PRODUCT_PACKAGES }}/' config.cfg
           fi
+
+      - name: Fetch release configuration files
+        run: |
+          mkdir -p offline_install_artifacts/json
+          gh release download -R "https://github.com/MOV-AI/$PRODUCT_NAME" "$PRODUCT_VERSION" -p "*.json" -D offline_install_artifacts/json
+        env:
+          PRODUCT_NAME: "${{ inputs.PRODUCT_NAME }}"
+          PRODUCT_VERSION: "${{ inputs.PRODUCT_VERSION }}"
+          GITHUB_TOKEN: ${{ secrets.auto_commit_pwd }}
 
       - name: Fetch platform artifacts
         run: |
@@ -117,7 +140,6 @@ jobs:
           GITHUB_API_PWD: ${{ secrets.auto_commit_pwd }}
           PRODUCT_NAME: ${{ inputs.PRODUCT_NAME }}
           PRODUCT_VERSION: ${{ inputs.PRODUCT_VERSION }}
-
 
       - name: Run the script
         run: |
@@ -149,7 +171,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Commit raise
-        if: ${{ inputs.deploy == 'true' }}
+        if: ${{ inputs.deploy == 'true' && inputs.manual_request == false }}
         run: |
           git config --global --add safe.directory $(pwd)
           git config --global user.name '${{ secrets.auto_commit_user }}'
@@ -162,11 +184,13 @@ jobs:
           git commit -m "[skip actions] Automatic Bump of image version to ${{ needs.Build.outputs.raised_version }}"
 
       - name: Prepare raise variables
+        if: ${{ inputs.deploy == 'true' && inputs.manual_request == false }}
         id: pre_raise_push
         run: |
           echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
 
       - name: Raise App version
+        if: ${{ inputs.deploy == 'true' && inputs.manual_request == false }}
         uses: CasperWA/push-protected@v2.14.0
         with:
           token: ${{ secrets.auto_commit_pwd }}
@@ -174,6 +198,7 @@ jobs:
           unprotect_reviews: true
 
       - name: Commit info
+        if: ${{ inputs.deploy == 'true' && inputs.manual_request == false }}
         id: commit
         shell: bash
         run: |
@@ -181,6 +206,7 @@ jobs:
           echo "commit_id=$commit_hash" >> $GITHUB_OUTPUT
 
       - name: Create Github Release
+        if: ${{ inputs.deploy == 'true' && inputs.manual_request == false }}
         uses: softprops/action-gh-release@v1
         with:
           name: "Release of ${{ needs.Build.outputs.raised_version }}"
@@ -198,44 +224,71 @@ jobs:
     steps:
       - name: Test NFS server
         run: |
-          if [ ! -d "$PROXMOX_NFS_SERVER_PATH" ]; then
-            echo "ERROR: NFS server path $PROXMOX_NFS_SERVER_PATH does not exist."
+          if [ ! -d "$NFS_SERVER_PATH" ]; then
+            echo "ERROR: NFS server path $NFS_SERVER_PATH does not exist."
             exit 1
           fi
 
-      - name: Deploy images to NFS server
+      - name: Compute NFS folder name
+        id: compute_nfs_folder
         run: |
-          sudo mkdir -p $PROXMOX_NFS_SERVER_PATH/
+          # test if inputs.manual_request is set
+          if [ "${{ inputs.manual_request }}" == "true" || "${{ inputs.manual_request }}" == "True" ]; then
+            NFS_SERVER_DEPLOY_PATH=$NFS_SERVER_PATH/${{ inputs.PRODUCT_NAME }}_${{ inputs.PRODUCT_VERSION }}_${{ needs.Build.outputs.current_version }}
+          else
+            NFS_SERVER_DEPLOY_PATH=$NFS_SERVER_PATH
+          fi
+          echo "NFS_SERVER_DEPLOY_PATH=$NFS_SERVER_DEPLOY_PATH" >> $GITHUB_OUTPUT
 
-          sudo rsync --progress -z $RUN_STAGING_DIR/${{ needs.Build.outputs.file_name }} $PROXMOX_NFS_SERVER_PATH/
-          echo "Image copied to NFS server to $PROXMOX_NFS_SERVER_URL"
+
+      - name: Deploy images to NFS server
+        env:
+          NFS_SERVER_DEPLOY_PATH: ${{ steps.compute_nfs_folder.outputs.NFS_SERVER_DEPLOY_PATH }}
+        run: |
+          sudo mkdir -p "$NFS_SERVER_DEPLOY_PATH"
+          sudo rsync --progress -z $RUN_STAGING_DIR/${{ needs.Build.outputs.file_name }} "$NFS_SERVER_DEPLOY_PATH"
+          echo "Image copied to NFS server to $NAS_URL with path $NFS_SERVER_DEPLOY_PATH"
 
       - name: Prepare slack variables
         if: always()
         id: pre_slack
+        env:
+          NFS_SERVER_DEPLOY_PATH: ${{ steps.compute_nfs_folder.outputs.NFS_SERVER_DEPLOY_PATH }}
         run: |
-          MESSAGE=":arrow_forward: New pre-version ${{ needs.Build.outputs.raised_version }} of baremetal image available :sunny:"
-          MESSAGE_ERR=":x: Build of pre-version ${{ needs.Build.outputs.raised_version }} is unstable :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-
+          deploy_msg="Image copied to NFS server to $NAS_URL with path $NFS_SERVER_DEPLOY_PATH"
+          if [ "${{ inputs.manual_request }}" == "true" ] || [ "${{ inputs.manual_request }}" == "True" ]; then
+            MESSAGE=":arrow_forward: New version ${{ needs.Build.outputs.raised_version }} of ${{ inputs.PRODUCT_NAME }}:${{ inputs.PRODUCT_VERSION}} image available :sunny:. Details: ${deploy_msg}"
+            MESSAGE_ERR=":x: Build of version ${{ needs.Build.outputs.raised_version }} of ${{ inputs.PRODUCT_NAME }}:${{ inputs.PRODUCT_VERSION}} is unstable :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          else
+            MESSAGE=":arrow_forward: New pre-version ${{ needs.Build.outputs.raised_version }} of baremetal image available :sunny:. Details: ${deploy_msg}"
+            MESSAGE_ERR=":x: Build of pre-version ${{ needs.Build.outputs.raised_version }} is unstable :rain_cloud: Details: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          fi
           echo "msg=${MESSAGE}" >> $GITHUB_OUTPUT
           echo "msg_error=${MESSAGE_ERR}" >> $GITHUB_OUTPUT
 
-      # - name: Slack message success
-      #   uses: slackapi/slack-github-action@v1.25.0
-      #   with:
-      #     channel-id: ${{ inputs.slack_channel }}
-      #     slack-message: ${{ steps.pre_slack.outputs.msg }}
-      #   env:
-      #     SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN_ID }}
+      - name: Write summary message in Github Actions
+        if: always()
+        run: |
+          summary_message="${{ steps.pre_slack.outputs.msg }}"
+          echo -e "${summary_message}" >> $GITHUB_STEP_SUMMARY
 
-      # - name: Slack message failure
-      #   if: failure()
-      #   uses: slackapi/slack-github-action@v1.25.0
-      #   with:
-      #     channel-id: ${{ inputs.slack_channel }}
-      #     slack-message: ${{ steps.pre_slack.outputs.msg_error }}
-      #   env:
-      #     SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN_ID }}
+      - name: Slack message success
+        uses: slackapi/slack-github-action@v1.25.0
+        if: ${{ success() && inputs.slack_channel }}
+        with:
+          channel-id: ${{ inputs.slack_channel }}
+          slack-message: ${{ steps.pre_slack.outputs.msg }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN_ID }}
+
+      - name: Slack message failure
+        if: ${{ failure() &&  inputs.slack_channel }}
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          channel-id: ${{ inputs.slack_channel }}
+          slack-message: ${{ steps.pre_slack.outputs.msg_error }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN_ID }}
 
       - name: Cleanup
         if: always()
