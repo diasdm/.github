@@ -44,10 +44,6 @@ on:
         required: false
         type: string
         default: 'false'
-      install_test_distros:
-        required: false
-        type: string
-        default: '["20.04", "22.04"]'
       install_test_zmq:
         required: false
         type: string
