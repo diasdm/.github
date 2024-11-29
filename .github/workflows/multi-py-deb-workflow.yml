@@ -988,6 +988,7 @@ jobs:
       matrix:
         publish_repo: ${{ fromJSON(inputs.prod_publish_repos) }}
         distro: ${{ fromJSON(inputs.distributions) }}
+      max-parallel: 1
 
     steps:
     - name: Checkout
