@@ -893,7 +893,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: deb_artifacts_${{ matrix.distro }}
-          path: artifacts_${{ matrix.distro }}
+          path: artifacts
 
       - name: Update Github Release
         if: ${{ inputs.deploy == 'true' }}
@@ -903,7 +903,7 @@ jobs:
 
           for asset in artifacts/*; do
             # do nothing if folder is empty
-            if [[ $asset != "artifacts_${{ matrix.distro }}/*" ]]; then
+            if [[ $asset != "artifacts/*" ]]; then
               # Add sufix of distro to asset name
               asset_renamed=$(basename $asset .deb)_${{ matrix.distro }}.deb
               cp $asset $asset_renamed
