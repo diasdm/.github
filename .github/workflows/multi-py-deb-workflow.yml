@@ -837,13 +837,6 @@ jobs:
           pattern: packages_*
           path: dist
           merge-multiple: true
-
-      - name: Download deb artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: deb_artifacts_*
-          path: artifacts
-          merge-multiple: true
       
       - name: Download rpm artifacts
         uses: actions/download-artifact@v4
@@ -878,6 +871,47 @@ jobs:
             # do nothing if folder is empty
             if [[ $asset != "artifacts/*" ]]; then
               gh release upload ${{ needs.Debian-Pack.outputs.package_version }} $asset
+            fi
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.gh_token }}
+  
+  Github-Release-Debian-Upload:
+    needs: [Raise, Debian-Pack, Rpm-Pack, Debian-Test, SonarCloud, PublishDebian, PublishRpm]
+    runs-on: ubuntu-20.04
+    container:
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
+      credentials:
+        username: ${{secrets.registry_user}}
+        password: ${{secrets.registry_password}}
+    strategy:
+      matrix:
+        distro: ${{ fromJSON(inputs.distributions) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download deb artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: deb_artifacts_${{ matrix.distro }}
+          path: artifacts_${{ matrix.distro }}
+
+      - name: Update Github Release
+        if: ${{ inputs.deploy == 'true' }}
+        shell: bash
+        run: |
+          git config --global --add safe.directory $(pwd)
+
+          for asset in artifacts/*; do
+            # do nothing if folder is empty
+            if [[ $asset != "artifacts_${{ matrix.distro }}/*" ]]; then
+              # Add sufix of distro to asset name
+              asset_renamed=$(basename $asset .deb)_${{ matrix.distro }}.deb
+              cp $asset $asset_renamed
+              gh release upload ${{ needs.Debian-Pack.outputs.package_version }} $asset_renamed
             fi
           done
         env:
@@ -971,7 +1005,7 @@ jobs:
             NEXUS_REPO="${{ matrix.publish_repo }}-${{ matrix.distro }}"
             NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
 
-            for file in artifacts/*.deb
+            for file in artifacts/*_${{ matrix.distro }}.deb
             do
               RETURN_CODE=$(curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
               -H "Content-Type: multipart/form-data" \
