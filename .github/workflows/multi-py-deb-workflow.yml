@@ -1003,7 +1003,6 @@ jobs:
     - name: Publish to Nexus
       shell: bash
       run: |
-            ls -la artifacts
             NEXUS_REPO="${{ matrix.publish_repo }}-${{ matrix.distro }}"
             NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
 
