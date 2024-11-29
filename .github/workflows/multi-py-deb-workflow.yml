@@ -999,7 +999,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: released_deb_artifacts
-        path: artifacts/*.deb
+        path: artifacts/
 
     - name: Publish to Nexus
       shell: bash
