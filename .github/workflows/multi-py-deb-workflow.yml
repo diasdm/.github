@@ -1005,7 +1005,7 @@ jobs:
             NEXUS_REPO="${{ matrix.publish_repo }}-${{ matrix.distro }}"
             NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
 
-            for file in artifacts/*.deb
+            for file in artifacts/*_${{ matrix.distro }}.deb
             do
               RETURN_CODE=$(curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
               -H "Content-Type: multipart/form-data" \
