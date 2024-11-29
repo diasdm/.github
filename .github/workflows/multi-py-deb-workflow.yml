@@ -911,6 +911,7 @@ jobs:
             if [[ $asset != "artifacts_${{ matrix.distro }}/*" ]]; then
               # Add sufix of distro to asset name
               asset_renamed=$(basename $asset .deb)_${{ matrix.distro }}.deb
+              cp $asset $asset_renamed
               gh release upload ${{ needs.Debian-Pack.outputs.package_version }} $asset_renamed
             fi
           done
