@@ -126,8 +126,11 @@ jobs:
 
       - name: post-install patch
         shell: bash
+        id: post_install
         run: |
           export CONFIG_FILE_NAME=$(cat product/robot.json)
+          export MOVAI_USER="${{ steps.install.outputs.movai_user }}"
+          export MOVAI_PWD="${{ steps.install.outputs.movai_pwd }}"
           if test -f .github/workflows/post_install_platform.bash; then
             echo "Running post-install patch"
             . .github/workflows/post_install_platform.bash
@@ -139,3 +142,32 @@ jobs:
           name: robot_configs_after_post_patch
           path: product
           retention-days: 5
+
+      - name: test setup
+        shell: bash
+        run: |
+          export CONFIG_FILE_NAME=$(cat product/robot.json)
+          export MOVAI_USER="${{ steps.install.outputs.movai_user }}"
+          export MOVAI_PWD="${{ steps.install.outputs.movai_pwd }}"
+          mkdir -p test_artifacts
+          if test -f .github/workflows/test_setup.bash; then
+            echo "Running tests setup"
+            . .github/workflows/test_setup.bash
+          fi
+
+      - name: Run tests
+        shell: bash
+        run: |
+          export CONFIG_FILE_NAME=$(cat product/robot.json)
+          export MOVAI_USER="${{ steps.install.outputs.movai_user }}"
+          export MOVAI_PWD="${{ steps.install.outputs.movai_pwd }}"
+          if test -f .github/workflows/run_tests.bash; then
+            echo "Running tests"
+            . .github/workflows/run_tests.bash
+          fi
+
+      - name: Upload test_artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: test_artifacts
+          path: test_artifacts
