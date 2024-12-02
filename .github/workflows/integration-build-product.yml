@@ -603,6 +603,24 @@ jobs:
         if: always()
         shell: bash
         run: |
+          set -e
+          movai-cli apt_cache stop
+
+          robots_str=$(movai-cli robots list)
+          readarray -t robots <<< "$robots_str"
+
+          if [ "${#robots[@]}" -gt 1 ]; then
+            echo "There is more than one robot. There was a bad cleanup somewhere."
+            exit 1
+          fi
+
+          movai-cli restart "${robots[0]}"
+          sleep 3
+
+          wget https://movai-scripts.s3.amazonaws.com/wait_robot_start.bash
+          chmod +x ./wait_robot_start.bash
+          ./wait_robot_start.bash
+
           container_id=$(docker ps -q -f "ancestor=$REGISTRY/qa/${{ inputs.product_name }}-${{ matrix.distro }}:$(cat product.version)")
           docker exec -t "$container_id" bash -c '
             set -e
