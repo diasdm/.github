@@ -894,6 +894,7 @@ jobs:
         with:
           pattern: deb_artifacts_${{ matrix.distro }}
           path: artifacts
+          merge-multiple: true
 
       - name: Update Github Release
         if: ${{ inputs.deploy == 'true' }}
