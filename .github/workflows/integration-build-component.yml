@@ -76,7 +76,7 @@ jobs:
           PRODUCT=${{ inputs.vs_product_name }}
           QUICKSTART_VERSION=$(cat product/quickstart_version.txt)
           if [[ "$PRODUCT" == *"ee-project-platform"* ]]; then
-            CONFIG_FILE_NAME=basic-standalone-noetic.json 
+            CONFIG_FILE_NAME=basic-standalone-noetic.json
           else
             CONFIG_FILE_NAME=spawner-${{ inputs.vs_product_name }}-noetic.json
           fi
@@ -100,7 +100,7 @@ jobs:
           retention-days: 5
 
       - name: Install platform
-        id: install  
+        id: install
         shell: bash
         run: |
           timeout 30 movai-cli remove --all || true
@@ -166,7 +166,20 @@ jobs:
             . .github/workflows/run_tests.bash
           fi
 
+      - name: Collect tests artifacts
+        if: always()
+        shell: bash
+        run: |
+          export CONFIG_FILE_NAME=$(cat product/robot.json)
+          export MOVAI_USER="${{ steps.install.outputs.movai_user }}"
+          export MOVAI_PWD="${{ steps.install.outputs.movai_pwd }}"
+          if test -f .github/workflows/collect_tests_artifacts.bash; then
+            echo "Running tests"
+            . .github/workflows/collect_tests_artifacts.bash
+          fi
+
       - name: Upload test_artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test_artifacts
