@@ -10,11 +10,6 @@ on:
         required: false
         type: string
         default: 'false'
-      skip_linting:
-        required: false
-        type: string
-        default: 'false'
-        description: DEPRECATED - to be removed on v2
       run_black:
         required: false
         type: string
@@ -739,7 +734,7 @@ jobs:
           name: released_deb_artifacts
           path: artifacts/*.deb
           retention-days: 5
-  
+
       - name: Publish package to prod PyPI
         uses: pypa/gh-action-pypi-publish@v1.11.0
         with:
