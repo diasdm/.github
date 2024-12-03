@@ -354,6 +354,7 @@ jobs:
       env:
         PACKAGE_VERSION: ${{ needs.Raise.outputs.package_version }}
       run: |
+        make bump_version
         make pack_${{ matrix.distro }}
 
     - name: Archive binary
