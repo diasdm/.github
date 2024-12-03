@@ -345,6 +345,7 @@ jobs:
       env:
         PACKAGE_VERSION: ${{ needs.Raise.outputs.package_version }}
       run: |
+        make bump_version
         make pack_${{ matrix.distro }}
 
     - name: Archive binary
@@ -358,7 +359,6 @@ jobs:
     strategy:
       matrix:
         distro: ${{ fromJSON(inputs.distributions) }}
-      fail-fast: false
     needs: [Raise, Debian-Pack]
     if: ${{ inputs.release == 'false' && inputs.install_test == 'true' }}
     runs-on: ubuntu-${{ matrix.distro == 'focal' && '20.04' || matrix.distro == 'jammy' && '22.04' || matrix.distro == 'noble' && '24.04' }}
@@ -535,7 +535,6 @@ jobs:
     strategy:
       matrix:
         distro: ${{ fromJSON(inputs.distributions) }}
-      fail-fast: false
     runs-on: ubuntu-20.04
     container:
       image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
