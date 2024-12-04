@@ -79,7 +79,7 @@ jobs:
     if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/devops/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -148,7 +148,7 @@ jobs:
     if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/devops/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -200,7 +200,7 @@ jobs:
     if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/devops/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -230,7 +230,6 @@ jobs:
         id: vars
         run: |
           PACKAGE_VERSION=$(cat .bumpversion.cfg | sed s/' '/''/g | grep 'current_version=' | sed s/'current_version='/''/g)
-          #echo ::set-output name=py_pkg_version::$PACKAGE_VERSION
           echo "py_pkg_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
 
       - name: Push auto raise version
@@ -245,7 +244,6 @@ jobs:
         id: var_branch
         run: |
           echo "Branch name is: ${GITHUB_REF#refs/heads/}"
-          #echo ::set-output name=branch::${GITHUB_REF#refs/heads/}
           echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
 
       - name: Raise App version
@@ -268,7 +266,7 @@ jobs:
     if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/devops/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -429,7 +427,7 @@ jobs:
     needs: [Debian-Test]
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/devops/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -520,7 +518,7 @@ jobs:
         distro: ${{ fromJSON(inputs.distributions) }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/devops/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -603,7 +601,7 @@ jobs:
     needs: [Raise, Debian-Pack, Debian-Test, SonarCloud, PublishDebian]
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/devops/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -655,7 +653,7 @@ jobs:
     needs: [Raise, Debian-Pack, Debian-Test, SonarCloud, PublishDebian, Github-Release]
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/devops/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -697,7 +695,7 @@ jobs:
     if: ${{ inputs.release == 'true' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/devops/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -748,7 +746,7 @@ jobs:
     if: ${{ inputs.release == 'true' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/devops/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
