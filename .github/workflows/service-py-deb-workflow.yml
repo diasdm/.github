@@ -31,10 +31,6 @@ on:
         required: false
         type: string
         default: 'true'
-      install_test_docker:
-        required: false
-        type: string
-        default: 'false'
       prod_publish_repos:
         required: false
         type: string
@@ -367,13 +363,6 @@ jobs:
           python3 -m pip install -r build-requirements.txt
           deactivate
 
-      # - name: Prereq Docker
-      #   if: ${{ inputs.install_test_docker == 'true' }}
-      #   run: |
-      #     sudo apt update && sudo apt install -y curl
-      #     curl -fsSL https://get.docker.com -o get-docker.sh
-      #     sh get-docker.sh
-
       - name: Download deb artifacts
         uses: actions/download-artifact@v4
         with:
@@ -385,7 +374,7 @@ jobs:
         run: |
           sudo apt update
           cd artifacts/
-          find ./ -name "*.deb" -not -name "*src*" -exec sudo apt install -y {} \;
+          sudo apt install -y ./movai-service* ./movai-cli*
 
       - name: Run tests
         if: ${{ inputs.skip_testing != 'true' }}
