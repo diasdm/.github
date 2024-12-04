@@ -170,10 +170,6 @@ jobs:
     - name: Install build-requirements
       run: |
         python3 -m pip install -r build-requirements.txt
-        ln -snf /usr/share/zoneinfo/$(curl https://ipapi.co/timezone) /etc/localtime
-        echo 'tzdata tzdata/Areas select Europe' | debconf-set-selections
-        echo 'tzdata tzdata/Zones/Europe select Paris' | debconf-set-selections
-        DEBIAN_FRONTEND="noninteractive" apt update && apt install -y tzdata && apt install -y devscripts
 
     - name: Create links for package ${{ matrix.pack_path }}
       run: |
