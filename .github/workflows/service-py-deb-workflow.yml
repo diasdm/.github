@@ -79,7 +79,7 @@ jobs:
     if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -148,7 +148,7 @@ jobs:
     if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -200,7 +200,7 @@ jobs:
     if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -266,7 +266,7 @@ jobs:
     if: ${{ inputs.release == 'false' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -427,7 +427,7 @@ jobs:
     needs: [Debian-Test]
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -518,7 +518,7 @@ jobs:
         distro: ${{ fromJSON(inputs.distributions) }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -601,7 +601,7 @@ jobs:
     needs: [Raise, Debian-Pack, Debian-Test, SonarCloud, PublishDebian]
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -653,7 +653,7 @@ jobs:
     needs: [Raise, Debian-Pack, Debian-Test, SonarCloud, PublishDebian, Github-Release]
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -695,7 +695,7 @@ jobs:
     if: ${{ inputs.release == 'true' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
@@ -746,7 +746,7 @@ jobs:
     if: ${{ inputs.release == 'true' }}
     runs-on: ubuntu-20.04
     container:
-      image: registry.aws.cloud.mov.ai/qa/py-buildserver:v3.0.4
+      image: registry.aws.cloud.mov.ai/devops/py-buildserver:latest
       credentials:
         username: ${{secrets.registry_user}}
         password: ${{secrets.registry_password}}
