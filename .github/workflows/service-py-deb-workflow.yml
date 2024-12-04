@@ -35,10 +35,6 @@ on:
         required: false
         type: string
         default: 'false'
-      install_test_zmq:
-        required: false
-        type: string
-        default: 'false'
       prod_publish_repos:
         required: false
         type: string
@@ -373,12 +369,12 @@ jobs:
           python3 -m pip install -r build-requirements.txt
           deactivate
 
-      - name: Prereq Docker
-        if: ${{ inputs.install_test_docker == 'true' }}
-        run: |
-          sudo apt update && sudo apt install -y curl
-          curl -fsSL https://get.docker.com -o get-docker.sh
-          sh get-docker.sh
+      # - name: Prereq Docker
+      #   if: ${{ inputs.install_test_docker == 'true' }}
+      #   run: |
+      #     sudo apt update && sudo apt install -y curl
+      #     curl -fsSL https://get.docker.com -o get-docker.sh
+      #     sh get-docker.sh
 
       - name: Download deb artifacts
         uses: actions/download-artifact@v4
