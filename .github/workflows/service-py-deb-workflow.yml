@@ -179,6 +179,7 @@ jobs:
     - name: Raise version locally
       id: releasevars
       run: |
+        make install_bump_requirements
         make bump_version 
         PACKAGE_VERSION=$(cat .bumpversion.cfg | sed s/' '/''/g | grep 'current_version=' | sed s/'current_version='/''/g)
         echo "py_pkg_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
@@ -226,6 +227,7 @@ jobs:
         env:
           PACKAGE_VERSION: ${{ needs.Build.outputs.package_version }}
         run: |
+          make install_bump_requirements
           make bump_version
 
       - name: Find Package details
@@ -329,6 +331,7 @@ jobs:
       env:
         PACKAGE_VERSION: ${{ needs.Raise.outputs.package_version }}
       run: |
+        make install_bump_requirements
         make bump_version
         make pack_${{ matrix.distro }}
 
