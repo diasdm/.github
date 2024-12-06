@@ -177,10 +177,6 @@ jobs:
         fetch-depth: 0
         submodules: recursive
 
-    - name: Print generated packages
-      run: |
-        ls -la artifacts
-
     - name: Raise Version
       id: vars-after-raise
       shell: bash
