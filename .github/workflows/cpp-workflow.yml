@@ -179,7 +179,7 @@ jobs:
     - name: Download a single artifact
       uses: actions/download-artifact@v4
       with:
-        name: packages_*
+        name: package_*
         path: artifacts
         merge-multiple: true
 
