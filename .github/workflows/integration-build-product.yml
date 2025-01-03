@@ -1121,14 +1121,17 @@ jobs:
         shell: bash
         run: |
           promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g" | sed "s-${{ env.MID_REGISTRY }}-${{ env.REGISTRY }}-g")
+          promoted_name_push=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-/ci/-/qa/-g" | sed "s-${{ env.MID_REGISTRY }}-${{ env.PUSH_REGISTRY }}-g")
           # if event is pr create ci tags
           if [ "${{ github.event_name }}" = "pull_request" ];
           then
             promoted_name=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-${{ env.MID_REGISTRY }}-${{ env.REGISTRY }}-g")
+            promoted_name_push=$(echo "${{ needs.Build-Simulator.outputs.image_name }}" | sed "s-${{ env.MID_REGISTRY }}-${{ env.PUSH_REGISTRY }}-g")
           fi
 
           docker pull "${{ needs.Build-Simulator.outputs.image_name }}"
           docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name
+          docker tag "${{ needs.Build-Simulator.outputs.image_name }}" $promoted_name_push
 
       - name: Installation
         if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
