@@ -14,6 +14,10 @@ on:
         required: false
         type: string
         default: "v2.0.10"
+      ref_name:
+        required: false
+        type: string
+        default: "latest"
 
     secrets:
       auto_commit_user:
@@ -48,6 +52,7 @@ jobs:
 
   Pack:
     runs-on: ubuntu-20.04
+    if: ${{ inputs.release == 'false' }}
     container:
       image: registry.aws.cloud.mov.ai/qa/ros-buildtools-noetic:${{ inputs.ROS_BUILDTOOLS_TAG }}
       options: --user root
@@ -66,6 +71,7 @@ jobs:
 
         echo "pkg_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
         echo "pkg_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+
     - name: Raise Version
       id: vars-after-raise
       run: |
@@ -75,6 +81,7 @@ jobs:
         raised_buildid=$(($build_id+1))
         RAISED_PACKAGE_VERSION="$main_version-$raised_buildid"
         echo "pkg_version=$RAISED_PACKAGE_VERSION" >> $GITHUB_OUTPUT
+
     - name: Pack debian
       run: |
         git config --global --add safe.directory $(pwd)
@@ -94,9 +101,6 @@ jobs:
         # Store generated .deb
         mkdir artifacts && \
         cp ../*.deb artifacts
-    - name: Raise App version
-      run: |
-        # commit of debian/changelog previously done
         
     - name: Prepare raise variables
       id: pre_raise
@@ -110,24 +114,12 @@ jobs:
         branch: ${{ steps.pre_raise.outputs.branch }}
         unprotect_reviews: true
 
-    - name: Publish to Nexus ppa-testing
-      run: |
-          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
-          NEXUS_REPO="ppa-testing"
-          FILE_LOCATION=$(find artifacts/*.deb)
-          curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
-          -H "Content-Type: multipart/form-data" \
-          --data-binary "@$FILE_LOCATION" \
-          "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/"
-    - name: Publish to Nexus ppa-main
-      run: |
-          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
-          NEXUS_REPO="ppa-main"
-          FILE_LOCATION=$(find artifacts/*.deb)
-          curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
-          -H "Content-Type: multipart/form-data" \
-          --data-binary "@$FILE_LOCATION" \
-          "https://$NEXUS_ENDPOINT/repository/$NEXUS_REPO/"
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: packages
+        path: artifacts/*
+
     - name: Commit info
       id: commit
       shell: bash
@@ -136,16 +128,65 @@ jobs:
         echo "commit_id=$commit_hash" >> $GITHUB_OUTPUT
 
     - name: Create Github Release
-      shell: bash
-      run: |
-        product_version=${{ steps.vars-after-raise.outputs.pkg_version }}
-        previous_version_option=""
-        if gh release view ${{ steps.vars.outputs.pkg_version }} &>/dev/null; then
-          previous_version_option="--notes-start-tag ${{ steps.vars.outputs.pkg_version }}"
-        fi
-        gh release create -p --generate-notes $previous_version_option --target $commit_hash -t "Release of $product_version" $product_version
-        # add all files in the artifacts folder
-        find artifacts -type f -exec gh release upload $product_version {} \;
+      uses: softprops/action-gh-release@v1
+      with:
+        prerelease: true
+        name: "Release of ${{ steps.vars-after-raise.outputs.pkg_version  }}"
+        generate_release_notes: true
+        files: artifacts/*.deb
+        tag_name: ${{ steps.vars-after-raise.outputs.pkg_version  }}
+        target_commitish: ${{ steps.commit.outputs.commit_id }}
       env:
         GITHUB_TOKEN: ${{ secrets.gh_token }}
 
+  Publish-To-Testing:
+    needs: [Pack]
+    if: ${{ inputs.release == 'false' }}
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        nexus_ppa: ["ppa-testing", "ppa-testing-focal", "ppa-testing-jammy", "ppa-testing-noble"]
+    steps:
+
+    - name: Download a single artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: packages
+        path: artifacts
+
+    - name: Publish to Nexus
+      run: |
+          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
+          FILE_LOCATION=$(find artifacts/*.deb)
+          curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
+          -H "Content-Type: multipart/form-data" \
+          --data-binary "@$FILE_LOCATION" \
+          "https://$NEXUS_ENDPOINT/repository/${{ matrix.nexus_ppa }}/"
+
+  Publish-To-Stable:
+    if: ${{ inputs.release == 'true' }}
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        nexus_ppa: [ "ppa-main", "ppa-stable-focal", "ppa-stable-jammy", "ppa-stable-noble"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch artifact from github release
+        run: |
+          git config --global --add safe.directory $(pwd)
+          mkdir artifacts
+          cd artifacts
+          gh release download ${{ inputs.ref_name }} -p *.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.gh_token }}
+
+      - name: Publish to PPAs
+        run: |
+          NEXUS_ENDPOINT="artifacts.cloud.mov.ai"
+          FILE_LOCATION=$(find artifacts/*.deb)
+          curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
+          -H "Content-Type: multipart/form-data" \
+          --data-binary "@$FILE_LOCATION" \
+          "https://$NEXUS_ENDPOINT/repository/${{ matrix.nexus_ppa }}/"
