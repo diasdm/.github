@@ -18,6 +18,10 @@ on:
         required: false
         type: string
         default: "latest"
+      with_docs:
+        required: false
+        type: string
+        default: 'false'
 
     secrets:
       auto_commit_user:
@@ -138,6 +142,11 @@ jobs:
         target_commitish: ${{ steps.commit.outputs.commit_id }}
       env:
         GITHUB_TOKEN: ${{ secrets.gh_token }}
+    
+    - uses: DenverCoder1/doxygen-github-pages-action@v1
+      if: ${{ inputs.with_docs == 'true' }}
+      with:
+        github_token: ${{ secrets.gh_token }}
 
   Publish-To-Testing:
     needs: [Pack]
