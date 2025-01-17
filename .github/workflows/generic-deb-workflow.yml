@@ -176,6 +176,36 @@ jobs:
       with:
         github_token: ${{ secrets.gh_token }}
 
+  Run-Tests:
+    runs-on: ubuntu-20.04
+    needs: [Pack]
+    if: ${{ inputs.release == 'false' }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: packages
+        path: artifacts
+
+    - name: test setup
+      shell: bash
+      run: |
+        if test -f .github/workflows/test_setup.bash; then
+          echo "Running tests setup"
+          . .github/workflows/test_setup.bash
+        fi
+
+    - name: Run tests
+      shell: bash
+      run: |
+        if test -f .github/workflows/run_tests.bash; then
+          echo "Running tests"
+          . .github/workflows/run_tests.bash
+        fi
+
   Publish-To-Testing:
     needs: [Pack]
     if: ${{ inputs.release == 'false' && inputs.deploy == 'true' }}
