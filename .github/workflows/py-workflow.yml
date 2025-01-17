@@ -178,11 +178,17 @@ jobs:
         echo "Please check report here: https://sonarcloud.io/project/overview?id=${{ github.repository_owner }}_${{ github.event.repository.name }}"
 
     - name: Raise version
+      id: bump
       run: |
         python3 -m venv venv --clear
         . venv/bin/activate
         pip install bump-my-version==0.29.0
         bump-my-version bump build --no-tag --no-commit
+
+        current_version=$(bump-my-version show current_version)
+        echo "Bumped to version ${current_version}"
+
+        echo "current_version=${current_version}" >> $GITHUB_OUTPUT
 
     - name: Commit auto raise version
       id: raise
@@ -190,7 +196,7 @@ jobs:
         git config --global --add safe.directory $(pwd)
         git config --global user.name ${{ secrets.auto_commit_user }}
         git config --global user.email ${{ secrets.auto_commit_mail }}
-        git commit -am "[skip actions] Automatic Bump of build version to ${{ steps.bump.outputs.current-version }}"
+        git commit -am "[skip actions] Automatic Bump of build version to ${{ steps.bump.outputs.current_version }}"
 
     - name: Set branch output
       if: ${{ inputs.deploy }}
@@ -283,20 +289,20 @@ jobs:
       if: ${{ inputs.deploy }}
       shell: bash
       run: |
-        title="Release of ${{ steps.bump.outputs.current-version }}"
+        title="Release of ${{ steps.bump.outputs.current_version }}"
         git config --global --add safe.directory $(pwd)
 
         gh release create -p -t "$title" -n "Release notes for ${{ github.event.repository.name }}" \
         --target ${{ steps.commit_id.outputs.commit_id }} \
         --generate-notes \
-        ${{ steps.bump.outputs.current-version }}
+        ${{ steps.bump.outputs.current_version }}
 
         # add all files in the artifacts folder
         assets=()
         for asset in dist/*; do
           # do nothing if folder is empty
           if [[ $asset != "dist/*" ]]; then
-            gh release upload ${{ steps.bump.outputs.current-version }} $asset
+            gh release upload ${{ steps.bump.outputs.current_version }} $asset
           fi
         done
 
