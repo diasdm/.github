@@ -14,6 +14,7 @@ on:
         required: false
         type: string
         default: "v2.0.10"
+      # tag to fetch release artifacts from
       ref_name:
         required: false
         type: string
@@ -22,6 +23,14 @@ on:
         required: false
         type: string
         default: 'false'
+      testing_publish_repos:  
+        required: false  
+        type: string  
+        default: '["ppa-testing", "ppa-testing-focal", "ppa-testing-jammy", "ppa-testing-noble"]'
+      prod_publish_repos:  
+        required: false  
+        type: string  
+        default: '[ "ppa-main", "ppa-stable-focal", "ppa-stable-jammy", "ppa-stable-noble"]'
 
     secrets:
       auto_commit_user:
@@ -66,6 +75,7 @@ jobs:
 
   Pack:
     runs-on: ubuntu-20.04
+    needs: [Pre-commit]
     if: ${{ inputs.release == 'false' }}
     container:
       image: registry.aws.cloud.mov.ai/qa/ros-buildtools-noetic:${{ inputs.ROS_BUILDTOOLS_TAG }}
@@ -161,7 +171,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.gh_token }}
     
-    - uses: DenverCoder1/doxygen-github-pages-action@v1
+    - uses: DenverCoder1/doxygen-github-pages-action@v2.0.0
       if: ${{ inputs.with_docs == 'true' }}
       with:
         github_token: ${{ secrets.gh_token }}
@@ -172,7 +182,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        nexus_ppa: ["ppa-testing", "ppa-testing-focal", "ppa-testing-jammy", "ppa-testing-noble"]
+        artifact_repo_ppas: ${{fromJson(inputs.testing_publish_repos)}}
     steps:
 
     - name: Download a single artifact
@@ -188,14 +198,14 @@ jobs:
           curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
           -H "Content-Type: multipart/form-data" \
           --data-binary "@$FILE_LOCATION" \
-          "https://$NEXUS_ENDPOINT/repository/${{ matrix.nexus_ppa }}/"
+          "https://$NEXUS_ENDPOINT/repository/${{ matrix.artifact_repo_ppas }}/"
 
   Publish-To-Stable:
     if: ${{ inputs.release == 'true' }}
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        nexus_ppa: [ "ppa-main", "ppa-stable-focal", "ppa-stable-jammy", "ppa-stable-noble"]
+        artifact_repo_ppas: ${{fromJson(inputs.prod_publish_repos)}}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -216,4 +226,4 @@ jobs:
           curl -u "${{ secrets.nexus_publisher_user }}:${{ secrets.nexus_publisher_password }}" \
           -H "Content-Type: multipart/form-data" \
           --data-binary "@$FILE_LOCATION" \
-          "https://$NEXUS_ENDPOINT/repository/${{ matrix.nexus_ppa }}/"
+          "https://$NEXUS_ENDPOINT/repository/${{ matrix.artifact_repo_ppas }}/"
