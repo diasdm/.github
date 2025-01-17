@@ -176,10 +176,35 @@ jobs:
       with:
         github_token: ${{ secrets.gh_token }}
 
-  Run-Tests:
+  Search-Tests:
     runs-on: ubuntu-20.04
     needs: [Pack]
     if: ${{ inputs.release == 'false' }}
+    outputs:
+      test_folders: ${{ steps.get-tests.outputs.test_folders }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Get list of tests
+      id: get-tests
+      run: |
+        # Get list of folder inside .github/workflows/tests folder if the tests folder existss
+        if [ -d .github/workflows/tests ]; then
+          test_folders=$(ls .github/workflows/tests)
+        fi
+        echo "test_folders=$test_folders" >> $GITHUB_OUTPUT
+
+  Run-Tests:
+    strategy:
+      matrix:
+        test_setup: ${{fromJson(needs.Search-Tests.outputs.test_folders)}}
+    runs-on: ${{ matrix.test_setup }}
+    needs: [Search-Tests]
+    if: ${{ inputs.release == 'false' && needs.Search-Tests.outputs.test_folders != '' }}
+    env:
+      TEST_DIR: .github/workflows/tests/${{ matrix.test_setup }}
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -193,26 +218,26 @@ jobs:
     - name: test setup
       shell: bash
       run: |
-        if test -f .github/workflows/test_setup.bash; then
+        if test -f ${{ env.TEST_DIR }}/test_setup.bash; then
           echo "Running tests setup"
-          . .github/workflows/test_setup.bash
+          . ${{ env.TEST_DIR }}/test_setup.bash
         fi
 
     - name: Run tests
       shell: bash
       run: |
-        if test -f .github/workflows/run_tests.bash; then
+        if test -f ${{ env.TEST_DIR }}/run_tests.bash; then
           echo "Running tests"
-          . .github/workflows/run_tests.bash
+          . ${{ env.TEST_DIR }}/run_tests.bash
         fi
 
     - name: Test Cleanup
       if: always()
       shell: bash
       run: |
-        if test -f .github/workflows/clean_tests.bash; then
+        if test -f ${{ env.TEST_DIR }}/clean_tests.bash; then
           echo "Running test cleanup"
-          . .github/workflows/clean_tests.bash
+          . ${{ env.TEST_DIR }}/clean_tests.bash
         fi
 
   Publish-To-Testing:
