@@ -143,7 +143,7 @@ jobs:
         if gh release view ${{ steps.vars.outputs.pkg_version }} &>/dev/null; then
           previous_version_option="--notes-start-tag ${{ steps.vars.outputs.pkg_version }}"
         fi
-        gh release create -p --generate-notes $previous_version_option --target $commit_hash -t "Release of $product_version" $product_version
+        gh release create -p --generate-notes $previous_version_option --target ${{ steps.commit.outputs.commit_id }} -t "Release of $product_version" $product_version
         # add all files in the artifacts folder
         find artifacts -type f -exec gh release upload $product_version {} \;
       env:
