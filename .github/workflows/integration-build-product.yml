@@ -1051,6 +1051,7 @@ jobs:
           echo "private ip: $(hostname -I | awk '{print $1}')"
 
       - name: Setup CI Scripts in .ci-venv
+        if: ${{ needs.Build-Simulator.outputs.skip_simulator == 'false' && inputs.with_simulation == 'true' }}
         shell: bash
         run: |
           python3 -m venv .ci-venv --clear
