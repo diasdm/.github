@@ -193,10 +193,11 @@ jobs:
         if [ -d .github/workflows/tests ]; then
           test_folders=$(ls .github/workflows/tests | tr '\n' ',')
           # Remove the trailing comma if it exists
-          test_folders=${test_folders%,}
+          test_folders=[${test_folders%,}]
+          echo $test_folders
         fi
 
-        echo "test_folders=[$test_folders]" >> $GITHUB_OUTPUT
+        echo "test_folders=$test_folders" >> $GITHUB_OUTPUT
 
 
   Run-Tests:
