@@ -189,11 +189,15 @@ jobs:
     - name: Get list of tests
       id: get-tests
       run: |
-        # Get list of folder inside .github/workflows/tests folder if the tests folder existss
+        # Get list of folder inside .github/workflows/tests folder if the tests folder exists
         if [ -d .github/workflows/tests ]; then
-          test_folders=$(ls .github/workflows/tests)
+          test_folders=$(ls .github/workflows/tests | tr '\n' ',')
+          # Remove the trailing comma if it exists
+          test_folders=${test_folders%,}
         fi
-        echo "test_folders=$test_folders" >> $GITHUB_OUTPUT
+
+        echo "test_folders=[$test_folders]" >> $GITHUB_OUTPUT
+
 
   Run-Tests:
     strategy:
