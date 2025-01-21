@@ -191,12 +191,11 @@ jobs:
       run: |
         # Get list of folder inside .github/workflows/tests folder if the tests folder exists
         if [ -d .github/workflows/tests ]; then
-          test_folders=$(ls .github/workflows/tests | tr '\n' ',')
-          # Remove the trailing comma if it exists
-          test_folders=[${test_folders%,}]
-          echo $test_folders
+          test_folders=$(ls .github/workflows/tests | jq -R . | jq -s .)
+        else
+          test_folders="[]"
         fi
-
+  
         echo "test_folders=$test_folders" >> $GITHUB_OUTPUT
 
 
