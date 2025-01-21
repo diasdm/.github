@@ -246,7 +246,7 @@ jobs:
         fi
 
   Publish-To-Testing:
-    needs: [Pack]
+    needs: [Run-Tests]
     if: ${{ inputs.release == 'false' && inputs.deploy == 'true' }}
     runs-on: ubuntu-20.04
     strategy:
