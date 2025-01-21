@@ -204,7 +204,7 @@ jobs:
     strategy:
       matrix:
         test_setup: ${{fromJson(needs.Search-Tests.outputs.test_folders)}}
-    runs-on: ${{ matrix.test_setup }}
+    runs-on: ubuntu-20.04
     needs: [Search-Tests]
     if: ${{ inputs.release == 'false' && needs.Search-Tests.outputs.test_folders != '' }}
     env:
